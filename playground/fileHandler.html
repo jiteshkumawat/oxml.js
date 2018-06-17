@@ -1,0 +1,15 @@
+<html>
+    <head>
+
+    </head>
+    <body>
+        <script src="../lib/fileSaver.min.js"></script>
+        <script src="../node_modules/jszip/dist/jszip.min.js"></script>
+        <script src="../utils/fileHandler.js"></script>
+        <script>
+            var file = oxml.util.createFile();
+            file.addFile('test', 'tst.txt');
+            file.saveFile('tst.zip');
+        </script>
+    </body>
+</html>
