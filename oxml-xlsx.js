@@ -5,28 +5,13 @@
         var index = 0, file = window.oxml.util.createFile();
 
         // Create Content Types
-        var contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-        `;
-        for (index = 0; index < _xlsx.ContentTypes.length; index++) {
-            contentTypes += `<${_xlsx.ContentTypes[index].name} ContentType="${_xlsx.ContentTypes[index].ContentType}" `;
-            if (_xlsx.ContentTypes[index].Extension) {
-                contentTypes += `Extension="${_xlsx.ContentTypes[index].Extension}" `;
-            }
-            if (_xlsx.ContentTypes[index].PartName) {
-                contentTypes += `PartName="${_xlsx.ContentTypes[index].PartName}" `;
-            }
-            contentTypes += '/>\n';
-        }
-        contentTypes += `</Types>`;
-        file.addFile(contentTypes, "[Content_Types].xml");
+        _xlsx.contentTypes.attach(file);
 
         // Create RELS
-        var rels = _xlsx._rels.generateContent();
-        file.addFile(rels, ".rels", "_rels");
+        _xlsx._rels.attach(file);
 
         // Create WorkBook RELS
-        rels = _xlsx.workBook._rels.generateContent();
+        var rels = _xlsx.workBook._rels.generateContent();
         file.addFile(rels, "workbook.xml.rels", "workbook/_rels");
 
         // Create Workbood
@@ -54,23 +39,7 @@
     }
     var createXLSX = function () {
         var _xlsx = {
-            ContentTypes: [{
-                name: "Default",
-                Extension: "rels",
-                ContentType: "application/vnd.openxmlformats-package.relationships+xml",
-            }, {
-                name: "Default",
-                Extension: "xml",
-                ContentType: "application/xml",
-            }, {
-                name: "Override",
-                PartName: "/workbook/workbook.xml",
-                ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
-            }, {
-                name: "Override",
-                PartName: "/workbook/sheets/sheet1.xml",
-                ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
-            }],
+            contentTypes: oxml.createContentType(),
             workBook: {
                 _rels: [],
                 _workBook: {},
@@ -78,7 +47,20 @@
             }
         };
 
-        _xlsx._rels = oxml.createRelation('.rels');
+        _xlsx.contentTypes.addContentType("Default", "application/vnd.openxmlformats-package.relationships+xml", {
+            Extension: "rels"
+        });
+        _xlsx.contentTypes.addContentType("Default", "application/xml", {
+            Extension: "xml"
+        });
+        _xlsx.contentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml", {
+            PartName: "/workbook/workbook.xml"
+        });
+        _xlsx.contentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml", {
+            PartName: "/workbook/sheets/sheet1.xml"
+        });
+
+        _xlsx._rels = oxml.createRelation('.rels', '_rels');
         _xlsx._rels.addRelation(
             "rId1",
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
@@ -98,7 +80,7 @@
 
             sheetName = sheetName || "sheet" + nextSheetRelId;
             // Update REL
-            _xlsx.workBook._rels = oxml.createRelation('workbook.xml.rels');
+            _xlsx.workBook._rels = oxml.createRelation('workbook.xml.rels', "workbook/_rels");
             _xlsx.workBook._rels.addRelation(
                 "rId" + nextSheetRelId, 
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet", 
