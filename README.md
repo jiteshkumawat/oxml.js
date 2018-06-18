@@ -5,7 +5,8 @@ User can export grid data or images to open xml documents using this library.<br
 ## Dependencies
 
 * <a href="https://stuk.github.io/jszip/">JSZip</a>
-* <a href="https://github.com/eligrey/FileSaver.js/">File Saver</a> - But not a required. Can work on modern browsers without File Saver. Please see browser supported section for more details.
+* <a href="https://github.com/eligrey/FileSaver.js/">File Saver</a> 
+<br/><i>- But not required. oxml.js can work on modern browsers without File Saver. Please see browser supported section for more details.</i>
 
 ## Commands
 
