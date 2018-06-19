@@ -1,19 +1,17 @@
 (function (window) {
     var generateContent = function (_contentType) {
-        var contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-        `;
+        var contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">';
         for (index = 0; index < _contentType.length; index++) {
-            contentTypes += `<${_contentType[index].name} ContentType="${_contentType[index].contentType}" `;
+            contentTypes += '<' + _contentType[index].name + ' ContentType="' + _contentType[index].contentType + '" ';
             if (_contentType[index].Extension) {
-                contentTypes += `Extension="${_contentType[index].Extension}" `;
+                contentTypes += 'Extension="' + _contentType[index].Extension + '" ';
             }
             if (_contentType[index].PartName) {
-                contentTypes += `PartName="${_contentType[index].PartName}" `;
+                contentTypes += 'PartName="' + _contentType[index].PartName + '" ';
             }
             contentTypes += '/>\n';
         }
-        contentTypes += `</Types>`;
+        contentTypes += '</Types>';
         return contentTypes;
     };
 

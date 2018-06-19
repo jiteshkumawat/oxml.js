@@ -10,14 +10,11 @@
 
     var generateContent = function(_rels){
         // Create RELS
-        var index, rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-        `;
+        var index, rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
         for (index = 0; index < _rels.relations.length; index++) {
-            rels += `<Relationship Id="${_rels.relations[index].Id}" Type="${_rels.relations[index].Type}" Target="${_rels.relations[index].Target}"/>
-            `;
+            rels += '<Relationship Id="' + _rels.relations[index].Id + '" Type="' + _rels.relations[index].Type + '" Target="' + _rels.relations[index].Target + '"/>';
         }
-        rels += `</Relationships>`;
+        rels += '</Relationships>';
         return rels;
     };
 
