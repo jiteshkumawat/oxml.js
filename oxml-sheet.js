@@ -9,6 +9,9 @@
             return '<c r="' + cellIndex + '" t="s"><v>' + value.value + '</v></c>';
         } else if (value.type === 'string') {
             return '<c r="'+ cellIndex + '" t="inlineStr"><is><t>' + value.value + '</t></is></c>';
+        } else if (value.type === 'formula') {
+            var v = (value.value !== null && value.value !== undefined) ? '<v>' + value.value + '</v>' : '';
+            return '<c r="'+ cellIndex + '"><f>' + value.formula + '</f>' + v + '</c>';
         }
     };
 
@@ -47,7 +50,7 @@
         }
         if (typeof value === "object") {
             // Object type of value
-            if (value.value === undefined || value.value === null) {
+            if ((value.value === undefined || value.value === null) && !(value.formula && value.type === "formula")) {
                 return null;
             }
             if (!value.type) {
@@ -58,7 +61,7 @@
                         return {
                             type: value.type,
                             value: value.value
-                        }
+                        };
                     }
                     else{
                         // Add shared string
@@ -66,14 +69,19 @@
                         return {
                             type: value.type,
                             value: value.value
-                        }
+                        };
                     }
-                }
-                else if (value.type === "numeric" || value.type === "string") {
+                } else if(value.type === "formula"){
+                    return {
+                        type: value.type,
+                        formula: value.formula,
+                        value: value.value
+                    };
+                } else if (value.type === "numeric" || value.type === "string") {
                     return {
                         type: value.type,
                         value: value.value
-                    }
+                    };
                 }
                 return null;
             }

@@ -16,9 +16,8 @@
             // var sharedString = file._xlsx.workBook.createSharedString("Hello");
             var sheet2 = file.addSheet('sheet1');
             sheet2.updateValuesInMatrix([
-                [1, 3, {type: "sharedString", value: "Hello"}],
-                ['a','b'],
-                [4, {type: "sharedString", value: "Hello"}, 9]
+                ['Sale Price', 'Cost Price', 'Profit', 'Profit%'],
+                [10, 14, {type: "formula", formula: "(B2 - A2)", value: 4}, {type: "formula", formula: "(C2 / A2) * 100", value: 40}]
             ]);
             var sheet = file.addSheet('tst1');
             sheet.updateValuesInRow(0, [null, 22, undefined, 23, 28]);
