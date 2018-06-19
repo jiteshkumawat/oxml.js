@@ -3,20 +3,36 @@
         var rowIndex = 0, sheetValues = '';
         if (_sheet.values && _sheet.values.length) {
             for (rowIndex = 0; rowIndex < _sheet.values.length; rowIndex++) {
-                var rowChar = String.fromCharCode(65 + rowIndex);
-                sheetValues += '<row >\n';
+                if (_sheet.values[rowIndex] && _sheet.values[rowIndex].length > 0) {
+                    sheetValues += '<row r="' + (rowIndex + 1) + '">\n';
 
-                var columnIndex = 0;
-                for (columnIndex = 0; columnIndex < _sheet.values[rowIndex].length; columnIndex++) {
-                    var cellIndex = rowChar + (columnIndex + 1);
-                    var value = _sheet.values[rowIndex][columnIndex];
-                    if (value === null || value === undefined) {
-                        value = '';
-                    }
-                    sheetValues += `<c >
+                    var columnIndex = 0;
+                    for (columnIndex = 0; columnIndex < _sheet.values[rowIndex].length; columnIndex++) {
+                        var columnChar = String.fromCharCode(65 + columnIndex);
+                        var value = _sheet.values[rowIndex][columnIndex];
+                        var isNumber = !isNaN(value);
+                        if (value !== null && value !== undefined) {
+                            var cellIndex = columnChar + (rowIndex + 1);
+                            if (isNumber) {
+                                sheetValues += `<c r="${cellIndex}">
                             <v>${value}</v>
                         </c>
                         `;
+                            }
+                            else if (value.type === 'sharedString'){
+                                sheetValues += `<c r="${cellIndex}" t="s">
+                            <v>${value.value}</v>
+                        </c>
+                        `;
+                            }
+                            else {
+                                sheetValues += `<c r="${cellIndex}" t="inlineStr">
+                            <is><t>${value}</t></is>
+                        </c>
+                        `;
+                            }
+                        }
+                    }
                 }
 
                 sheetValues += '</row>'
@@ -42,7 +58,16 @@
         var index = 0;
         for (index = 0; index < values.length; index++) {
             if (values[index] !== undefined && values[index] !== null) {
-                _sheet.values[rowId][index] = values[index];
+                if (values[index].type === 'sharedString' || values[index].type === 'sharedstring') {
+                    if (values[index].value !== undefined && values[index].value !== null) {
+                        _sheet.values[rowId][index] = {
+                            type: "sharedString",
+                            value: values[index].value
+                        }
+                    }
+                } else {
+                    _sheet.values[rowId][index] = values[index];
+                }
             }
         }
     };
@@ -54,7 +79,17 @@
                 if (!_sheet.values[index]) {
                     _sheet.values[index] = [];
                 }
-                _sheet.values[index][columnId] = values[index];
+                if (values[index].type === 'sharedString' || values[index].type === 'sharedstring') {
+                    if (values[index].value !== undefined && values[index].value !== null) {
+                        _sheet.values[index][columnId] = {
+                            type: "sharedString",
+                            value: values[index].value
+                        }
+                    }
+                }
+                else {
+                    _sheet.values[index][columnId] = values[index];
+                }
             }
         }
     };
@@ -71,7 +106,18 @@
                     for (columnIndex = 0; columnIndex < values[rowIndex].length; columnIndex++) {
                         var value = values[rowIndex][columnIndex];
                         if (value !== undefined && value !== null) {
+                            if (value.type === 'sharedString' || value.type === 'sharedstring') {
+                                if (value.value !== undefined && value.value !== null) {
+                                    _sheet.values[rowIndex][columnIndex] = {
+                                        type: "sharedString",
+                                        value: value.value
+                                    }
+                                }
+                            }
+                            else
+                            {
                             _sheet.values[rowIndex][columnIndex] = value;
+                            }
                         }
                     }
                 }

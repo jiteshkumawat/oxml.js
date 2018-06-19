@@ -18,7 +18,6 @@
     
     var createXLSX = function () {
         var _xlsx = {};
-        _xlsx.workBook = oxml.createWorkbook();
         _xlsx.contentTypes = oxml.createContentType();
 
         _xlsx.contentTypes.addContentType("Default", "application/vnd.openxmlformats-package.relationships+xml", {
@@ -30,16 +29,15 @@
         _xlsx.contentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml", {
             PartName: "/workbook/workbook.xml"
         });
-        _xlsx.contentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml", {
-            PartName: "/workbook/sheets/sheet1.xml"
-        });
-
+        
         _xlsx._rels = oxml.createRelation('.rels', '_rels');
         _xlsx._rels.addRelation(
             "rId1",
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
             "workbook/workbook.xml"
         );
+
+        _xlsx.workBook = oxml.createWorkbook(_xlsx.contentTypes, _xlsx._rels);
 
         var download = function (fileName) {
             if (!JSZip) {

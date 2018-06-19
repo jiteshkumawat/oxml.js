@@ -23,6 +23,23 @@
         return workBook;
     };
 
+    var generateSharedStrings = function (_workBook) {
+        if (_workBook._sharedStrings && Object.keys(_workBook._sharedStrings).length) {
+            var sharedStrings = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+            `;
+            for (var key in _workBook._sharedStrings) {
+                sharedStrings += `<si> 
+                <t>${key}</t> 
+                </si>
+                `;
+            }
+            sharedStrings += '</sst>';
+            return sharedStrings;
+        }
+        return '';
+    }
+
     var addSheet = function (_workBook, sheetName) {
         var lastSheetRel = getLastSheet(_workBook);
         var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
@@ -34,6 +51,11 @@
         // Update Sheets
         var sheet = oxml.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId);
         _workBook.sheets.push(sheet);
+        // Add Content Type (TODO)
+        _workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml", {
+            PartName: "/workbook/sheets/sheet" + nextSheetRelId + ".xml"
+        });
+        
         return sheet;
     };
 
@@ -42,11 +64,48 @@
         _workBook._rels.attach(file);
         var workBook = generateContent(_workBook, file);
         file.addFile(workBook, "workbook.xml", "workbook");
+        var sharedStrings = generateSharedStrings(_workBook);
+        if (sharedStrings) {
+            file.addFile(sharedStrings, "sharedstrings.xml", "workbook");
+        }
     };
 
-    var createWorkbook = function () {
+    var createSharedString = function (str, _workBook) {
+        if (!str) {
+            return;
+        }
+        if (!_workBook._sharedStrings) {
+            _workBook._sharedStrings = {};
+
+            // Add Content Types
+            _workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml", {
+                PartName: "/workbook/sharedstrings.xml"
+            });
+
+            // Add REL
+            var lastSheetRel = getLastSheet(_workBook);
+            var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
+            _workBook._rels.addRelation("rId" + nextSheetRelId,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
+                "sharedstrings.xml");
+        }
+
+        if (!_workBook._sharedStrings[str]) {
+            _workBook._sharedStrings[str] = Object.keys(_workBook._sharedStrings).length || 0;
+        }
+
+        return _workBook._sharedStrings[str];
+    };
+
+    var getSharedString = function (str, _workBook) {
+        return _workBook._sharedStrings[str];
+    }
+
+    var createWorkbook = function (xlsxContentTypes, xlsxRels) {
         var _workBook = {
-            sheets: []
+            sheets: [],
+            xlsxContentTypes: xlsxContentTypes,
+            xlsxRels: xlsxRels
         };
         _workBook._rels = oxml.createRelation('workbook.xml.rels', "workbook/_rels");
 
@@ -60,6 +119,12 @@
             },
             attach: function (file) {
                 attach(file, _workBook);
+            },
+            createSharedString: function (str) {
+                return createSharedString(str, _workBook);
+            },
+            getSharedString: function (str) {
+                return getSharedString(str, _workBook);
             }
         };
     };
