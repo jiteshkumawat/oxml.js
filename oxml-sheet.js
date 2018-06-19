@@ -7,11 +7,16 @@
             return '<c r="' + cellIndex + '"><v>' + value.value + '</v></c>';
         } else if (value.type === 'sharedString') {
             return '<c r="' + cellIndex + '" t="s"><v>' + value.value + '</v></c>';
+        } else if (value.type === "sharedFormula") {
+            if (value.formula) {
+                return '<c  r="' + cellIndex + '"><f t="shared" ref="' + value.range + '" si="' + value.si + '">' + value.formula + '</f></c>';
+            }
+            return '<c  r="' + cellIndex + '"><f t="shared" si="' + value.si + '"></f></c>';
         } else if (value.type === 'string') {
-            return '<c r="'+ cellIndex + '" t="inlineStr"><is><t>' + value.value + '</t></is></c>';
+            return '<c r="' + cellIndex + '" t="inlineStr"><is><t>' + value.value + '</t></is></c>';
         } else if (value.type === 'formula') {
             var v = (value.value !== null && value.value !== undefined) ? '<v>' + value.value + '</v>' : '';
-            return '<c r="'+ cellIndex + '"><f>' + value.formula + '</f>' + v + '</c>';
+            return '<c r="' + cellIndex + '"><f>' + value.formula + '</f>' + v + '</c>';
         }
     };
 
@@ -57,13 +62,13 @@
                 value = value.value;
             } else {
                 if (value.type === "sharedString") {
-                    if(typeof value.value === "number"){
+                    if (typeof value.value === "number") {
                         return {
                             type: value.type,
                             value: value.value
                         };
                     }
-                    else{
+                    else {
                         // Add shared string
                         value.value = _sheet._workBook.createSharedString(value.value, _sheet._workBook);
                         return {
@@ -71,7 +76,7 @@
                             value: value.value
                         };
                     }
-                } else if(value.type === "formula"){
+                } else if (value.type === "formula") {
                     return {
                         type: value.type,
                         formula: value.formula,
@@ -139,7 +144,7 @@
                 if (!_sheet.values[rowIndex]) {
                     _sheet.values[rowIndex] = [];
                 }
-                if (values[rowIndex].length) {
+                if (typeof values[rowIndex] === "object" && values[rowIndex].length >= 0) {
                     var columnIndex = 0;
                     for (columnIndex = 0; columnIndex < values[rowIndex].length; columnIndex++) {
                         var value = sanitizeValue(values[rowIndex][columnIndex], _sheet);
@@ -148,7 +153,7 @@
                         }
                     }
                 }
-                else if (values[rowIndex].length === undefined || values[rowIndex].length === null) {
+                else {
                     var value = sanitizeValue(values[rowIndex], _sheet);
                     if (value) {
                         _sheet.values[rowIndex][0] = value;
@@ -156,6 +161,79 @@
                 }
             }
         }
+    };
+
+    var updateSharedFormula = function (_sheet, formula, fromCell, toCell) {
+        var nextId;
+
+        if (!fromCell || !formula || !toCell) {
+            return;
+        }
+
+        var fromCellChar = fromCell.match(/\D+/)[0];
+        var fromCellNum = fromCell.match(/\d+/)[0];
+
+        if (!_sheet._sharedFormula) {
+            _sheet._sharedFormula = [];
+            nextId = 0;
+        } else {
+            var lastSharedFormula = _sheet._sharedFormula[_sheet._sharedFormula.length - 1];
+            nextId = lastSharedFormula.si + 1;
+        }
+
+        _sheet._sharedFormula.push({
+            si: nextId,
+            fromCell: fromCell,
+            toCell: toCell,
+            formula: formula
+        });
+
+        // Update from Cell
+        var columIndex = fromCellChar.toUpperCase().charCodeAt() - 65;
+        var rowIndex = parseInt(fromCellNum, 10);
+        if (!_sheet.values[rowIndex - 1]) {
+            _sheet.values[rowIndex - 1] = [];
+        }
+        _sheet.values[rowIndex - 1][columIndex] = {
+            type: "sharedFormula",
+            si: nextId,
+            formula: formula,
+            range: fromCell + ":" + toCell
+        };
+
+        var toCellChar, toCellNum;
+        if (toCell) {
+            toCellChar = toCell.match(/\D+/)[0];
+            toCellNum = toCell.match(/\d+/)[0];
+        }
+
+        // Update all cell in row
+        if (toCellNum === fromCellNum) {
+            var toColumnIndex = toCellChar.toUpperCase().charCodeAt() - 65;
+            for (columIndex++; columIndex <= toColumnIndex; columIndex++) {
+                _sheet.values[rowIndex - 1][columIndex] = {
+                    type: "sharedFormula",
+                    si: nextId
+                };
+            }
+        }
+
+        // Update all cell in column
+        else if (toCellChar === fromCellChar) {
+            var torowIndex = parseInt(toCellNum, 10);
+            for (rowIndex++; rowIndex <= torowIndex; rowIndex++) {
+                if (!_sheet.values[rowIndex - 1]) {
+                    _sheet.values[rowIndex - 1] = [];
+                }
+
+                _sheet.values[rowIndex - 1][columIndex] = {
+                    type: "sharedFormula",
+                    si: nextId
+                };
+            }
+        }
+
+        return nextId;
     };
 
     var createSheet = function (sheetName, sheetId, rId, workBook) {
@@ -188,6 +266,9 @@
                 if (values && values.length) {
                     updateValuesInMatrix(values, _sheet);
                 }
+            },
+            updateSharedFormula: function (formula, fromCell, toCell) {
+                return updateSharedFormula(_sheet, formula, fromCell, toCell);
             }
         };
     }
