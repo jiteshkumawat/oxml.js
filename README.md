@@ -62,7 +62,7 @@ Below methods are available for pushing data into worksheets. They use value arg
 **_Shared Formula:_** Shared Frmula are smarter type of values assigned in xlsx documents. They can not be directly assigned along with values in column, row or matrix but can be assigned seperately as described later in this section.
 
 Below are few of the examples for creating values:
- ```
+ ```javascript
  // This will create Numeric values
  var numericValues = [1,2,3,{type: "number", value: 4}];
 
