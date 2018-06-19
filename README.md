@@ -1,36 +1,11 @@
 # oxml.js
-### Javascript library for creating and manipulating Open XML Documents like docx, xlsx, etc. <br/>
-User can export grid data or images to open xml documents using this library.<br/>
+## Javascript library for creating and manipulating Open XML Documents like docx, xlsx, etc.
+This is a small javascript library, which can let you download / export data in open xml documents like docx and xlsx which can be opened in any desktop or online document processing application such as Microsoft Excel, Google Sheets, etc. User can export data from charts or grid without making any server calls and thus saving processing units.
+
+Open XML documents are just a ziped collection of XML files, thus only library required for oxml.js to work is JSZip, for compressing data in zip format and downloading.
 
 ## Dependencies
 
-* <a href="https://stuk.github.io/jszip/">JSZip</a>
-* <a href="https://github.com/eligrey/FileSaver.js/">File Saver</a> 
-<br/><i>- But not required. oxml.js can work on modern browsers without File Saver. Please see browser supported section for more details.</i>
-
-## Commands
-
-* <b>oxml.createXLSX()</b> <br/>
-Creates an open xml document in .xlsx format. This document can be used to store worksheets and charts. A convinient way to export grids and charts from html.<br/>
-```
-Syntax: oxml.createXLSX()
-Example: var workbook = oxml.createXLSX();
-Returns: XLSX document object
-```
-* <b>addSheet()</b> <br/>
-This method is present on xlsx object obtained from createXLSX method. It facilitates adding sheets into a workbook for storing data.<br/>
-```
-Syntax: <workbook>.addSheet(<sheetName>)
-Example: workbook.addSheet('Sheet1');
-Arguments: sheetName
-```
-* <b>download()</b><br/>
-This method is present on xlsx object obtained from createXLSX method. It facilitates downloading created workbook.<br/>
-```
-Syntax: <workbook>.download(<fileName>)
-Example: workbook.download('workbook1.xlsx');
-Arguments: fileName
-```
-
--- Work In Progress --<br/>
-I welcome contributers to help me build this library.
+* [JSZIP](https://stuk.github.io/jszip/)
+* [File Saver](https://github.com/eligrey/FileSaver.js/)
+  *- But not required. oxml.js can work on modern browsers without File Saver. Please see browser supported section for more details.*
