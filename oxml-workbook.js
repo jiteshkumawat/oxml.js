@@ -1,4 +1,6 @@
-(function (window) {
+define(['oxml_content_types', 'oxml_rels', 'oxml_sheet'], function (oxmlContentTypes, oxmlRels, oxmlSheet) {
+    'use strict';
+
     var getLastSheet = function (_workBook) {
         if (_workBook._rels.relations.length) {
             return _workBook._rels.relations[_workBook._rels.relations.length - 1];
@@ -8,10 +10,10 @@
 
     var generateContent = function (_workBook, file) {
         // Create Workbood
-        var workBook = '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>';
+        var index, workBook = '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>';
         for (index = 0; index < _workBook.sheets.length; index++) {
-            workBook += '<sheet name="' + _workBook.sheets[index]._sheet.sheetName + '" sheetId="' + _workBook.sheets[index]._sheet.sheetId + 
-            '" r:id="' + _workBook.sheets[index]._sheet.rId + '" />';
+            workBook += '<sheet name="' + _workBook.sheets[index]._sheet.sheetName + '" sheetId="' + _workBook.sheets[index]._sheet.sheetId +
+                '" r:id="' + _workBook.sheets[index]._sheet.rId + '" />';
             if (file) {
                 _workBook.sheets[index].attach(file);
             }
@@ -24,7 +26,7 @@
         if (_workBook._sharedStrings && Object.keys(_workBook._sharedStrings).length) {
             var sharedStrings = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
             for (var key in _workBook._sharedStrings) {
-                sharedStrings += '<si><t>' + key +'</t></si>';
+                sharedStrings += '<si><t>' + key + '</t></si>';
             }
             sharedStrings += '</sst>';
             return sharedStrings;
@@ -41,13 +43,13 @@
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
             "sheets/sheet" + nextSheetRelId + ".xml");
         // Update Sheets
-        var sheet = oxml.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId, _workBook);
+        var sheet = oxmlSheet.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId, _workBook);
         _workBook.sheets.push(sheet);
         // Add Content Type (TODO)
         _workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml", {
             PartName: "/workbook/sheets/sheet" + nextSheetRelId + ".xml"
         });
-        
+
         return sheet;
     };
 
@@ -100,7 +102,7 @@
             xlsxRels: xlsxRels,
             createSharedString: createSharedString
         };
-        _workBook._rels = oxml.createRelation('workbook.xml.rels', "workbook/_rels");
+        _workBook._rels = oxmlRels.createRelation('workbook.xml.rels', "workbook/_rels");
 
         return {
             _workBook: _workBook,
@@ -122,9 +124,5 @@
         };
     };
 
-    if (!window.oxml) {
-        window.oxml = {};
-    }
-
-    window.oxml.createWorkbook = createWorkbook;
-})(window);
+    return { createWorkbook: createWorkbook };
+});

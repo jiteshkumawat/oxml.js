@@ -1,4 +1,6 @@
-(function (window) {
+define([], function () {
+    'use strict';
+
     var cellString = function (value, cellIndex) {
         if (!value) {
             return '';
@@ -112,14 +114,14 @@
     };
 
     var updateValuesInRow = function (rowId, values, _sheet) {
-        if (!_sheet.values[rowId]) {
-            _sheet.values[rowId] = [];
+        if (!_sheet.values[rowId - 1]) {
+            _sheet.values[rowId - 1] = [];
         }
         var index = 0;
         for (index = 0; index < values.length; index++) {
             var value = sanitizeValue(values[index], _sheet);
             if (value) {
-                _sheet.values[rowId][index] = value;
+                _sheet.values[rowId - 1][index] = value;
             }
         }
     };
@@ -132,7 +134,7 @@
                 _sheet.values[index] = [];
             }
             if (value) {
-                _sheet.values[index][columnId] = value;
+                _sheet.values[index][columnId - 1] = value;
             }
         }
     };
@@ -272,9 +274,7 @@
             }
         };
     }
-    if (!window.oxml) {
-        window.oxml = {};
-    }
-
-    window.oxml.createSheet = createSheet;
-})(window);
+    
+    // window.oxml.createSheet = createSheet;
+    return { createSheet: createSheet };
+});

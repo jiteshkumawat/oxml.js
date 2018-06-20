@@ -1,6 +1,6 @@
-"use strict";
+define([], function(){
+    "use strict";
 
-(function (window) {
     var createCompressedFile = function () {
         if (!window.JSZip) {
             return;
@@ -40,13 +40,7 @@
         return compressedFile;
     };
 
-    if (!window.oxml) {
-        window.oxml = {};
+    return {
+        createFile: createCompressedFile
     }
-
-    if (!window.oxml.util) {
-        window.oxml.util = {};
-    }
-
-    window.oxml.util.createFile = createCompressedFile;
-})(window);
+});

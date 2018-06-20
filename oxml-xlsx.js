@@ -1,8 +1,10 @@
-"use strict";
+define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], function (fileHandler, oxmlContentTypes, oxmlRels, oxmlWorkBook) {
+    'use strict';
 
-(function (window) {
+    var oxml = {};
+
     var downloadFile = function (fileName, _xlsx) {
-        var file = window.oxml.util.createFile();
+        var file = fileHandler.createFile();
 
         // Attach Content Types
         _xlsx.contentTypes.attach(file);
@@ -15,10 +17,10 @@
 
         file.saveFile(fileName);
     };
-    
+
     var createXLSX = function () {
         var _xlsx = {};
-        _xlsx.contentTypes = oxml.createContentType();
+        _xlsx.contentTypes = oxmlContentTypes.createContentType();
 
         _xlsx.contentTypes.addContentType("Default", "application/vnd.openxmlformats-package.relationships+xml", {
             Extension: "rels"
@@ -29,15 +31,15 @@
         _xlsx.contentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml", {
             PartName: "/workbook/workbook.xml"
         });
-        
-        _xlsx._rels = oxml.createRelation('.rels', '_rels');
+
+        _xlsx._rels = oxmlRels.createRelation('.rels', '_rels');
         _xlsx._rels.addRelation(
             "rId1",
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
             "workbook/workbook.xml"
         );
 
-        _xlsx.workBook = oxml.createWorkbook(_xlsx.contentTypes, _xlsx._rels);
+        _xlsx.workBook = oxmlWorkBook.createWorkbook(_xlsx.contentTypes, _xlsx._rels);
 
         var download = function (fileName) {
             if (!JSZip) {
@@ -52,10 +54,12 @@
             download: download
         };
     };
+    
+    oxml.createXLSX = createXLSX;
 
     if (!window.oxml) {
-        window.oxml = {};
+        window.oxml = oxml;
     }
 
-    window.oxml.createXLSX = createXLSX;
-})(window);
+    return oxml;
+});

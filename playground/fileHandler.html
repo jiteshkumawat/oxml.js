@@ -4,30 +4,25 @@
     </head>
     <body>
         <script src="../lib/fileSaver.min.js"></script>
-        <script src="../node_modules/jszip/dist/jszip.min.js"></script>
-        <script src="../utils/fileHandler.js"></script>
-        <script src="../oxml-content-types.js"></script>
-        <script src="../oxml-rels.js"></script>
-        <script src="../oxml-sheet.js"></script>
-        <script src="../oxml-workbook.js"></script>
-        <script src="../oxml-xlsx.js"></script>
+        <script src="../lib/jszip.min.js"></script>
+        <script data-main="../app.js" src="../lib/require.js"></script>
         <script>
-            var file = oxml.createXLSX();
-            // var sharedString = file._xlsx.workBook.createSharedString("Hello");
-            var sheet2 = file.addSheet('sheet1');
-            sheet2.updateValuesInMatrix([
-                [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
-                [null, 10, 14], //{type: "formula", formula: "(B2 - A2)", value: 4}, {type: "formula", formula: "(C2 / A2) * 100", value: 40}]
-                [null, 11, 14],
-                'Total'
-            ]);
-            sheet2.updateSharedFormula('(C2 - B2)', 'D2', 'D3');
-            sheet2.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
-            sheet2.updateSharedFormula('(D2 / B2) * 100', 'E2', 'E4');
-            var sheet = file.addSheet('tst1');
-            sheet.updateValuesInRow(0, [null, 22, undefined, 23, 28]);
-            file.download('t.xlsx');
-            console.log(file);
+            // var file = oxml.createXLSX();
+            // // var sharedString = file._xlsx.workBook.createSharedString("Hello");
+            // var sheet2 = file.addSheet('sheet1');
+            // sheet2.updateValuesInMatrix([
+            //     [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
+            //     [null, 10, 14], //{type: "formula", formula: "(B2 - A2)", value: 4}, {type: "formula", formula: "(C2 / A2) * 100", value: 40}]
+            //     [null, 11, 14],
+            //     'Total'
+            // ]);
+            // sheet2.updateSharedFormula('(C2 - B2)', 'D2', 'D3');
+            // sheet2.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
+            // sheet2.updateSharedFormula('(D2 / B2) * 100', 'E2', 'E4');
+            // var sheet = file.addSheet('tst1');
+            // sheet.updateValuesInRow(0, [null, 22, undefined, 23, 28]);
+            // file.download('t.xlsx');
+            // console.log(file);
         </script>
     </body>
 </html>
