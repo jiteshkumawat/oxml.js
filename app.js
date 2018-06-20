@@ -30,5 +30,4 @@ function   (fileSaver, oxmlXLSX) {
             var sheet = file.addSheet('tst1');
             sheet.updateValuesInRow(0, [null, 22, undefined, 23, 28]);
             file.download('t.xlsx');
-            console.log(file);
 });

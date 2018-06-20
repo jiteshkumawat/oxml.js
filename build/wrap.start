@@ -1,0 +1,8 @@
+//Copyright 2012, etc.
+
+(function (root, factory) {
+        // Browser globals
+        root.oxml = factory();
+}(this, function () {
+
+
