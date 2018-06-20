@@ -57,8 +57,12 @@ Below methods are available for pushing data into worksheets. They use value arg
 
 **_Shared String Values:_** Shared string are optimized way to update a string value in cell. They are shared among different cells, thus otimizing space complexity of xlsx document.
 
+**_Formula:_** Formula type of values will perform calculations to assign value in cell. They can be written as equation for formula bar of any workbook editor like Microsoft Excel. Formula can be assigned to a cell with or without cached value.
+
+**_Shared Formula:_** Shared Frmula are smarter type of values assigned in xlsx documents. They can not be directly assigned along with values in column, row or matrix but can be assigned seperately as described later in this section.
+
 Below are few of the examples for creating values:
- ```
+ ```javascript
  // This will create Numeric values
  var numericValues = [1,2,3,{type: "number", value: 4}];
 
@@ -68,6 +72,9 @@ Below are few of the examples for creating values:
  // This will create Shared string values
  var sharedStringValues = [{type: "sharedString", value: "Hello"}, {type: "sharedString", value: "World"}];
  
+ // This will create Formula type cell with cached value. This will calculate sum of A1 and A2 cell, where 'A' defined column and numeric value define row. Value can be provided if this has to be cached.
+ var formulaWithValue = [{type: "formula", value: 10, formula: "(A1 + A2)"}]
+ 
  // Below will create empty values
  var nullValues = [null, undefined, {type: "number"}, {value: null}];
  ```
@@ -75,14 +82,14 @@ Below are few of the examples for creating values:
 ##### updateValuesInRow()
 
  This method is used to push data in a row. updateValuesInRow method is available to instance of worksheet. updateValuesInRow takes two required parameters:
- 1. rowIndex: First parameter passed in method is index of row starting from 0.
- 1. valuesArray: Second parameter is an array list of values to be filled in row. User can pass value in any format as described above.
+ 1. rowIndex: First parameter passed in method is index of row starting from 1.
+ 1. valuesArray: Second parameter is an array list of values to be filled in row. User can pass value in any format except shared formula, described above.
   ```javascript
   Syntax: [workSheet].updateValuesInRow([rowId], [values])
   Example:
   var workBook = oxml.createXLSX();
   var workSheet = workBook.addSheet('Sheet1');
-  workSheet.updateValuesInRow(0, [1,2,null,4,5]);
+  workSheet.updateValuesInRow(1, [1,2,null,4,5]);
   // This will update data in following format:
   // 1 --- 2 --- --- 4 --- 5
   ```
@@ -90,14 +97,14 @@ Below are few of the examples for creating values:
 ##### updateValuesInColumn()
 
  This method is used to push data in a column. updateValuesInColumn method is available to instance of worksheet. updateValuesInColumn takes to required parameters:
- 1. rowIndex: First parameter passed in method is index of row starting from 0.
- 1. valuesArray: Second parameter is an array list of values to be filled in column. User can pass value in any format as described above.
+ 1. columnIndex: First parameter passed in method is index of column starting from 1.
+ 1. valuesArray: Second parameter is an array list of values to be filled in column. User can pass value in any format except shared formula, described above.
   ```javascript
-  Syntax: [workSheet].updateValuesInColumn([rowId], [values])
+  Syntax: [workSheet].updateValuesInColumn([columnIndex], [values])
   Example:
   var workBook = oxml.createXLSX();
   var workSheet = workBook.addSheet('Sheet1');
-  workSheet.updateValuesInColumn(0, ['Data1',1,2,3]);
+  workSheet.updateValuesInColumn(1, ['Data1',1,2,3]);
   // This will update data in following format:
   // Data1
   // 1
@@ -107,10 +114,10 @@ Below are few of the examples for creating values:
 
 ##### updateValuesInMatrix()
  
- This method is used to push data in row and column format. updateValuesInMatrix is available to instance of worksheet. updateValuesInMatrix takes an only argument of array collection of data in row and column format.
+ This method is used to push data in row and column format. updateValuesInMatrix is available to instance of worksheet. updateValuesInMatrix takes an only argument of array collection of data in row and column format. Values passed can be in any format except shared formula, described above.
   ```javascript
-  Syntax: [workSheet].updateValuesInColumn([rowId], [values])
-  Example:
+  Syntax: [workSheet].updateValuesInMatrix([values])
+  Example1:
   var workBook = oxml.createXLSX();
   var workSheet = workBook.addSheet('Sheet1');
   workSheet.updateValuesInMatrix([
@@ -119,7 +126,41 @@ Below are few of the examples for creating values:
       [4, {type: "sharedString", value: "Hello"}, 9]
   ]);
   // This will update data in following format:
-  // 1 --- 3 --- Hello
-  // a --- b
-  // 4 --- Hello --- 9
+  // 1 ---   3   --- Hello
+  // a ---   b
+  // 4 --- Hello ---  9
+  
+  Example2:
+  var workBook = oxml.createXLSX();
+  var workSheet = workBook.addSheet('Sheet1');
+  workSheet.updateValuesInMatrix([
+      ['Sale Price', 'Cost Price', 'Profit', 'Profit%'],
+      [10, 14, {type: "formula", formula: "(B2 - A2)", value: 4}, {type: "formula", formula: "(C2 / A2) * 100", value: 40}]
+  ]);
+  // This will update data in following format:
+  // Sale Price --- Cost Price --- Profit --- Profit%
+  //     10     ---     14     ---    4   ---   40
+  ```
+  
+##### updateSharedFormula()
+ This method is used to assign a shared formula in a range or row or column. updateSharedFormula is available to instance of worksheet. updateSharedFormula takes three required arguments: formula, start cell index, and end cell index. Cell index is provided starting from 'A' as column starter and positive numeric value for row index. eg. 'A1' describe first cell of worksheet, 'A2' describe second cell in first row, 'B1' describe second cell in first column and so on. updateSharedFormula is an optimized way to update values in all the range of cells. This can be explained with below example:
+  ```javascript
+  Syntax: [workSheet].updateSharedFormula([formula], [startCell], [endCell])
+  Example:
+  var workBook = oxml.createXLSX();
+  var workSheet = workBook.addSheet('Sheet1');
+  workSheet.updateValuesInMatrix([
+   [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
+   [null, 10, 14],
+   [null, 11, 14],
+   'Total'
+  ]);
+  workSheet.updateSharedFormula('(C2 - B2)', 'D2', 'D3');
+  workSheet.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
+  workSheet.updateSharedFormula('(D2 / B2) * 100', 'E2', 'E4');
+  // This will update data in following format:
+  //      --- Sale Price --- Cost Price --- Profit --- Profit%
+  //      ---     10     ---     14     ---    4   ---   40
+  //      ---     11     ---     14     ---    3   ---   27.27273
+  //Total ---     21     ---     28     ---    7   ---   33.33333
   ```
