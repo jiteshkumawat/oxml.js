@@ -68,15 +68,15 @@
         <div style="margin-top: 25px;">
             <div class="alert alert-light">
                 <pre>
-    &lt;script src="../lib/fileSaver.min.js">&lt;/script>
-    &lt;script src="../lib/jszip.min.js">&lt;/script>
-    &lt;script src="../dist/oxml.min.js">&lt;/script> </pre>
+    &lt;script src="../scripts/fileSaver.min.js">&lt;/script>
+    &lt;script src="../scripts/jszip.min.js">&lt;/script>
+    &lt;script src="../scripts/oxml.min.js">&lt;/script> </pre>
             </div>
         </div>
 
         <div style="margin-top: 25px;">
             <div class="alert alert-dark">
-                Create Workbook and Worksheet documents
+                Create / Export Workbook and Worksheet documents
             </div>
         </div>
 
@@ -87,16 +87,242 @@
             </div>
         </div>
 
+        <script>
+            onExample1Click = function () {
+                var workbook = oxml.createXLSX();
+                var worksheet = workbook.addSheet('sheet1');
+                workbook.download('workbook.xlsx');
+            }
+        </script>
+
         <div style="margin-top: 25px;">
             <div class="alert alert-light">
                 var workbook = oxml.createXLSX();
-                <br/> var worksheet = file.addSheet('sheet1');
+                <br/> var worksheet = workbook.addSheet('sheet1');
+                <br/> var workbook.download('workbook.xslx');
+                <hr/>
+                <p>
+                    <button type="button" class="btn btn-dark" onclick="onExample1Click()">Execute</button>
+                </p>
             </div>
         </div>
 
         <div style="margin-top: 25px;">
             <div class="alert alert-dark">
-                Fill in sheets
+                Fill values in sheets
+            </div>
+        </div>
+
+        <div class="row justify-content-md-center">
+            <div class="col">
+                <h4>Values</h4>
+                Values in worksheet can be of different types. These values can be filled in cell, rows, column, or a matrix of rows and
+                column. Value defined to be filled in worksheet may be of following types:
+                <ul>
+                    <li>String Values: String values are represented by javascript string literals. String values can be provided
+                        for cell using string literal or JSON object with type set as string. A JSON string value should
+                        have attributes value and type defined. String are usually defined as inline string in worksheet.</li>
+                    <li>Numeric Values: Numeric values are represented by javascript number literals. Numeric values can be provided
+                        for cell using number literal or JSON object with type set as numeric. A JSON numeric value should
+                        have attributes value and type defined.</li>
+                    <li>Blank Values: Cell can be left blank by passing null or undefined javascript values.</li>
+                    <li>Shared String: Shared string are represented by JSON object, with type attribute defined as sharedString.
+                        A shared string JSON should have attributes type and value defined.</li>
+                    <li>Formula: Formulas are represented by JSON object, with type attribute defined as formula. A formula type
+                        of value should be defined with attributes type and formula defined. Formula attribute stores the
+                        formula used to calculate cell value, this can be reffered as formula defined in formula bar of any
+                        workbook processing application like Microsoft Excel. If an additional attribute value is defined,
+                        this value will be used as cached value for formula cell.</li>
+                    <li>Shared Formula: Shared Formulas can be filled using special method available to worksheet object, updateSharedFormula.
+                        This method is described well below.</li>
+                </ul>
+                <h5>updateSharedFormula</h5>
+                <p>
+                    updateSharedFormula is used to define a shared formula among range of cells or column. They are an optimized way to define
+                    formula in range of cells of worksheet. This method is available with instance of worksheet type of object.
+                    This method takes three required variables, i.e, formula, start cell index, and end cell index. Here
+                    cell index is represented with column defined with character representation and row is defined with numeric
+                    representation just as any workbook application. eg. A1 represent the first cell, A2 represent the second
+                    cell in column, and B1 represent the second cell in row. Formula is defined just as any formula of formula
+                    bar. updateSharedFormula can be seen in different examples below.
+                </p>
+                All these values will be used to fill data in worksheet using below methods:
+                <br/>
+                <h5>updateValueInCell</h5>
+                <p>
+                    updateValueInCell is used to fill a value in single cell of worksheet. This method is available on instance of worksheet
+                    type of object. updateValueInCell takes three arguments, i.e., rowIndex starting from 1, column index
+                    starting from 1, and value. Value provided can be of any type explained above except shared formula.
+                    Below example describe updating values in cells of worksheet:
+                </p>
+
+                <script>
+                    onExample2Click = function () {
+                        var workbook = oxml.createXLSX();
+                        var worksheet = workbook.addSheet('sheet1');
+                        worksheet.updateValueInCell(1, 1, null);
+                        worksheet.updateValueInCell(1, 2, { type: 'string', value: 'Data 1' });
+                        worksheet.updateValueInCell(1, 3, 'Data 2');
+                        worksheet.updateValueInCell(1, 4, { type: 'sharedString', value: 'Total' });
+                        worksheet.updateValueInCell(2, 1, undefined);
+                        worksheet.updateValueInCell(2, 2, { type: "numeric", value: 5 });
+                        worksheet.updateValueInCell(2, 3, 9);
+                        worksheet.updateValueInCell(2, 4, { type: 'formula', formula: '(B2 + C2)', value: 14 });
+                        worksheet.updateValueInCell(3, 1, null);
+                        worksheet.updateValueInCell(3, 2, 7);
+                        worksheet.updateValueInCell(3, 3, 3);
+                        worksheet.updateValueInCell(3, 4, { type: 'formula', formula: '(B3 + C3)', value: 10 });
+                        worksheet.updateValueInCell(4, 1, { type: 'sharedString', value: 'Total' });
+                        worksheet.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
+                        workbook.download('workbook.xlsx');
+                    }
+                </script>
+
+                <div style="margin-top: 25px;">
+                    <div class="alert alert-light">
+                        var workbook = oxml.createXLSX();
+                        <br/> var worksheet = workbook.addSheet('sheet1');
+                        <br/> worksheet.updateValueInCell(1, 1, null);
+                        <br/> worksheet.updateValueInCell(1, 2, {type: 'string', value:'Data 1'});
+                        <br/> worksheet.updateValueInCell(1, 3, 'Data 2');
+                        <br/> worksheet.updateValueInCell(1, 4, { type: 'sharedString', value: 'Total' });
+                        <br/> worksheet.updateValueInCell(2, 1, undefined);
+                        <br/> worksheet.updateValueInCell(2, 2, {type: 'numeric', value: 5});
+                        <br/> worksheet.updateValueInCell(2, 3, 9);
+                        <br/> worksheet.updateValueInCell(2, 4, { type: 'formula', formula: '(B2 + C2)', value: 14 });
+                        <br/> worksheet.updateValueInCell(3, 1, null);
+                        <br/> worksheet.updateValueInCell(3, 2, 7);
+                        <br/> worksheet.updateValueInCell(3, 3, 3);
+                        <br/> worksheet.updateValueInCell(3, 4, { type: 'formula', formula: '(B3 + C3)', value: 10 });
+                        <br/> worksheet.updateValueInCell(4, 1, { type: 'sharedString', value: 'Total' });
+                        <br/> worksheet.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
+                        <br/> var workbook.download('workbook.xslx');
+                        <hr/>
+                        <p>
+                            <button type="button" class="btn btn-dark" onclick="onExample2Click()">Execute</button>
+                        </p>
+                    </div>
+                </div>
+
+                <h5>updateValuesInRow</h5>
+                <p>
+                    updateValuesInRow method is used to fill values in a row of worksheet. This method is available on instance of worksheet
+                    type of object. updateValuesInRow takes two arguments, i.e., rowIndex starting from 1 and values array.
+                    Values array is array representation of above value types. This method also takes single value, if it
+                    has to be filled in first column of the row only. Below example describe updating values in rows of worksheet:
+                </p>
+                <script>
+                    onExample3Click = function () {
+                        var workbook = oxml.createXLSX();
+                        var worksheet = workbook.addSheet('sheet1');
+                        worksheet.updateValuesInRow(1, 'Total of Data')
+                        worksheet.updateValuesInRow(2, [null, 'Data 1', 'Data 2', { type: 'sharedString', value: 'Total' }]);
+                        worksheet.updateValuesInRow(3, [undefined, 5, 9]);
+                        worksheet.updateValuesInRow(4, [null, 7, 3]);
+                        worksheet.updateSharedFormula('(B3 + C3)', 'D3', 'D4');
+                        workbook.download('workbook.xlsx');
+                    }
+                </script>
+
+                <div style="margin-top: 25px;">
+                    <div class="alert alert-light">
+                        var workbook = oxml.createXLSX();
+                        <br/> var worksheet = workbook.addSheet('sheet1');
+                        <br/> worksheet.updateValuesInRow(1, 'Total of Data')
+                        <br/> worksheet.updateValuesInRow(2, [null, 'Data 1', 'Data 2', { type: 'sharedString', value: 'Total'
+                        }]);
+                        <br/> worksheet.updateValuesInRow(3, [undefined, 5, 9]);
+                        <br/> worksheet.updateValuesInRow(4, [null, 7, 3]);
+                        <br/> worksheet.updateSharedFormula('(B3 + C3)', 'D3', 'D4');
+                        <br/> var workbook.download('workbook.xslx');
+                        <hr/>
+                        <p>
+                            <button type="button" class="btn btn-dark" onclick="onExample3Click()">Execute</button>
+                        </p>
+                    </div>
+                </div>
+
+                <h5>updateValuesInColumn</h5>
+                <p>
+                    updateValuesInColumn are just like updateValuesInRow, but they fill values in column of worksheet. It is also available on
+                    instance of worksheet type of object. Just like for rows, it takes two arguments, i.e, columnIndex and
+                    values. Below example describe updating values in column of worksheet:
+                </p>
+                <script>
+                    onExample4Click = function () {
+                        var workbook = oxml.createXLSX();
+                        var worksheet = workbook.addSheet('sheet1');
+                        worksheet.updateValuesInColumn(1, 'Total of Data')
+                        worksheet.updateValuesInColumn(2, [null, 'Data 1', 'Data 2', { type: 'sharedString', value: 'Total' }]);
+                        worksheet.updateValuesInColumn(3, [undefined, 5, 9]);
+                        worksheet.updateValuesInColumn(4, [null, 7, 3]);
+                        worksheet.updateSharedFormula('(C2 + C3)', 'C4', 'D4');
+                        workbook.download('workbook.xlsx');
+                    }
+                </script>
+
+                <div style="margin-top: 25px;">
+                    <div class="alert alert-light">
+                        var workbook = oxml.createXLSX();
+                        <br/> var worksheet = workbook.addSheet('sheet1');
+                        <br/> worksheet.updateValuesInColumn(1, 'Total of Data')
+                        <br/> worksheet.updateValuesInColumn(2, [null, 'Data 1', 'Data 2', { type: 'sharedString', value: 'Total'
+                        }]);
+                        <br/> worksheet.updateValuesInColumn(3, [undefined, 5, 9]);
+                        <br/> worksheet.updateValuesInColumn(4, [null, 7, 3]);
+                        <br/> worksheet.updateSharedFormula('(C2 + C3)', 'C4', 'D4');
+                        <br/> var workbook.download('workbook.xslx');
+                        <hr/>
+                        <p>
+                            <button type="button" class="btn btn-dark" onclick="onExample4Click()">Execute</button>
+                        </p>
+                    </div>
+                </div>
+
+                <h5>updateValuesInMatrix</h5>
+                <p>
+                    updateValuesInMatrix is the much smarter way to fill values in worksheet. It accepts an only argument of two dimensional
+                    array with values defined in rows and column. With a value[i][j] representation, i represent the row
+                    of value and j represent the column of value. This value can be of any type as described above. Below
+                    example describe updating values in rows and columns:
+                </p>
+                <script>
+                    onExample5Click = function () {
+                        var workbook = oxml.createXLSX();
+                        var worksheet = workbook.addSheet('sheet1');
+                        worksheet.updateValuesInMatrix([
+                            [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
+                            [null, 10, 14],
+                            [null, 11, 14],
+                            'Total'
+                        ]);
+                        worksheet.updateSharedFormula('(C2 - B2)', 'D2', 'D3');
+                        worksheet.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
+                        worksheet.updateSharedFormula('(D2 / B2) * 100', 'E2', 'E4');
+                        workbook.download('workbook.xlsx');
+                    }
+                </script>
+
+                <div style="margin-top: 25px;">
+                    <div class="alert alert-light">
+                        var workbook = oxml.createXLSX();
+                        <br/> var worksheet = workbook.addSheet('sheet1');
+                        <br/> worksheet.updateValuesInMatrix([
+                        <br/> [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
+                        <br/> [null, 10, 14],
+                        <br/> [null, 11, 14],
+                        <br/> 'Total'
+                        <br/> ]);
+                        <br/> worksheet.updateSharedFormula('(C2 - B2)', 'D2', 'D3');
+                        <br/> worksheet.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
+                        <br/> worksheet.updateSharedFormula('(D2 / B2) * 100', 'E2', 'E4');
+                        <br/> var workbook.download('workbook.xslx');
+                        <hr/>
+                        <p>
+                            <button type="button" class="btn btn-dark" onclick="onExample5Click()">Execute</button>
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

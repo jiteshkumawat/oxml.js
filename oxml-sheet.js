@@ -118,6 +118,9 @@ define([], function () {
             _sheet.values[rowId - 1] = [];
         }
         var index = 0;
+        if (typeof values !== "object" || !values.length) {
+            values = [values];
+        }
         for (index = 0; index < values.length; index++) {
             var value = sanitizeValue(values[index], _sheet);
             if (value) {
@@ -128,6 +131,9 @@ define([], function () {
 
     var updateValuesInColumn = function (columnId, values, _sheet) {
         var index = 0;
+        if (typeof values !== "object" || !values.length) {
+            values = [values];
+        }
         for (index = 0; index < values.length; index++) {
             var value = sanitizeValue(values[index], _sheet);
             if (!_sheet.values[index]) {
@@ -164,6 +170,18 @@ define([], function () {
             }
         }
     };
+
+    var updateValueInCell = function (_sheet, value, rowIndex, columnIndex) {
+        if (value !== undefined && value !== null) {
+            if (!rowIndex) rowIndex = 1;
+            if (!columnIndex) columnIndex = 1;
+            if (!_sheet.values[rowIndex - 1]) {
+                _sheet.values[rowIndex - 1] = [];
+            }
+            value = sanitizeValue(value, _sheet);
+            _sheet.values[rowIndex - 1][columnIndex - 1] = value;
+        }
+    }
 
     var updateSharedFormula = function (_sheet, formula, fromCell, toCell) {
         var nextId;
@@ -255,12 +273,12 @@ define([], function () {
                 attach(_sheet, file);
             },
             updateValuesInRow: function (rowId, values) {
-                if (!isNaN(rowId) && rowId >= 0 && values && values.length) {
+                if (!isNaN(rowId) && rowId > 0 && values) {
                     updateValuesInRow(rowId, values, _sheet);
                 }
             },
             updateValuesInColumn: function (columnId, values) {
-                if (!isNaN(columnId) && columnId >= 0 && values && values.length) {
+                if (!isNaN(columnId) && columnId > 0 && values) {
                     updateValuesInColumn(columnId, values, _sheet);
                 }
             },
@@ -271,10 +289,13 @@ define([], function () {
             },
             updateSharedFormula: function (formula, fromCell, toCell) {
                 return updateSharedFormula(_sheet, formula, fromCell, toCell);
+            },
+            updateValueInCell: function (rowIndex, columnIndex, value) {
+                return updateValueInCell(_sheet, value, rowIndex, columnIndex);
             }
         };
     }
-    
+
     // window.oxml.createSheet = createSheet;
     return { createSheet: createSheet };
 });
