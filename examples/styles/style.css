@@ -1,0 +1,47 @@
+body, html {
+    height: 100%;
+    margin: 0px;
+}
+
+.parallax { 
+    background-image: url("../images/banner.png");
+    height: 100%; 
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 100%;
+
+    /* Firefox */
+    display: -moz-box;
+    -moz-box-pack: center;
+
+    /* Safari and Chrome */
+    display: -webkit-box;
+    -webkit-box-pack: center;
+
+    /* W3C */
+    display: box;
+    box-pack: center;
+}
+
+.scroll-title{
+    background-color: #616161;
+    color: #cedced;
+    height: 45px;
+    width: 150px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    font-family: monospace;
+    padding-top: 8px;
+    margin-top: 60px;
+    border-radius: 7px;
+    cursor: default;
+}
+
+@media only screen and (max-device-width: 1366px) {
+    .parallax {
+        background-attachment: scroll;
+    }
+}
