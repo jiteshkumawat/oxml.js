@@ -14,7 +14,7 @@ requirejs.config({
 
 requirejs(['fileSaver', 'oxml-xlsx'],
     function (fileSaver, oxmlXLSX) {
-        var file = oxml.createXLSX();
+        // var file = oxml.createXLSX();
         // var sharedString = file._xlsx.workBook.createSharedString("Hello");
         // var sheet2 = file.addSheet('sheet1');
         // sheet2.updateValuesInMatrix([
@@ -30,21 +30,18 @@ requirejs(['fileSaver', 'oxml-xlsx'],
         // var sheet = file.addSheet('tst1');
         // sheet.updateValuesInRow(0, [null, 22, undefined, 23, 28]);
         // file.download('t.xlsx');
-        file.destroy();
+        // file.destroy();
 
         var workbook = oxml.createXLSX();
-        var worksheet = workbook.addSheet('sheet1');
-        worksheet.updateValuesInRow(1, 'Total of Data')
-        worksheet.updateValuesInRow(2, [null, 'Data 1', 'Data 2', { type: 'sharedString', value: 'Total' }]);
-        worksheet.updateValuesInRow(3, [undefined, 5, 9]);
-        worksheet.updateValuesInRow(4, [null, 7, 3]);
-        worksheet.updateSharedFormula('(B3 + C3)', 'D3', 'D4');
-        workbook.download('workbook.xlsx').then(function(){
-            console.log("Successful");
-        }, function(error){
-            console.log(error);
-        });
-        setTimeout(function(){
-            workbook.destroy();
-        }, 3000);
+                        var worksheet = workbook.addSheet('sheet1');
+                        worksheet.updateValuesInMatrix([
+                            [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
+                            [null, 10, 14],
+                            [null, 11, 14],
+                            'Total'
+                        ], 4, 4);
+                        worksheet.updateSharedFormula('(F5 - E5)', 'G5', 'G6');
+                        worksheet.updateSharedFormula('(E5 + E6)', 'E7', 'F7');
+                        worksheet.updateSharedFormula('(G5 / E5) * 100', 'H5', 'H6');
+                        workbook.download('workbook.xlsx');
     });

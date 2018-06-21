@@ -44,7 +44,7 @@ define([], function () {
                             });
                         }
                     }
-                    catch{
+                    catch (err){
                         if (callback) {
                             callback("Err: Not able to create file object.");
                         } else if (typeof Promise !== "undefined") {

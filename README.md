@@ -79,32 +79,51 @@ Below are few of the examples for creating values:
  var nullValues = [null, undefined, {type: "number"}, {value: null}];
  ```
 
-##### updateValuesInRow()
+##### updateValueInCell()
 
- This method is used to push data in a row. updateValuesInRow method is available to instance of worksheet. updateValuesInRow takes two required parameters:
- 1. rowIndex: First parameter passed in method is index of row starting from 1.
- 1. valuesArray: Second parameter is an array list of values to be filled in row. User can pass value in any format except shared formula, described above.
+ This method is used to push data in a cell of worksheet. updateValueInCell method is available to instance of worksheet, and it takes three parameters:
+ 1. value: First parameter is value to be filled. User can pass value in any format except shared formula, described above.
+ 1. rowIndex: Second parameter passed in method is index of row starting from 1.
+ 1. columnIndex: Thirt parameter passed in method is index of column starting from 1.
   ```javascript
-  Syntax: [workSheet].updateValuesInRow([rowId], [values])
+  Syntax: [workSheet].updateValueInCell([value], [rowIndex], [columnIndex])
   Example:
   var workBook = oxml.createXLSX();
   var workSheet = workBook.addSheet('Sheet1');
-  workSheet.updateValuesInRow(1, [1,2,null,4,5]);
+  workSheet.updateValuesInRow(["Data"], 1, 3);
   // This will update data in following format:
+  // --- --- --- Data
+  ```
+
+##### updateValuesInRow()
+
+ This method is used to push data in consecutive cells of a row. updateValuesInRow method is available to instance of worksheet. updateValuesInRow takes three parameters:
+ 1. valuesArray: First parameter is an array list of values to be filled in row. User can pass value in any format except shared formula, described above.
+ 1. rowIndex: Second parameter passed in method is index of row starting from 1.
+ 1. columnIndex: Thirt parameter passed in method is index of column starting from 1.
+  ```javascript
+  Syntax: [workSheet].updateValuesInRow([values], [rowIndex], [columnIndex])
+  Example:
+  var workBook = oxml.createXLSX();
+  var workSheet = workBook.addSheet('Sheet1');
+  workSheet.updateValuesInRow([1,2,null,4,5], 2, 1);
+  // This will update data in following format:
+  // -----------------------
   // 1 --- 2 --- --- 4 --- 5
   ```
   
 ##### updateValuesInColumn()
 
- This method is used to push data in a column. updateValuesInColumn method is available to instance of worksheet. updateValuesInColumn takes to required parameters:
- 1. columnIndex: First parameter passed in method is index of column starting from 1.
- 1. valuesArray: Second parameter is an array list of values to be filled in column. User can pass value in any format except shared formula, described above.
+ This method is used to push data in consecutive cells of a column. updateValuesInColumn method is available to instance of worksheet. updateValuesInColumn takes three parameters:
+  1. valuesArray: First parameter is an array list of values to be filled in column. User can pass value in any format except shared formula, described above.
+  1. rowIndex: Second parameter passed in method is index of row starting from 1.
+  1. columnIndex: Third parameter passed in method is index of column starting from 1.
   ```javascript
-  Syntax: [workSheet].updateValuesInColumn([columnIndex], [values])
+  Syntax: [workSheet].updateValuesInColumn([values], [rowIndex], [columnIndex])
   Example:
   var workBook = oxml.createXLSX();
   var workSheet = workBook.addSheet('Sheet1');
-  workSheet.updateValuesInColumn(1, ['Data1',1,2,3]);
+  workSheet.updateValuesInColumn(['Data1',1,2,3], 1, 1);
   // This will update data in following format:
   // Data1
   // 1
@@ -114,9 +133,12 @@ Below are few of the examples for creating values:
 
 ##### updateValuesInMatrix()
  
- This method is used to push data in row and column format. updateValuesInMatrix is available to instance of worksheet. updateValuesInMatrix takes an only argument of array collection of data in row and column format. Values passed can be in any format except shared formula, described above.
+ This method is used to push data in row and column format. updateValuesInMatrix is available to instance of worksheet. updateValuesInMatrix again takes following three arguments
+  1. valuesArray: First parameter is a two dimensional array list of values to be filled in rows and column column. User can pass value in any format except shared formula, described above.
+  1. rowIndex: Second parameter passed in method is index of row starting from 1.
+  1. columnIndex: Third parameter passed in method is index of column starting from 1.
   ```javascript
-  Syntax: [workSheet].updateValuesInMatrix([values])
+  Syntax: [workSheet].updateValuesInMatrix([values], [rowIndex], [columnIndex])
   Example1:
   var workBook = oxml.createXLSX();
   var workSheet = workBook.addSheet('Sheet1');
@@ -124,7 +146,7 @@ Below are few of the examples for creating values:
       [1, 3, {type: "sharedString", value: "Hello"}],
       ['a','b'],
       [4, {type: "sharedString", value: "Hello"}, 9]
-  ]);
+  ], 1, 1);
   // This will update data in following format:
   // 1 ---   3   --- Hello
   // a ---   b
@@ -136,8 +158,9 @@ Below are few of the examples for creating values:
   workSheet.updateValuesInMatrix([
       ['Sale Price', 'Cost Price', 'Profit', 'Profit%'],
       [10, 14, {type: "formula", formula: "(B2 - A2)", value: 4}, {type: "formula", formula: "(C2 / A2) * 100", value: 40}]
-  ]);
+  ], 2, 1);
   // This will update data in following format:
+  // ------------------------------------------------
   // Sale Price --- Cost Price --- Profit --- Profit%
   //     10     ---     14     ---    4   ---   40
   ```

@@ -18,7 +18,7 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
 
             return file.saveFile(fileName, callback);
         }
-        catch {
+        catch (err){
             if (callback) {
                 callback('Err: Not able to create Workbook.');
             }

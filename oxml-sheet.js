@@ -37,9 +37,9 @@ define([], function () {
                         var cellStr = cellString(value, cellIndex);
                         sheetValues += cellStr;
                     }
-                }
 
-                sheetValues += '</row>'
+                    sheetValues += '</row>'
+                }
             }
         }
         var sheet = '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + sheetValues + '</sheetData></worksheet>';
@@ -113,9 +113,10 @@ define([], function () {
         return null;
     };
 
-    var updateValuesInRow = function (rowId, values, _sheet) {
-        if (!_sheet.values[rowId - 1]) {
-            _sheet.values[rowId - 1] = [];
+    var updateValuesInRow = function (values, _sheet, rowIndex, columnIndex) {
+        rowIndex--;
+        if (!_sheet.values[rowIndex]) {
+            _sheet.values[rowIndex] = [];
         }
         var index = 0;
         if (typeof values !== "object" || !values.length) {
@@ -124,62 +125,62 @@ define([], function () {
         for (index = 0; index < values.length; index++) {
             var value = sanitizeValue(values[index], _sheet);
             if (value) {
-                _sheet.values[rowId - 1][index] = value;
+                _sheet.values[rowIndex][index + columnIndex - 1] = value;
             }
         }
     };
 
-    var updateValuesInColumn = function (columnId, values, _sheet) {
+    var updateValuesInColumn = function (values, _sheet, rowIndex, columnIndex) {
         var index = 0;
         if (typeof values !== "object" || !values.length) {
             values = [values];
         }
         for (index = 0; index < values.length; index++) {
-            var value = sanitizeValue(values[index], _sheet);
-            if (!_sheet.values[index]) {
-                _sheet.values[index] = [];
+            var value = sanitizeValue(values[index], _sheet), sheetRowIndex = index + rowIndex - 1;
+            if (!_sheet.values[sheetRowIndex]) {
+                _sheet.values[sheetRowIndex] = [];
             }
             if (value) {
-                _sheet.values[index][columnId - 1] = value;
+                _sheet.values[sheetRowIndex][columnIndex - 1] = value;
             }
         }
     };
 
-    var updateValuesInMatrix = function (values, _sheet) {
-        var rowIndex = 0;
-        for (rowIndex = 0; rowIndex < values.length; rowIndex++) {
-            if (values[rowIndex] !== undefined || values[rowIndex] !== null) {
-                if (!_sheet.values[rowIndex]) {
-                    _sheet.values[rowIndex] = [];
+    var updateValuesInMatrix = function (values, _sheet, rowIndex, columnIndex) {
+        var index;
+        for (index = 0; index < values.length; index++) {
+            if (values[index] !== undefined || values[index] !== null) {
+                var sheetRowIndex = index + rowIndex - 1;
+                if (!_sheet.values[sheetRowIndex]) {
+                    _sheet.values[sheetRowIndex] = [];
                 }
-                if (typeof values[rowIndex] === "object" && values[rowIndex].length >= 0) {
-                    var columnIndex = 0;
-                    for (columnIndex = 0; columnIndex < values[rowIndex].length; columnIndex++) {
-                        var value = sanitizeValue(values[rowIndex][columnIndex], _sheet);
+                if (typeof values[index] === "object" && values[index].length >= 0) {
+                    var index2;
+                    for (index2 = 0; index2 < values[index].length; index2++) {
+                        var value = sanitizeValue(values[index][index2], _sheet);
                         if (value) {
-                            _sheet.values[rowIndex][columnIndex] = value;
+                            _sheet.values[sheetRowIndex][index2 + columnIndex - 1] = value;
                         }
                     }
                 }
                 else {
-                    var value = sanitizeValue(values[rowIndex], _sheet);
+                    var value = sanitizeValue(values[index], _sheet);
                     if (value) {
-                        _sheet.values[rowIndex][0] = value;
+                        _sheet.values[sheetRowIndex][columnIndex - 1] = value;
                     }
                 }
             }
         }
     };
 
-    var updateValueInCell = function (_sheet, value, rowIndex, columnIndex) {
+    var updateValueInCell = function (value, _sheet, rowIndex, columnIndex) {
         if (value !== undefined && value !== null) {
-            if (!rowIndex) rowIndex = 1;
-            if (!columnIndex) columnIndex = 1;
-            if (!_sheet.values[rowIndex - 1]) {
-                _sheet.values[rowIndex - 1] = [];
+            var sheetRowIndex = rowIndex - 1;
+            if (!_sheet.values[sheetRowIndex]) {
+                _sheet.values[sheetRowIndex] = [];
             }
             value = sanitizeValue(value, _sheet);
-            _sheet.values[rowIndex - 1][columnIndex - 1] = value;
+            _sheet.values[sheetRowIndex][columnIndex - 1] = value;
         }
     }
 
@@ -265,6 +266,13 @@ define([], function () {
         delete _sheet._sharedFormula;
     };
 
+    var validateIndex = function(index){
+        if(isNaN(index) || index <= 0){
+            return 1;
+        }
+        return index;
+    };
+
     var createSheet = function (sheetName, sheetId, rId, workBook) {
         var _sheet = {
             sheetName: sheetName,
@@ -281,26 +289,34 @@ define([], function () {
             attach: function (file) {
                 attach(_sheet, file);
             },
-            updateValuesInRow: function (rowId, values) {
-                if (!isNaN(rowId) && rowId > 0 && values) {
-                    updateValuesInRow(rowId, values, _sheet);
+            updateValuesInRow: function (values, rowIndex, columnIndex) {
+                rowIndex = validateIndex(rowIndex);
+                columnIndex = validateIndex(columnIndex);
+                if (values) {
+                    updateValuesInRow(values, _sheet, rowIndex, columnIndex);
                 }
             },
-            updateValuesInColumn: function (columnId, values) {
-                if (!isNaN(columnId) && columnId > 0 && values) {
-                    updateValuesInColumn(columnId, values, _sheet);
+            updateValuesInColumn: function (values, rowIndex, columnIndex) {
+                rowIndex = validateIndex(rowIndex);
+                columnIndex = validateIndex(columnIndex);
+                if (values) {
+                    updateValuesInColumn(values, _sheet, rowIndex, columnIndex);
                 }
             },
-            updateValuesInMatrix: function (values) {
+            updateValuesInMatrix: function (values, rowIndex, columnIndex) {
+                rowIndex = validateIndex(rowIndex);
+                columnIndex = validateIndex(columnIndex);
                 if (values && values.length) {
-                    updateValuesInMatrix(values, _sheet);
+                    updateValuesInMatrix(values, _sheet, rowIndex, columnIndex);
                 }
             },
             updateSharedFormula: function (formula, fromCell, toCell) {
                 return updateSharedFormula(_sheet, formula, fromCell, toCell);
             },
-            updateValueInCell: function (rowIndex, columnIndex, value) {
-                return updateValueInCell(_sheet, value, rowIndex, columnIndex);
+            updateValueInCell: function (value, rowIndex, columnIndex) {
+                rowIndex = validateIndex(rowIndex);
+                columnIndex = validateIndex(columnIndex);
+                return updateValueInCell(value, _sheet, rowIndex, columnIndex);
             },
             destroy: function(){
                 return destroy(_sheet);
