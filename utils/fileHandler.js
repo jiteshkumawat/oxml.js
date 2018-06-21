@@ -1,4 +1,4 @@
-define([], function(){
+define([], function () {
     "use strict";
 
     var createCompressedFile = function () {
@@ -19,21 +19,40 @@ define([], function(){
             (path || zip).file(fileName, content);
         };
 
-        compressedFile.saveFile = function (fileName) {
-            zip.generateAsync({type: "blob"})
-                .then(function(content){
-                    if(window.saveAs){
-                        return saveAs(content, fileName);
+        compressedFile.saveFile = function (fileName, callback) {
+            return zip.generateAsync({ type: "blob" })
+                .then(function (content) {
+                    try {
+                        if (window.saveAs) {
+                            return saveAs(content, fileName);
+                        }
+                        var url = window.URL.createObjectURL(content);
+                        var element = document.createElement('a');
+                        element.setAttribute('href', url);
+                        element.setAttribute('download', fileName);
+
+                        element.style.display = 'none';
+                        document.body.appendChild(element);
+                        element.click();
+                        document.body.removeChild(element);
+
+                        if (callback) {
+                            callback();
+                        } else if (typeof Promise !== "undefined") {
+                            return new Promise(function (resolve, reject) {
+                                resolve();
+                            });
+                        }
                     }
-                    var url = window.URL.createObjectURL(content);
-                    var element = document.createElement('a');
-                    element.setAttribute('href', url);
-                    element.setAttribute('download', fileName);
-        
-                    element.style.display = 'none';
-                    document.body.appendChild(element);
-                    element.click();
-                    document.body.removeChild(element);
+                    catch{
+                        if (callback) {
+                            callback("Err: Not able to create file object.");
+                        } else if (typeof Promise !== "undefined") {
+                            return new Promise(function (resolve, reject) {
+                                reject("Err: Not able to create file object.");
+                            });
+                        }
+                    }
                 });
         };
 

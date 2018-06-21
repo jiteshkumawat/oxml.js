@@ -45,7 +45,7 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet'], function (oxmlContentT
         // Update Sheets
         var sheet = oxmlSheet.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId, _workBook);
         _workBook.sheets.push(sheet);
-        // Add Content Type (TODO)
+        // Add Content Type
         _workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml", {
             PartName: "/workbook/sheets/sheet" + nextSheetRelId + ".xml"
         });
@@ -93,35 +93,66 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet'], function (oxmlContentT
 
     var getSharedString = function (str, _workBook) {
         return _workBook._sharedStrings[str];
-    }
+    };
+
+    var destroy = function (_workBook) {
+        var index;
+        delete _workBook.xlsxContentTypes;
+        delete _workBook.xlsxRels;
+        _workBook._rels.destroy();
+        _workBook._rels.destroy = null;
+        delete _workBook._rels.destroy;
+        _workBook._rels = null;
+        delete _workBook._rels;
+        _workBook.generateContent = null;
+        delete _workBook.generateContent;
+        _workBook.attach = null;
+        delete _workBook.attach;
+        _workBook.addSheet = null;
+        delete _workBook.addSheet;
+        _workBook.createSharedString = null;
+        delete _workBook.createSharedString;
+        _workBook.getSharedString = null;
+        delete _workBook.getSharedString;
+        _workBook._sharedStrings = null;
+        delete _workBook._sharedStrings;
+        for (index = 0; index < _workBook.sheets.length; index++) {
+            _workBook.sheets[index].destroy();
+            _workBook.sheets[index].destroy = null;
+            delete _workBook.sheets[index].destroy;
+            _workBook.sheets[index] = null;
+        }
+        _workBook.sheets = null;
+        delete _workBook.sheets;
+    };
 
     var createWorkbook = function (xlsxContentTypes, xlsxRels) {
         var _workBook = {
             sheets: [],
             xlsxContentTypes: xlsxContentTypes,
-            xlsxRels: xlsxRels,
-            createSharedString: createSharedString
+            xlsxRels: xlsxRels
         };
         _workBook._rels = oxmlRels.createRelation('workbook.xml.rels', "workbook/_rels");
 
-        return {
-            _workBook: _workBook,
-            addSheet: function (sheetName) {
-                return addSheet(_workBook, sheetName);
-            },
-            generateContent: function () {
-                return generateContent(_workBook);
-            },
-            attach: function (file) {
-                attach(file, _workBook);
-            },
-            createSharedString: function (str) {
-                return createSharedString(str, _workBook);
-            },
-            getSharedString: function (str) {
-                return getSharedString(str, _workBook);
-            }
+        _workBook.addSheet = function (sheetName) {
+            return addSheet(_workBook, sheetName);
         };
+        _workBook.generateContent = function () {
+            return generateContent(_workBook);
+        };
+        _workBook.attach = function (file) {
+            attach(file, _workBook);
+        };
+        _workBook.createSharedString = function (str) {
+            return createSharedString(str, _workBook);
+        };
+        _workBook.getSharedString = function (str) {
+            return getSharedString(str, _workBook);
+        };
+        _workBook.destroy = function(){
+            destroy(_workBook);
+        };
+        return _workBook;
     };
 
     return { createWorkbook: createWorkbook };

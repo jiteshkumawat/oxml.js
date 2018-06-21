@@ -3,19 +3,31 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
 
     var oxml = {};
 
-    var downloadFile = function (fileName, _xlsx) {
-        var file = fileHandler.createFile();
+    var downloadFile = function (fileName, callback, _xlsx) {
+        try {
+            var file = fileHandler.createFile();
 
-        // Attach Content Types
-        _xlsx.contentTypes.attach(file);
+            // Attach Content Types
+            _xlsx.contentTypes.attach(file);
 
-        // Attach RELS
-        _xlsx._rels.attach(file);
+            // Attach RELS
+            _xlsx._rels.attach(file);
 
-        // Attach WorkBook
-        _xlsx.workBook.attach(file);
+            // Attach WorkBook
+            _xlsx.workBook.attach(file);
 
-        file.saveFile(fileName);
+            return file.saveFile(fileName, callback);
+        }
+        catch {
+            if (callback) {
+                callback('Err: Not able to create Workbook.');
+            }
+            else if (typeof Promise !== "undefined") {
+                return new Promise(function (resolve, reject) {
+                    reject("Err: Not able to create Workbook.");
+                });
+            }
+        }
     };
 
     var createXLSX = function () {
@@ -41,20 +53,38 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
 
         _xlsx.workBook = oxmlWorkBook.createWorkbook(_xlsx.contentTypes, _xlsx._rels);
 
-        var download = function (fileName) {
-            if (!JSZip) {
-                return;
+        var download = function (fileName, callback) {
+            if (typeof JSZip === "undefined") {
+                if (callback) {
+                    callback('Err: JSZip reference not found.');
+                }
+                else if (typeof Promise !== "undefined") {
+                    return new Promise(function (resolve, reject) {
+                        reject("Err: JSZip reference not found.");
+                    });
+                }
             }
-            downloadFile(fileName, _xlsx);
+            return downloadFile(fileName, callback, _xlsx);
         }
+
+        var destroy = function () {
+            _xlsx.workBook.destroy();
+            delete _xlsx.workBook;
+            _xlsx._rels.destroy();
+            delete _xlsx._rels;
+            _xlsx.contentTypes.destroy();
+            delete _xlsx.contentTypes;
+            _xlsx = null;
+        };
 
         return {
             _xlsx: _xlsx,
             addSheet: _xlsx.workBook.addSheet,
-            download: download
+            download: download,
+            destroy: destroy
         };
     };
-    
+
     oxml.createXLSX = createXLSX;
 
     if (!window.oxml) {

@@ -256,6 +256,15 @@ define([], function () {
         return nextId;
     };
 
+    var destroy = function(_sheet){
+        delete _sheet.sheetName;
+        delete _sheet.sheetId;
+        delete _sheet.rId;
+        delete _sheet.values;
+        delete _sheet._workBook;
+        delete _sheet._sharedFormula;
+    };
+
     var createSheet = function (sheetName, sheetId, rId, workBook) {
         var _sheet = {
             sheetName: sheetName,
@@ -292,6 +301,9 @@ define([], function () {
             },
             updateValueInCell: function (rowIndex, columnIndex, value) {
                 return updateValueInCell(_sheet, value, rowIndex, columnIndex);
+            },
+            destroy: function(){
+                return destroy(_sheet);
             }
         };
     }

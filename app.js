@@ -14,7 +14,6 @@ requirejs.config({
 
 requirejs(['fileSaver', 'oxml-xlsx'],
     function (fileSaver, oxmlXLSX) {
-        console.log(fileSaver, oxmlXLSX);
         var file = oxml.createXLSX();
         // var sharedString = file._xlsx.workBook.createSharedString("Hello");
         // var sheet2 = file.addSheet('sheet1');
@@ -31,6 +30,7 @@ requirejs(['fileSaver', 'oxml-xlsx'],
         // var sheet = file.addSheet('tst1');
         // sheet.updateValuesInRow(0, [null, 22, undefined, 23, 28]);
         // file.download('t.xlsx');
+        file.destroy();
 
         var workbook = oxml.createXLSX();
         var worksheet = workbook.addSheet('sheet1');
@@ -39,5 +39,12 @@ requirejs(['fileSaver', 'oxml-xlsx'],
         worksheet.updateValuesInRow(3, [undefined, 5, 9]);
         worksheet.updateValuesInRow(4, [null, 7, 3]);
         worksheet.updateSharedFormula('(B3 + C3)', 'D3', 'D4');
-        workbook.download('workbook.xlsx');
+        workbook.download('workbook.xlsx').then(function(){
+            console.log("Successful");
+        }, function(error){
+            console.log(error);
+        });
+        setTimeout(function(){
+            workbook.destroy();
+        }, 3000);
     });
