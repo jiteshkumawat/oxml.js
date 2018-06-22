@@ -166,17 +166,17 @@ Below are few of the examples for creating values:
   ```
   
 ##### updateSharedFormula()
- This method is used to assign a shared formula in a range or row or column. updateSharedFormula is available to instance of worksheet. updateSharedFormula takes three required arguments: formula, start cell index, and end cell index. Cell index is provided starting from 'A' as column starter and positive numeric value for row index. eg. 'A1' describe first cell of worksheet, 'A2' describe second cell in first row, 'B1' describe second cell in first column and so on. updateSharedFormula is an optimized way to update values in all the range of cells. This can be explained with below example:
+This method is used to assign a shared formula in a range or row or column. updateSharedFormula is available to instance of worksheet. updateSharedFormula takes three required arguments: formula, start cell index, and end cell index. Cell index is provided starting from 'A' as column starter and positive numeric value for row index. eg. 'A1' describe first cell of worksheet, 'A2' describe second cell in first row, 'B1' describe second cell in first column and so on. updateSharedFormula is an optimized way to update values in all the range of cells. This can be explained with below example:
   ```javascript
   Syntax: [workSheet].updateSharedFormula([formula], [startCell], [endCell])
   Example:
   var workBook = oxml.createXLSX();
   var workSheet = workBook.addSheet('Sheet1');
   workSheet.updateValuesInMatrix([
-   [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
-   [null, 10, 14],
-   [null, 11, 14],
-   'Total'
+    [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
+    [null, 10, 14],
+    [null, 11, 14],
+    'Total'
   ]);
   workSheet.updateSharedFormula('(C2 - B2)', 'D2', 'D3');
   workSheet.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
