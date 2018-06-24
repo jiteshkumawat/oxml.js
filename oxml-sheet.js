@@ -5,20 +5,21 @@ define([], function () {
         if (!value) {
             return '';
         }
+        var styleString = value.styleIndex ? ' s="' + value.styleIndex + '" ' : '';
         if (value.type === 'numeric') {
-            return '<c r="' + cellIndex + '"><v>' + value.value + '</v></c>';
+            return '<c r="' + cellIndex + '" ' + styleString + '><v>' + value.value + '</v></c>';
         } else if (value.type === 'sharedString') {
-            return '<c r="' + cellIndex + '" t="s"><v>' + value.value + '</v></c>';
+            return '<c r="' + cellIndex + '" t="s" ' + styleString + '><v>' + value.value + '</v></c>';
         } else if (value.type === "sharedFormula") {
             if (value.formula) {
-                return '<c  r="' + cellIndex + '"><f t="shared" ref="' + value.range + '" si="' + value.si + '">' + value.formula + '</f></c>';
+                return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" ref="' + value.range + '" si="' + value.si + '">' + value.formula + '</f></c>';
             }
-            return '<c  r="' + cellIndex + '"><f t="shared" si="' + value.si + '"></f></c>';
+            return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" si="' + value.si + '"></f></c>';
         } else if (value.type === 'string') {
-            return '<c r="' + cellIndex + '" t="inlineStr"><is><t>' + value.value + '</t></is></c>';
+            return '<c r="' + cellIndex + '" t="inlineStr" ' + styleString + '><is><t>' + value.value + '</t></is></c>';
         } else if (value.type === 'formula') {
             var v = (value.value !== null && value.value !== undefined) ? '<v>' + value.value + '</v>' : '';
-            return '<c r="' + cellIndex + '"><f>' + value.formula + '</f>' + v + '</c>';
+            return '<c r="' + cellIndex + '" ' + styleString + '><f>' + value.formula + '</f>' + v + '</c>';
         }
     };
 
@@ -113,7 +114,7 @@ define([], function () {
         return null;
     };
 
-    var updateValuesInRow = function (values, _sheet, rowIndex, columnIndex) {
+    var updateValuesInRow = function (values, _sheet, rowIndex, columnIndex, options) {
         rowIndex--;
         if (!_sheet.values[rowIndex]) {
             _sheet.values[rowIndex] = [];
@@ -122,18 +123,39 @@ define([], function () {
         if (typeof values !== "object" || !values.length) {
             values = [values];
         }
+        var styleIndex;
+        if (options) {
+            options.cellIndices = [];
+            for (index = 0; index < values.length; index++) {
+                options.cellIndices.push(String.fromCharCode(65 + index + columnIndex - 1) + (rowIndex + 1));
+            }
+            var _styles = _sheet._workBook.createStyles();
+            styleIndex = _styles.addStyles(options);
+        }
         for (index = 0; index < values.length; index++) {
             var value = sanitizeValue(values[index], _sheet);
             if (value) {
+                if (styleIndex) {
+                    value.styleIndex = styleIndex.index;
+                }
                 _sheet.values[rowIndex][index + columnIndex - 1] = value;
             }
         }
     };
 
-    var updateValuesInColumn = function (values, _sheet, rowIndex, columnIndex) {
+    var updateValuesInColumn = function (values, _sheet, rowIndex, columnIndex, options) {
         var index = 0;
         if (typeof values !== "object" || !values.length) {
             values = [values];
+        }
+        var styleIndex;
+        if (options) {
+            options.cellIndices = [];
+            for (index = 0; index < values.length; index++) {
+                options.cellIndices.push(String.fromCharCode(65 + columnIndex - 1) + (rowIndex + index));
+            }
+            var _styles = _sheet._workBook.createStyles();
+            styleIndex = _styles.addStyles(options);
         }
         for (index = 0; index < values.length; index++) {
             var value = sanitizeValue(values[index], _sheet), sheetRowIndex = index + rowIndex - 1;
@@ -141,13 +163,27 @@ define([], function () {
                 _sheet.values[sheetRowIndex] = [];
             }
             if (value) {
+                if (styleIndex) {
+                    value.styleIndex = styleIndex.index;
+                }
                 _sheet.values[sheetRowIndex][columnIndex - 1] = value;
             }
         }
     };
 
-    var updateValuesInMatrix = function (values, _sheet, rowIndex, columnIndex) {
-        var index;
+    var updateValuesInMatrix = function (values, _sheet, rowIndex, columnIndex, options) {
+        var index, styleIndex;
+        if (options) {
+            options.cellIndices = [];
+            for (index = 0; index < values.length; index++) {
+                var index2;
+                    for (index2 = 0; index2 < values[index].length; index2++) {
+                options.cellIndices.push(String.fromCharCode(65 + columnIndex + index2 - 1) + (rowIndex + index));
+                    }
+            }
+            var _styles = _sheet._workBook.createStyles();
+            styleIndex = _styles.addStyles(options);
+        }
         for (index = 0; index < values.length; index++) {
             if (values[index] !== undefined || values[index] !== null) {
                 var sheetRowIndex = index + rowIndex - 1;
@@ -159,6 +195,9 @@ define([], function () {
                     for (index2 = 0; index2 < values[index].length; index2++) {
                         var value = sanitizeValue(values[index][index2], _sheet);
                         if (value) {
+                            if (styleIndex) {
+                                value.styleIndex = styleIndex.index;
+                            }
                             _sheet.values[sheetRowIndex][index2 + columnIndex - 1] = value;
                         }
                     }
@@ -166,6 +205,9 @@ define([], function () {
                 else {
                     var value = sanitizeValue(values[index], _sheet);
                     if (value) {
+                        if (styleIndex) {
+                            value.styleIndex = styleIndex.index;
+                        }
                         _sheet.values[sheetRowIndex][columnIndex - 1] = value;
                     }
                 }
@@ -173,13 +215,18 @@ define([], function () {
         }
     };
 
-    var updateValueInCell = function (value, _sheet, rowIndex, columnIndex) {
+    var updateValueInCell = function (value, _sheet, rowIndex, columnIndex, options) {
         if (value !== undefined && value !== null) {
             var sheetRowIndex = rowIndex - 1;
             if (!_sheet.values[sheetRowIndex]) {
                 _sheet.values[sheetRowIndex] = [];
             }
             value = sanitizeValue(value, _sheet);
+            if (options) {
+                options.cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+                var _styles = _sheet._workBook.createStyles();
+                value.styleIndex = _styles.addStyles(options).index;
+            }
             _sheet.values[sheetRowIndex][columnIndex - 1] = value;
         }
     }
@@ -257,7 +304,7 @@ define([], function () {
         return nextId;
     };
 
-    var destroy = function(_sheet){
+    var destroy = function (_sheet) {
         delete _sheet.sheetName;
         delete _sheet.sheetId;
         delete _sheet.rId;
@@ -266,8 +313,8 @@ define([], function () {
         delete _sheet._sharedFormula;
     };
 
-    var validateIndex = function(index){
-        if(isNaN(index) || index <= 0){
+    var validateIndex = function (index) {
+        if (isNaN(index) || index <= 0) {
             return 1;
         }
         return index;
@@ -289,36 +336,36 @@ define([], function () {
             attach: function (file) {
                 attach(_sheet, file);
             },
-            updateValuesInRow: function (values, rowIndex, columnIndex) {
+            updateValuesInRow: function (values, rowIndex, columnIndex, options) {
                 rowIndex = validateIndex(rowIndex);
                 columnIndex = validateIndex(columnIndex);
                 if (values) {
-                    updateValuesInRow(values, _sheet, rowIndex, columnIndex);
+                    updateValuesInRow(values, _sheet, rowIndex, columnIndex, options);
                 }
             },
-            updateValuesInColumn: function (values, rowIndex, columnIndex) {
+            updateValuesInColumn: function (values, rowIndex, columnIndex, options) {
                 rowIndex = validateIndex(rowIndex);
                 columnIndex = validateIndex(columnIndex);
                 if (values) {
-                    updateValuesInColumn(values, _sheet, rowIndex, columnIndex);
+                    updateValuesInColumn(values, _sheet, rowIndex, columnIndex, options);
                 }
             },
-            updateValuesInMatrix: function (values, rowIndex, columnIndex) {
+            updateValuesInMatrix: function (values, rowIndex, columnIndex, options) {
                 rowIndex = validateIndex(rowIndex);
                 columnIndex = validateIndex(columnIndex);
                 if (values && values.length) {
-                    updateValuesInMatrix(values, _sheet, rowIndex, columnIndex);
+                    updateValuesInMatrix(values, _sheet, rowIndex, columnIndex, options);
                 }
             },
             updateSharedFormula: function (formula, fromCell, toCell) {
                 return updateSharedFormula(_sheet, formula, fromCell, toCell);
             },
-            updateValueInCell: function (value, rowIndex, columnIndex) {
+            updateValueInCell: function (value, rowIndex, columnIndex, options) {
                 rowIndex = validateIndex(rowIndex);
                 columnIndex = validateIndex(columnIndex);
-                return updateValueInCell(value, _sheet, rowIndex, columnIndex);
+                return updateValueInCell(value, _sheet, rowIndex, columnIndex, options);
             },
-            destroy: function(){
+            destroy: function () {
                 return destroy(_sheet);
             }
         };

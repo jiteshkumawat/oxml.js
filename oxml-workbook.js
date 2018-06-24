@@ -1,4 +1,4 @@
-define(['oxml_content_types', 'oxml_rels', 'oxml_sheet'], function (oxmlContentTypes, oxmlRels, oxmlSheet) {
+define(['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles'], function (oxmlContentTypes, oxmlRels, oxmlSheet, oxmlXlsxStyles) {
     'use strict';
 
     var getLastSheet = function (_workBook) {
@@ -61,6 +61,9 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet'], function (oxmlContentT
         var sharedStrings = generateSharedStrings(_workBook);
         if (sharedStrings) {
             file.addFile(sharedStrings, "sharedstrings.xml", "workbook");
+        }
+        if (_workBook._styles) {
+            _workBook._styles.attach(file);
         }
     };
 
@@ -149,8 +152,16 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet'], function (oxmlContentT
         _workBook.getSharedString = function (str) {
             return getSharedString(str, _workBook);
         };
-        _workBook.destroy = function(){
+        _workBook.destroy = function () {
             destroy(_workBook);
+        };
+        _workBook.createStyles = function () {
+            if (!_workBook._styles)
+                _workBook._styles = oxmlXlsxStyles.createStyle(_workBook, _workBook._rels, xlsxContentTypes);
+            return _workBook._styles;
+        };
+        _workBook.getLastSheet = function () {
+            return getLastSheet(_workBook);
         };
         return _workBook;
     };

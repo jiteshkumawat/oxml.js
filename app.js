@@ -8,7 +8,8 @@ requirejs.config({
         oxml_rels: 'oxml-rels',
         oxml_sheet: 'oxml-sheet',
         oxml_workbook: 'oxml-workbook',
-        oxml_xlsx: 'oxml-xlsx'
+        oxml_xlsx: 'oxml-xlsx',
+        oxml_xlsx_styles: 'oxml-xlsx-styles'
     }
 });
 
@@ -33,15 +34,97 @@ requirejs(['fileSaver', 'oxml-xlsx'],
         // file.destroy();
 
         var workbook = oxml.createXLSX();
-                        var worksheet = workbook.addSheet('sheet1');
-                        worksheet.updateValuesInMatrix([
-                            [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
-                            [null, 10, 14],
-                            [null, 11, 14],
-                            'Total'
-                        ], 4, 4);
-                        worksheet.updateSharedFormula('(F5 - E5)', 'G5', 'G6');
-                        worksheet.updateSharedFormula('(E5 + E6)', 'E7', 'F7');
-                        worksheet.updateSharedFormula('(G5 / E5) * 100', 'H5', 'H6');
-                        workbook.download('workbook.xlsx');
+        var worksheet = workbook.addSheet('sheet1');
+        // worksheet.updateValuesInColumn(["Dealer", "Cost Price", "Sale Price", "Profit", "Profit %"], 1, 1, {
+        //     bold: true,
+        //     italic: true,
+        //     border: {
+        //         color: "00ff00",
+        //         style: "thick"
+        //     },
+        //     fill: {
+        //         pattern: 'solid',
+        //         color: 'FFFF00'
+        //     }
+        // });
+        // worksheet.updateValueInCell('Test Bold2', 2, 1, {
+        //     bold: true,
+        //     italic: true,
+        //     underline: true,
+        //     fontName: "Arial",
+        //     fontSize: 9,
+        //     fontFamily: 2,
+        //     fontColor: 'ff0000',
+        //     strike: true,
+        //     border: {
+        //         left: {
+        //             color: "0000ff",
+        //             style: "dashDot" // dashDot,dashDotDot,dashed,dotted,double,hair,medium,mediumDashDot,mediumDashDotDot,mediumDashed,none,slantDashDot,thick,thin
+        //         },
+        //         bottom: {
+        //             color: "0000ff",
+        //             style: "double"
+        //         },
+        //         fill: {
+        //             pattern: 'lightGrid',
+        //             backColor: 'FFFF00' // none,solid,mediumGray,darkGray,lightGray,darkHorizontal,darkVertical,darkDown,darkUp,darkGrid,darkTrellis,lightHorizontal,lightVertical,lightDown,lightUp,lightGrid,lightTrellis,gray125,gray0625
+        //         }
+        //     }
+        // });
+        // worksheet.updateValueInCell(0.094, 2, 2, {
+        //     bold: true,
+        //     italic: true,
+        //     underline: true,
+        //     fontName: "Arial",
+        //     fontSize: 9,
+        //     fontFamily: 2,
+        //     // color: 'Red',
+        //     numberFormat: "$ #,##0.00;$ #,##0.00;-",
+        //     fill: {
+        //         gradient: {
+        //             degree: 90,
+        //             stop: [{
+        //                 position: 0,
+        //                 color: "FF92D050"
+        //             }, {
+        //                 position: 1,
+        //                 color: "FF0070C0"
+        //             }]
+        //         }
+        //     }
+        // });
+
+        worksheet.updateValuesInMatrix([
+            [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
+            [null, 10, 14],
+            [null, 11, 14],
+            'Total'
+        ], 4, 4, {
+                bold: true,
+                italic: true,
+                underline: true,
+                fontName: "Arial",
+                fontSize: 9,
+                fontFamily: 2,
+                fontColor: 'ff0000',
+                strike: true,
+                border: {
+                    left: {
+                        color: "0000ff",
+                        style: "dashDot" // dashDot,dashDotDot,dashed,dotted,double,hair,medium,mediumDashDot,mediumDashDotDot,mediumDashed,none,slantDashDot,thick,thin
+                    },
+                    bottom: {
+                        color: "0000ff",
+                        style: "double"
+                    },
+                    fill: {
+                        pattern: 'lightGrid',
+                        backColor: 'FFFF00' // none,solid,mediumGray,darkGray,lightGray,darkHorizontal,darkVertical,darkDown,darkUp,darkGrid,darkTrellis,lightHorizontal,lightVertical,lightDown,lightUp,lightGrid,lightTrellis,gray125,gray0625
+                    }
+                }
+            });
+        // worksheet.updateSharedFormula('(F5 - E5)', 'G5', 'G6');
+        // worksheet.updateSharedFormula('(E5 + E6)', 'E7', 'F7');
+        // worksheet.updateSharedFormula('(G5 / E5) * 100', 'H5', 'H6');
+        workbook.download('workbook.xlsx');
     });
