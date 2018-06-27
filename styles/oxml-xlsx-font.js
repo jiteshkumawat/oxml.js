@@ -120,7 +120,7 @@ define([], function () {
             fontIndex: fontIndex,
             newStyleCreated: newStyleCreated
         };
-    }
+    };
 
     var getFontForCell = function (_styles, options, cellStyle) {
         // Create Font Object

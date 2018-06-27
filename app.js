@@ -13,7 +13,8 @@ requirejs.config({
         oxml_xlsx_font: 'styles/oxml-xlsx-font',
         oxml_xlsx_fill: 'styles/oxml-xlsx-fill',
         oxml_xlsx_border: 'styles/oxml-xlsx-border',
-        oxml_xlsx_num_format: 'styles/oxml-xlsx-num-format'
+        oxml_xlsx_num_format: 'styles/oxml-xlsx-num-format',
+        utils: 'utils/utils'
     }
 });
 
@@ -74,14 +75,29 @@ requirejs(['fileSaver', 'oxml-xlsx'],
         //             backColor: 'FFFF00' // none,solid,mediumGray,darkGray,lightGray,darkHorizontal,darkVertical,darkDown,darkUp,darkGrid,darkTrellis,lightHorizontal,lightVertical,lightDown,lightUp,lightGrid,lightTrellis,gray125,gray0625
         //         }
         //     }
-        // });
-        worksheet.updateValueInCell(0.094, 1, 1)
-        .style({
-            numberFormat: "#,##0%"})
-        .style({
-            bold: true})
+        // }).style({
+        //    numberFormat: "#,##0%"});
+        worksheet.updateValuesInRow([0.094, "Hello", "World"], 1, 1)
             .style({
-                numberFormat: "#,##0%"});
+                border: {
+                    bottom: {
+                        color: '0000ff',
+                        style: 'dashDot'
+                    }
+                }
+            })
+            .style({
+                bold: true
+            })
+            .style({
+                border: {
+                    right: {
+                        color: '0000ff',
+                        style: 'thick'
+                    }
+                }
+            })
+            ;
 
         // worksheet.updateValuesInMatrix([
         //     [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],

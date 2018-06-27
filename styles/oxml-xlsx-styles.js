@@ -1,8 +1,8 @@
-define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlXlsxNumFormat) {
+define(['oxml_xlsx_font', 'oxml_xlsx_num_format', 'oxml_xlsx_border'], function (oxmlXlsxFont, oxmlXlsxNumFormat, oxmlXlsxBorder) {
     var generateContent = function (_styles) {
         // Create Styles
         var stylesString = '<?xml version="1.0" encoding="utf-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
-        var index = 0, borderKey, fillKey;
+        var index = 0, fillKey;
         stylesString += oxmlXlsxNumFormat.generateContent(_styles);
         stylesString += oxmlXlsxFont.generateContent(_styles);
         stylesString += '<fills count="' + _styles._fillsCount + '">';
@@ -15,22 +15,8 @@ define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlX
             }
         }
         stylesString += '</fills>';
-        stylesString += '<borders count="' + _styles._bordersCount + '">';
-        for (borderKey in _styles._borders) {
-            var border = JSON.parse(borderKey);
-            if (border) {
-                stylesString += '<border>';
-                stylesString += getBorderString(border.left, 'left');
-                stylesString += getBorderString(border.right, 'right');
-                stylesString += getBorderString(border.top, 'top');
-                stylesString += getBorderString(border.bottom, 'bottom');
-                stylesString += getBorderString(border.diagonal, 'diagonal');
-                stylesString += '</border>'
-            } else {
-                stylesString += '<border />';
-            }
-        }
-        stylesString += '</borders>' + '<cellStyleXfs count="1"><xf /></cellStyleXfs>';
+        stylesString += oxmlXlsxBorder.generateContent(_styles);
+        stylesString += '<cellStyleXfs count="1"><xf /></cellStyleXfs>';
 
         stylesString += '<cellXfs count="' + (parseInt(_styles.styles.length, 10) + 1) + '"><xf />';
         for (index = 0; index < _styles.styles.length; index++) {
@@ -41,15 +27,6 @@ define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlX
         }
         stylesString += '</cellXfs></styleSheet>';
         return stylesString;
-    };
-
-    var getBorderString = function (border, borderType) {
-        if (border.style || border.color) {
-            var borderStyleString = border.style ? ' style="' + border.style + '" ' : '';
-            var borderColorString = border.color ? '<color rgb="' + border.color + '"/>' : '';
-            return '<' + borderType + ' ' + borderStyleString + '>' + borderColorString + '</' + borderType + '>';
-        }
-        return '<' + borderType + '/>';
     };
 
     var getFillString = function (fill) {
@@ -143,50 +120,6 @@ define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlX
         return _styles._fills[JSON.stringify(fill)];
     };
 
-    var createBorder = function (options) {
-        var border = {};
-        if (options.border) {
-            border.left = {
-                color: (options.border.left ? options.border.left.color : false) || options.border.color || false,
-                style: (options.border.left ? options.border.left.style : false) || options.border.style || false
-            };
-            border.top = {
-                color: (options.border.top ? options.border.top.color : false) || options.border.color || false,
-                style: (options.border.top ? options.border.top.style : false) || options.border.style || false
-            };
-            border.bottom = {
-                color: (options.border.bottom ? options.border.bottom.color : false) || options.border.color || false,
-                style: (options.border.bottom ? options.border.bottom.style : false) || options.border.style || false
-            };
-            border.right = {
-                color: (options.border.right ? options.border.right.color : false) || options.border.color || false,
-                style: (options.border.right ? options.border.right.style : false) || options.border.style || false
-            };
-            border.diagonal = {
-                color: (options.border.diagonal ? options.border.diagonal.color : false) || options.border.color || false,
-                style: (options.border.diagonal ? options.border.diagonal.style : false) || options.border.style || false
-            };
-            border.isValid = border.left.style || border.top.style || border.bottom.style || border.right.style || border.diagonal.style
-                || border.left.color || border.top.color || border.bottom.color || border.right.color || border.diagonal.color;
-            return border.isValid ? border : false;
-        }
-        return false;
-    };
-
-    var searchBorder = function (border, _styles) {
-        return _styles._borders[JSON.stringify(border, Object.keys(border).sort())];
-    };
-
-    var addBorder = function (border, _styles) {
-        if (!_styles._borders) {
-            _styles._borders = {};
-            _styles._bordersCount = 0;
-        }
-        var index = _styles._bordersCount++;
-        _styles._borders[JSON.stringify(border, Object.keys(border).sort())] = "" + index;
-        return _styles._borders[JSON.stringify(border, Object.keys(border).sort())];
-    };
-
     var searchStyleForCell = function (_styles, cellIndex) {
         var index = 0;
         for (; index < _styles.styles.length; index++) {
@@ -211,18 +144,10 @@ define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlX
         if (options.cellIndex || options.cellIndices) {
             var newStyleCreated = false;
 
-            var border = createBorder(options);
             var fill = createFill(options);
 
-            var savedBorder = border && _styles._borders ? searchBorder(border, _styles) : null;
             var savedFill = fill && _styles._fills ? searchFill(fill, _styles) : null;
 
-            if (savedBorder) {
-                border = savedBorder;
-            } else if (border) {
-                newStyleCreated = true;
-                border = addBorder(border, _styles);
-            }
             if (savedFill) {
                 fill = savedFill;
             } else if (fill) {
@@ -234,16 +159,17 @@ define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlX
                 var cellStyle = searchStyleForCell(_styles, options.cellIndex);
                 var saveFont = oxmlXlsxFont.getFontForCell(_styles, options, cellStyle);
                 var saveNumFormat = oxmlXlsxNumFormat.getNumFormatForCell(_styles, options, cellStyle);
-                newStyleCreated = newStyleCreated || saveFont.newStyleCreated;
+                var saveBorder = oxmlXlsxBorder.getBorderForCell(_styles, options, cellStyle);
+                newStyleCreated = newStyleCreated || saveFont.newStyleCreated || saveBorder.newStyleCreated;
                 if (cellStyle) {
-                    if (cellStyle._font === saveFont.fontIndex && cellStyle._numFormat === saveNumFormat.numFormatIndex && cellStyle._border === border && cellStyle._fill === fill) {
+                    if (cellStyle._font === saveFont.fontIndex && cellStyle._numFormat === saveNumFormat.numFormatIndex && cellStyle._border === saveBorder.borderIndex && cellStyle._fill === fill) {
                         return cellStyle;
                     }
                     var totalCellApplied = Object.keys(cellStyle.cellIndices).length;
                     if (totalCellApplied === 1) {
                         cellStyle._font = saveFont.fontIndex;
                         cellStyle._numFormat = saveNumFormat.numFormatIndex;
-                        cellStyle._border = border;
+                        cellStyle._border = saveBorder.borderIndex;
                         cellStyle._fill = fill;
                         return cellStyle;
                     }
@@ -254,7 +180,7 @@ define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlX
                     cellStyle = searchSimilarStyle(_styles, {
                         _font: saveFont.fontIndex,
                         _numFormat: saveNumFormat.numFormatIndex,
-                        _border: border,
+                        _border: saveBorder.borderIndex,
                         _fill: fill
                     });
                     if (cellStyle) {
@@ -266,7 +192,7 @@ define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlX
                 cellStyle = {
                     _font: saveFont.fontIndex,
                     _numFormat: saveNumFormat.numFormatIndex || false,
-                    _border: border,
+                    _border: saveBorder.borderIndex,
                     _fill: fill,
                     cellIndices: {}
                 };
@@ -281,12 +207,13 @@ define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlX
                 var cellStyle, index;
                 var saveFont = oxmlXlsxFont.getFontForCells(_styles, options);
                 var saveNumFormat = oxmlXlsxNumFormat.getNumFormatForCells(_styles, options);
-                newStyleCreated = newStyleCreated || saveFont.newStyleCreated || saveNumFormat.newStyleCreated;
+                var saveBorder = oxmlXlsxBorder.getBorderForCells(_styles, options);
+                newStyleCreated = newStyleCreated || saveFont.newStyleCreated || saveNumFormat.newStyleCreated || saveBorder.newStyleCreated;
                 if (!newStyleCreated) {
                     cellStyle = searchSimilarStyle(_styles, {
                         _font: saveFont.fontIndex,
                         _numFormat: saveNumFormat.numFormatIndex,
-                        _border: border,
+                        _border: saveBorder.borderIndex,
                         _fill: fill
                     });
 
@@ -305,7 +232,7 @@ define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlX
                 cellStyle = {
                     _font: saveFont.fontIndex,
                     _numFormat: saveNumFormat.numFormatIndex,
-                    _border: border,
+                    _border: saveBorder.borderIndex,
                     _fill: fill,
                     cellIndices: {}
                 };
