@@ -1,34 +1,10 @@
-define([], function () {
+define(['oxml_xlsx_font', 'oxml_xlsx_num_format'], function (oxmlXlsxFont, oxmlXlsxNumFormat) {
     var generateContent = function (_styles) {
         // Create Styles
         var stylesString = '<?xml version="1.0" encoding="utf-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
-        var index = 0, fontKey, borderKey, fillKey;
-        if (_styles._numFormats) {
-            stylesString += '<numFmts count="' + Object.keys(_styles._numFormats).length + '">';
-            var numFormatKey;
-            for (numFormatKey in _styles._numFormats) {
-                var numFormat = JSON.parse(numFormatKey);
-                stylesString += '<numFmt numFmtId="' + _styles._numFormats[numFormatKey] + '" formatCode="' + numFormat.formatString + '"/>';
-            }
-            stylesString += '</numFmts>';
-        }
-        stylesString += '<fonts count="' + _styles._fontsCount + '">';
-        for (fontKey in _styles._fonts) {
-            // Excel requires the child elements to be in the following sequence: i, strike, condense, extend, outline, shadow, u, vertAlign, sz, color, name, family, charset, scheme.
-            var font = JSON.parse(fontKey);
-            stylesString += '<font>';
-            stylesString += font.strike ? '<strike/>' : '';
-            stylesString += font.italic ? '<i/>' : '';
-            stylesString += font.bold ? '<b/>' : '';
-            stylesString += font.underline ? '<u/>' : '';
-            stylesString += font.size ? '<sz val="' + font.size + '"/>' : '';
-            stylesString += font.color ? '<color rgb="' + font.color + '"/>' : '';
-            stylesString += font.name ? '<name val="' + font.name + '"/>' : '';
-            stylesString += font.family ? '<family val="' + font.family + '"/>' : '';
-            stylesString += font.scheme ? '<scheme val="' + font.scheme + '"/>' : '';
-            stylesString += '</font>';
-        }
-        stylesString += '</fonts>';
+        var index = 0, borderKey, fillKey;
+        stylesString += oxmlXlsxNumFormat.generateContent(_styles);
+        stylesString += oxmlXlsxFont.generateContent(_styles);
         stylesString += '<fills count="' + _styles._fillsCount + '">';
         for (fillKey in _styles._fills) {
             var fill = JSON.parse(fillKey);
@@ -125,34 +101,6 @@ define([], function () {
         return nextSheetRelId;
     };
 
-    var createFont = function (options) {
-        var font = {};
-        font.bold = !!options.bold;
-        font.italic = !!options.italic;
-        font.underline = !!options.underline;
-        font.size = options.fontSize || false;
-        font.color = options.fontColor || false;
-        font.name = options.fontName || false;
-        font.family = options.fontFamily || false;
-        font.scheme = options.scheme || false;
-        font.strike = !!options.strike;
-        return font;
-    }
-
-    var searchFont = function (font, _styles) {
-        return _styles._fonts[JSON.stringify(font)];
-    };
-
-    var addFont = function (font, _styles) {
-        if (!_styles._fonts) {
-            _styles._fonts = {};
-            _styles._fontsCount = 0;
-        }
-        var index = _styles._fontsCount++;
-        _styles._fonts[JSON.stringify(font)] = "" + index;
-        return _styles._fonts[JSON.stringify(font)];
-    };
-
     var createFill = function (options) {
         if (options.fill && options.fill.pattern) {
             var fill = {};
@@ -182,7 +130,7 @@ define([], function () {
     };
 
     var searchFill = function (fill, _styles) {
-        return _styles._fills[JSON.stringify(fill)];
+        return _styles._fills[JSON.stringify(fill, Object.keys(fill).sort())];
     };
 
     var addFill = function (fill, _styles) {
@@ -193,26 +141,6 @@ define([], function () {
         var index = _styles._fillsCount++;
         _styles._fills[JSON.stringify(fill)] = "" + index;
         return _styles._fills[JSON.stringify(fill)];
-    };
-
-    var createNumFormat = function (options) {
-        var numberFormat = {};
-        numberFormat.formatString = options.numberFormat;
-        return numberFormat;
-    };
-
-    var searchNumFormat = function (numFormat, _styles) {
-        return _styles._numFormats[JSON.stringify(numFormat)];
-    };
-
-    var addNumFormat = function (numFormat, _styles) {
-        if (!_styles._numFormats) {
-            _styles._numFormats = {};
-            _styles._numFormatsCount = 200;
-        }
-        var index = _styles._numFormatsCount++;
-        _styles._numFormats[JSON.stringify(numFormat)] = "" + index;
-        return _styles._numFormats[JSON.stringify(numFormat)];
     };
 
     var createBorder = function (options) {
@@ -246,7 +174,7 @@ define([], function () {
     };
 
     var searchBorder = function (border, _styles) {
-        return _styles._borders[JSON.stringify(border)];
+        return _styles._borders[JSON.stringify(border, Object.keys(border).sort())];
     };
 
     var addBorder = function (border, _styles) {
@@ -255,8 +183,8 @@ define([], function () {
             _styles._bordersCount = 0;
         }
         var index = _styles._bordersCount++;
-        _styles._borders[JSON.stringify(border)] = "" + index;
-        return _styles._borders[JSON.stringify(border)];
+        _styles._borders[JSON.stringify(border, Object.keys(border).sort())] = "" + index;
+        return _styles._borders[JSON.stringify(border, Object.keys(border).sort())];
     };
 
     var searchStyleForCell = function (_styles, cellIndex) {
@@ -283,28 +211,12 @@ define([], function () {
         if (options.cellIndex || options.cellIndices) {
             var newStyleCreated = false;
 
-            var font = createFont(options);
-            var numFormat = options.numberFormat ? createNumFormat(options) : null;
             var border = createBorder(options);
             var fill = createFill(options);
 
-            var savedFont = _styles._fonts ? searchFont(font, _styles) : null;
-            var savedNumFormat = options.numberFormat && _styles._numFormats ? searchNumFormat(numFormat, _styles) : null;
             var savedBorder = border && _styles._borders ? searchBorder(border, _styles) : null;
             var savedFill = fill && _styles._fills ? searchFill(fill, _styles) : null;
 
-            if (savedFont) {
-                font = savedFont;
-            } else {
-                newStyleCreated = true;
-                font = addFont(font, _styles);
-            }
-            if (savedNumFormat) {
-                numFormat = savedNumFormat;
-            } else if (options.numberFormat) {
-                newStyleCreated = true;
-                numFormat = addNumFormat(numFormat, _styles);
-            }
             if (savedBorder) {
                 border = savedBorder;
             } else if (border) {
@@ -320,14 +232,17 @@ define([], function () {
 
             if (options.cellIndex) {
                 var cellStyle = searchStyleForCell(_styles, options.cellIndex);
+                var saveFont = oxmlXlsxFont.getFontForCell(_styles, options, cellStyle);
+                var saveNumFormat = oxmlXlsxNumFormat.getNumFormatForCell(_styles, options, cellStyle);
+                newStyleCreated = newStyleCreated || saveFont.newStyleCreated;
                 if (cellStyle) {
-                    if (cellStyle._font === font && cellStyle._numFormat === numFormat && cellStyle._border === border && cellStyle._fill === fill) {
+                    if (cellStyle._font === saveFont.fontIndex && cellStyle._numFormat === saveNumFormat.numFormatIndex && cellStyle._border === border && cellStyle._fill === fill) {
                         return cellStyle;
                     }
                     var totalCellApplied = Object.keys(cellStyle.cellIndices).length;
                     if (totalCellApplied === 1) {
-                        cellStyle._font = font;
-                        cellStyle._numFormat = numFormat || false;
+                        cellStyle._font = saveFont.fontIndex;
+                        cellStyle._numFormat = saveNumFormat.numFormatIndex;
                         cellStyle._border = border;
                         cellStyle._fill = fill;
                         return cellStyle;
@@ -337,8 +252,8 @@ define([], function () {
 
                 if (!newStyleCreated) {
                     cellStyle = searchSimilarStyle(_styles, {
-                        _font: font,
-                        _numFormat: numFormat || false,
+                        _font: saveFont.fontIndex,
+                        _numFormat: saveNumFormat.numFormatIndex,
                         _border: border,
                         _fill: fill
                     });
@@ -349,8 +264,8 @@ define([], function () {
                 }
 
                 cellStyle = {
-                    _font: font,
-                    _numFormat: numFormat || false,
+                    _font: saveFont.fontIndex,
+                    _numFormat: saveNumFormat.numFormatIndex || false,
                     _border: border,
                     _fill: fill,
                     cellIndices: {}
@@ -364,10 +279,13 @@ define([], function () {
 
             if (options.cellIndices) {
                 var cellStyle, index;
+                var saveFont = oxmlXlsxFont.getFontForCells(_styles, options);
+                var saveNumFormat = oxmlXlsxNumFormat.getNumFormatForCells(_styles, options);
+                newStyleCreated = newStyleCreated || saveFont.newStyleCreated || saveNumFormat.newStyleCreated;
                 if (!newStyleCreated) {
                     cellStyle = searchSimilarStyle(_styles, {
-                        _font: font,
-                        _numFormat: numFormat || false,
+                        _font: saveFont.fontIndex,
+                        _numFormat: saveNumFormat.numFormatIndex,
                         _border: border,
                         _fill: fill
                     });
@@ -382,15 +300,16 @@ define([], function () {
                         return cellStyle;
                     }
                 }
+                // Maintain old styling
+                
                 cellStyle = {
-                    _font: font,
-                    _numFormat: numFormat || false,
+                    _font: saveFont.fontIndex,
+                    _numFormat: saveNumFormat.numFormatIndex,
                     _border: border,
                     _fill: fill,
                     cellIndices: {}
                 };
-                cellStyle.index = "" + (parseInt(_styles.styles.length, 10) + 1);
-
+                
                 for (index = 0; index < options.cellIndices.length; index++) {
                     var cellIndex = options.cellIndices[index];
                     var savedCellStyle = searchStyleForCell(_styles, cellIndex);
@@ -398,7 +317,14 @@ define([], function () {
                         delete savedCellStyle.cellIndices[cellIndex];
                     }
                     cellStyle.cellIndices[cellIndex] = Object.keys(cellStyle.cellIndices).length;
+                    if(savedCellStyle && !Object.keys(savedCellStyle.cellIndices).length){
+                        for(key in cellStyle){
+                            savedCellStyle[key] = cellStyle[key];
+                        }
+                        return savedCellStyle;
+                    }
                 }
+                cellStyle.index = "" + (parseInt(_styles.styles.length, 10) + 1);
                 _styles.styles.push(cellStyle);
                 return cellStyle;
             }
@@ -419,13 +345,18 @@ define([], function () {
                 _bordersCount: 1,
                 _fillsCount: 1
             };
-            _styles._fonts[JSON.stringify({
+            var font = {
                 bold: false,
                 italic: false,
                 underline: false,
                 size: false,
-                color: false
-            })] = 0;
+                color: false,
+                strike: false,
+                family: false,
+                name: false,
+                scheme: false
+            };
+            _styles._fonts[JSON.stringify(font, Object.keys(font).sort())] = 0;
             _styles._borders[false] = 0;
             _styles._fills[false] = 0;
             return {
