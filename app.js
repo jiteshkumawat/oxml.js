@@ -77,25 +77,43 @@ requirejs(['fileSaver', 'oxml-xlsx'],
         //     }
         // }).style({
         //    numberFormat: "#,##0%"});
-        worksheet.updateValueInCell(0.094, 1, 1)
-        .style({
+        worksheet.updateValueInCell(0.094, 1, 1);
+        var cell = worksheet.getRow(1, 1, 4);
+        cell.style({
+            bold: true
+        });
+        cell.style({
+            italic: true
+        });
+        cell.style({
             fill: {
-                pattern: 'lightGrid',
-                backColor: 'FFFF00'
+                pattern: 'solid',
+                color: 'FFFF00'
             }
-        })
-            .style({
-                bold: true
-            })
-            .style({
-                fill: {
-                    pattern: 'solid',
-                    foreColor: 'FFFF00',
-                    backColor: 'FFFF00'
+        });
+        cell.style({
+            numberFormat: '#,##0%'
+        });
+        cell.style({
+            border: {
+                left: {
+                    style: 'thick',
+                    color: '00ffff'
+                },
+                right: {
+                    style: 'thick',
+                    color: '00ffff'
+                },
+                top: {
+                    style: 'thick',
+                    color: '00ffff'
+                },
+                bottom: {
+                    style: 'thick',
+                    color: '00ffff'
                 }
-            })
-            ;
-
+            }
+        });
         // worksheet.updateValuesInMatrix([
         //     [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
         //     [null, 10, 14],

@@ -262,7 +262,9 @@ define([], function () {
                 options.cellIndex = cellIndex;
                 updateSingleStyle(_sheet, options, rowIndex, columnIndex);
                 return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
-            }
+            },
+            value: _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null,
+            type: _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null
         };
     };
 
@@ -429,6 +431,37 @@ define([], function () {
                 rowIndex = validateIndex(rowIndex);
                 columnIndex = validateIndex(columnIndex);
                 return updateValueInCell(value, _sheet, rowIndex, columnIndex, options);
+            },
+            getCell: function (rowIndex, columnIndex) {
+                var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+                return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
+            },
+            getRow: function (rowIndex, columnIndex, totalCells) {
+                var cellIndices = [], cells = [];
+                for (var index = 0; index < totalCells; index++) {
+                    cellIndices.push(String.fromCharCode(65 + columnIndex + index - 1) + (rowIndex));
+                    cells.push({ rowIndex: rowIndex - 1, columnIndex: columnIndex + index - 1 });
+                }
+                return getCellRangeAttributes(_sheet, cellIndices, cells);
+            },
+            getColumn: function (rowIndex, columnIndex, totalCells) {
+                var cellIndices = [], cells = [];
+                for (var index = 0; index < totalCells; index++) {
+                    cellIndices.push(String.fromCharCode(65 + columnIndex - 1) + (rowIndex + index));
+                    cells.push({ rowIndex: rowIndex + index - 1, columnIndex: columnIndex - 1 });
+                }
+                return getCellRangeAttributes(_sheet, cellIndices, cells);
+            },
+            getRange: function (rowIndex, columnIndex, totalRows, totalColumns) {
+                var cellIndices = [], cells = [];
+                for (var index = 0; index < totalRows; index++) {
+                    var index2;
+                    for (index2 = 0; index2 < totalColumns; index2++) {
+                        cellIndices.push(String.fromCharCode(65 + columnIndex + index2 - 1) + (rowIndex + index));
+                        cells.push({ rowIndex: index + rowIndex - 1, columnIndex: index2 + columnIndex - 1 });
+                    }
+                }
+                return getCellRangeAttributes(_sheet, cellIndices, cells);
             },
             destroy: function () {
                 return destroy(_sheet);
