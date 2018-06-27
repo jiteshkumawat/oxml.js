@@ -1,4 +1,4 @@
-define([], function () {
+define(['utils'], function (utils) {
     var generateContent = function (_styles) {
         var stylesString = '';
         if (_styles._numFormats) {
@@ -20,7 +20,7 @@ define([], function () {
     };
 
     var searchNumFormat = function (numFormat, _styles) {
-        return _styles._numFormats[JSON.stringify(numFormat, Object.keys(numFormat).sort())];
+        return _styles._numFormats[utils.stringify(numFormat)];
     };
 
     var addNumFormat = function (numFormat, _styles) {
@@ -29,8 +29,8 @@ define([], function () {
             _styles._numFormatsCount = 200;
         }
         var index = _styles._numFormatsCount++;
-        _styles._numFormats[JSON.stringify(numFormat, Object.keys(numFormat).sort())] = "" + index;
-        return _styles._numFormats[JSON.stringify(numFormat, Object.keys(numFormat).sort())];
+        _styles._numFormats[utils.stringify(numFormat)] = "" + index;
+        return _styles._numFormats[utils.stringify(numFormat)];
     };
 
     var updateNumFormat = function (numFormat, savedNumFormat, _styles) {
@@ -42,8 +42,8 @@ define([], function () {
             }
         }
         if (numFormat.formatString) {
-            delete _styles._numFormats[JSON.stringify(savedNumFormatDetails, Object.keys(savedNumFormatDetails).sort())];
-            _styles._numFormats[JSON.stringify(numFormat, Object.keys(numFormat).sort())] = savedNumFormat;
+            delete _styles._numFormats[utils.stringify(savedNumFormatDetails)];
+            _styles._numFormats[utils.stringify(numFormat)] = savedNumFormat;
         }
         else {
             numFormat.formatString = savedNumFormatDetails.formatString;

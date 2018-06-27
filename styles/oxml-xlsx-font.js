@@ -1,4 +1,4 @@
-define([], function () {
+define(['utils'], function (utils) {
     var generateContent = function (_styles) {
         var stylesString = '', fontKey;
         stylesString += '<fonts count="' + _styles._fontsCount + '">';
@@ -36,7 +36,7 @@ define([], function () {
     };
 
     var searchFont = function (font, _styles) {
-        return _styles._fonts[JSON.stringify(font, Object.keys(font).sort())];
+        return _styles._fonts[utils.stringify(font)];
     };
 
     var searchSavedFontsForUpdate = function (_styles, cellIndices) {
@@ -65,8 +65,8 @@ define([], function () {
             _styles._fontsCount = 0;
         }
         var index = _styles._fontsCount++;
-        _styles._fonts[JSON.stringify(font, Object.keys(font).sort())] = "" + index;
-        return _styles._fonts[JSON.stringify(font, Object.keys(font).sort())];
+        _styles._fonts[utils.stringify(font)] = "" + index;
+        return _styles._fonts[utils.stringify(font)];
     };
 
     var updateFont = function (font, savedFont, _styles) {
@@ -77,13 +77,13 @@ define([], function () {
                 break;
             }
         }
-        delete _styles._fonts[JSON.stringify(savedFontDetails, Object.keys(savedFontDetails).sort())];
+        delete _styles._fonts[utils.stringify(savedFontDetails)];
         for (var key in font) {
             if (font[key])
                 savedFontDetails[key] = font[key];
             font[key] = savedFontDetails[key];
         }
-        _styles._fonts[JSON.stringify(savedFontDetails, Object.keys(savedFontDetails).sort())] = savedFont;
+        _styles._fonts[utils.stringify(savedFontDetails)] = savedFont;
         return savedFont;
     };
 

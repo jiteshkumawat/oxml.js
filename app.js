@@ -77,24 +77,21 @@ requirejs(['fileSaver', 'oxml-xlsx'],
         //     }
         // }).style({
         //    numberFormat: "#,##0%"});
-        worksheet.updateValuesInRow([0.094, "Hello", "World"], 1, 1)
-            .style({
-                border: {
-                    bottom: {
-                        color: '0000ff',
-                        style: 'dashDot'
-                    }
-                }
-            })
+        worksheet.updateValueInCell(0.094, 1, 1)
+        .style({
+            fill: {
+                pattern: 'lightGrid',
+                backColor: 'FFFF00'
+            }
+        })
             .style({
                 bold: true
             })
             .style({
-                border: {
-                    right: {
-                        color: '0000ff',
-                        style: 'thick'
-                    }
+                fill: {
+                    pattern: 'solid',
+                    foreColor: 'FFFF00',
+                    backColor: 'FFFF00'
                 }
             })
             ;
