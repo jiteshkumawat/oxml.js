@@ -10,6 +10,10 @@ Open XML documents are just a ziped collection of XML files, thus only library r
 * [File Saver](https://github.com/eligrey/FileSaver.js/)
   *- But not required. oxml.js can work on modern browsers without File Saver. Please see browser supported section for more details.*
 
+## Installation
+
+Openxml.js can be installed by referring development js file, or minified js file in dist directory. This small library (~30KB) is based on javascript and require only dependency JSZip for creating compressed files. File Saver can help in achieving browser compatibility, however is not a required library.
+
 ## Methods
 
 ### XLSX Documents
@@ -164,26 +168,8 @@ Below are few of the examples for creating values:
   // Sale Price --- Cost Price --- Profit --- Profit%
   //     10     ---     14     ---    4   ---   40
   ```
-  
-##### updateSharedFormula()
-This method is used to assign a shared formula in a range or row or column. updateSharedFormula is available to instance of worksheet. updateSharedFormula takes three required arguments: formula, start cell index, and end cell index. Cell index is provided starting from 'A' as column starter and positive numeric value for row index. eg. 'A1' describe first cell of worksheet, 'A2' describe second cell in first row, 'B1' describe second cell in first column and so on. updateSharedFormula is an optimized way to update values in all the range of cells. This can be explained with below example:
-  ```javascript
-  Syntax: [workSheet].updateSharedFormula([formula], [startCell], [endCell])
-  Example:
-  var workBook = oxml.createXLSX();
-  var workSheet = workBook.addSheet('Sheet1');
-  workSheet.updateValuesInMatrix([
-    [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
-    [null, 10, 14],
-    [null, 11, 14],
-    'Total'
-  ]);
-  workSheet.updateSharedFormula('(C2 - B2)', 'D2', 'D3');
-  workSheet.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
-  workSheet.updateSharedFormula('(D2 / B2) * 100', 'E2', 'E4');
-  // This will update data in following format:
-  //      --- Sale Price --- Cost Price --- Profit --- Profit%
-  //      ---     10     ---     14     ---    4   ---   40
-  //      ---     11     ---     14     ---    3   ---   27.27273
-  //Total ---     21     ---     28     ---    7   ---   33.33333
-  ```
+
+For more detailed examples on open-xlsx.js, refer examples repository [openxml.js examples](https://jiteshkumawat.github.io/oxml.js-examples/index.html).
+
+## License
+This project is licensed under MIT license. See license.md for more details.
