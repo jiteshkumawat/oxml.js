@@ -32,7 +32,7 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles'], fu
             return sharedStrings;
         }
         return '';
-    }
+    };
 
     var addSheet = function (_workBook, sheetName) {
         var lastSheetRel = getLastSheet(_workBook);

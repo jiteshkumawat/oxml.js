@@ -71,7 +71,7 @@ define(['utils'], function (utils) {
             return fill;
         } else if (options.fill
             && options.fill.gradient
-            && options.fill.gradient.stop) {
+            && options.fill.gradient.stops) {
             var fill = {};
             fill.gradient = {};
             fill.gradient.degree = options.fill.gradient.degree || false;
@@ -82,13 +82,13 @@ define(['utils'], function (utils) {
             fill.gradient.type = options.fill.gradient.type || false;
             fill.gradient.stops = [];
             for (var stopIndex = 0;
-                stopIndex < options.fill.gradient.stop.length;
+                stopIndex < options.fill.gradient.stops.length;
                 stopIndex++) {
                 var stop = {};
                 stop.position =
-                    options.fill.gradient.stop[stopIndex].position || 0;
+                    options.fill.gradient.stops[stopIndex].position || 0;
                 stop.color =
-                    options.fill.gradient.stop[stopIndex].color || false;
+                    options.fill.gradient.stops[stopIndex].color || false;
                 fill.gradient.stops.push(stop);
             }
             return fill;

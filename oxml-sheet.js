@@ -295,8 +295,8 @@ define([], function () {
         }
     };
 
-    var updateSharedFormula = function (_sheet, formula, fromCell, toCell) {
-        var nextId;
+    var updateSharedFormula = function (_sheet, formula, fromCell, toCell, options) {
+        var nextId, cellIndices = [], cells = [];
 
         if (!fromCell || !formula || !toCell) {
             return;
@@ -332,6 +332,8 @@ define([], function () {
             formula: formula,
             range: fromCell + ":" + toCell
         };
+        cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+        cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
 
         var toCellChar, toCellNum;
         if (toCell) {
@@ -347,6 +349,8 @@ define([], function () {
                     type: "sharedFormula",
                     si: nextId
                 };
+                cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+                cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
             }
         } else if (toCellChar === fromCellChar) {
             var torowIndex = parseInt(toCellNum, 10);
@@ -354,6 +358,8 @@ define([], function () {
                 if (!_sheet.values[rowIndex - 1]) {
                     _sheet.values[rowIndex - 1] = [];
                 }
+                cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+                cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
 
                 _sheet.values[rowIndex - 1][columIndex] = {
                     type: "sharedFormula",
@@ -361,8 +367,15 @@ define([], function () {
                 };
             }
         }
-
-        return nextId;
+        if (options) {
+            options.cellIndices = cellIndices;
+            var styleIndex, _styles = _sheet._workBook.createStyles();
+            styleIndex = _styles.addStyles(options);
+            for (var cellIndex = 0; cellIndex < cells.length; cellIndex++) {
+                _sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex].styleIndex = styleIndex.index;
+            }
+        }
+        return getCellRangeAttributes(_sheet, cellIndices, cells);
     };
 
     var destroy = function (_sheet) {
@@ -418,8 +431,8 @@ define([], function () {
                     return updateValuesInMatrix(values, _sheet, rowIndex, columnIndex, options);
                 }
             },
-            updateSharedFormula: function (formula, fromCell, toCell) {
-                return updateSharedFormula(_sheet, formula, fromCell, toCell);
+            updateSharedFormula: function (formula, fromCell, toCell, options) {
+                return updateSharedFormula(_sheet, formula, fromCell, toCell, options);
             },
             updateValueInCell: function (value, rowIndex, columnIndex, options) {
                 rowIndex = validateIndex(rowIndex);

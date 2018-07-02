@@ -21,254 +21,170 @@ requirejs.config({
 
 requirejs(['fileSaver', 'oxml-xlsx'],
     function (fileSaver, oxmlXLSX) {
-        // var file = oxml.createXLSX();
-        // var sharedString = file._xlsx.workBook.createSharedString("Hello");
-        // var sheet2 = file.addSheet('sheet1');
-        // sheet2.updateValuesInMatrix([
-        //     [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
-        //     [null, 10, 14], //{type: "formula", formula: "(B2 - A2)", value: 4}, {type: "formula", formula: "(C2 / A2) * 100", value: 40}]
-        //     [null, 11, 14],
-        //     'Total'
-        // ]);
-        // sheet2.updateSharedFormula('(C2 - B2)', 'D2', 'D3');
-        // sheet2.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
-        // sheet2.updateSharedFormula('(D2 / B2) * 100', 'E2', 'E4');
-        // sheet2.updateValueInCell(40, 5, 1);
-        // var sheet = file.addSheet('tst1');
-        // sheet.updateValuesInRow(0, [null, 22, undefined, 23, 28]);
-        // file.download('t.xlsx');
-        // file.destroy();
 
-        var workbook = oxml.createXLSX();
-        var worksheet = workbook.addSheet('sheet1');
-        // worksheet.updateValuesInColumn(["Dealer", "Cost Price", "Sale Price", "Profit", "Profit %"], 1, 1, {
-        //     bold: true,
-        //     italic: true,
-        //     border: {
-        //         color: "00ff00",
-        //         style: "thick"
-        //     },
-        //     fill: {
-        //         pattern: 'solid',
-        //         color: 'FFFF00'
-        //     }
-        // });
-        // worksheet.updateValueInCell('Test Bold2', 2, 1, {
-        //     bold: true,
-        //     italic: true,
-        //     underline: true,
-        //     fontName: "Arial",
-        //     fontSize: 9,
-        //     fontFamily: 2,
-        //     fontColor: 'ff0000',
-        //     strike: true,
-        //     border: {
-        //         left: {
-        //             color: "0000ff",
-        //             style: "dashDot" // dashDot,dashDotDot,dashed,dotted,double,hair,medium,mediumDashDot,mediumDashDotDot,mediumDashed,none,slantDashDot,thick,thin
-        //         },
-        //         bottom: {
-        //             color: "0000ff",
-        //             style: "double"
-        //         },
+        // // Example 1
+        // (function () {
+        //     var workbook = oxml.createXLSX();
+        //     var worksheet = workbook.addSheet('sheet1');
+        //     var normalStyle = {
+        //         fontName: 'Arial',
+        //         fontSize: 10,
+        //         numberFormat: '#,##0.00'
+        //     };
+        //     var headerStyle = {
         //         fill: {
-        //             pattern: 'lightGrid',
-        //             backColor: 'FFFF00' // none,solid,mediumGray,darkGray,lightGray,darkHorizontal,darkVertical,darkDown,darkUp,darkGrid,darkTrellis,lightHorizontal,lightVertical,lightDown,lightUp,lightGrid,lightTrellis,gray125,gray0625
-        //         }
-        //     }
-        // }).style({
-        //    numberFormat: "#,##0%"});
-        // worksheet.updateValueInCell(0.094, 1, 1);
-        // var cell = worksheet.getRow(1, 1, 4);
-        // cell.style({
-        //     bold: true
-        // });
-        // cell.style({
-        //     italic: true
-        // });
-        // cell.style({
-        //     fill: {
-        //         pattern: 'solid',
-        //         color: 'FFFF00'
-        //     }
-        // });
-        // cell.style({
-        //     numberFormat: '#,##0%'
-        // });
-        // cell.style({
-        //     border: {
-        //         left: {
-        //             style: 'thick',
-        //             color: '00ffff'
+        //             pattern: 'solid',
+        //             foreColor: '090A0C'
         //         },
-        //         right: {
-        //             style: 'thick',
-        //             color: '00ffff'
-        //         },
-        //         top: {
-        //             style: 'thick',
-        //             color: '00ffff'
-        //         },
-        //         bottom: {
-        //             style: 'thick',
-        //             color: '00ffff'
-        //         }
-        //     }
-        // });
-        // worksheet.updateValuesInMatrix([
-        //     [null, 'Sale Price', 'Cost Price', 'Profit', 'Profit%'],
-        //     [null, 10, 14],
-        //     [null, 11, 14],
-        //     'Total'
-        // ], 4, 4, {
+        //         fontColor: 'ffffff',
         //         bold: true,
-        //         italic: true,
-        //         underline: true,
-        //         fontName: "Arial",
-        //         fontSize: 9,
-        //         fontFamily: 2,
-        //         fontColor: 'ff0000',
-        //         strike: true,
         //         border: {
+        //             color: 'ffff00',
+        //             style: 'double',
+        //             right: {
+        //                 style: 'none'
+        //             },
         //             left: {
-        //                 color: "0000ff",
-        //                 style: "dashDot" // dashDot,dashDotDot,dashed,dotted,double,hair,medium,mediumDashDot,mediumDashDotDot,mediumDashed,none,slantDashDot,thick,thin
+        //                 style: 'none'
+        //             }
+        //         }
+        //     };
+        //     var totalCellsStyle = {
+        //         fill: {
+        //             pattern: 'solid',
+        //             foreColor: '090A0C'
+        //         },
+        //         fontColor: 'ffffff',
+        //         border: {
+        //             color: 'ffff00',
+        //             style: 'double',
+        //             top: {
+        //                 style: 'none'
         //             },
         //             bottom: {
-        //                 color: "0000ff",
-        //                 style: "double"
-        //             },
-        //             fill: {
-        //                 pattern: 'lightGrid',
-        //                 backColor: 'FFFF00' // none,solid,mediumGray,darkGray,lightGray,darkHorizontal,darkVertical,darkDown,darkUp,darkGrid,darkTrellis,lightHorizontal,lightVertical,lightDown,lightUp,lightGrid,lightTrellis,gray125,gray0625
+        //                 style: 'none'
+        //             }
+        //         }
+        //     }
+        //     worksheet.updateValueInCell(null, 1, 1);
+        //     worksheet.updateValueInCell({ type: 'string', value: 'Data 1' }, 1, 2, headerStyle);
+        //     worksheet.updateValueInCell('Data 2', 1, 3, headerStyle);
+        //     worksheet.updateValueInCell({ type: 'sharedString', value: 'Total' }, 1, 4, headerStyle);
+        //     worksheet.updateValueInCell(undefined, 2, 1);
+        //     worksheet.updateValueInCell({ type: "numeric", value: 5 }, 2, 2, normalStyle);
+        //     worksheet.updateValueInCell(9, 2, 3, normalStyle);
+        //     worksheet.updateValueInCell({ type: 'formula', formula: '(B2 + C2)', value: 14 }, 2, 4, normalStyle);
+        //     worksheet.updateValueInCell(null, 3, 1);
+        //     worksheet.updateValueInCell(7, 3, 2, normalStyle);
+        //     worksheet.updateValueInCell(3, 3, 3, normalStyle);
+        //     worksheet.updateValueInCell({ type: 'formula', formula: '(B3 + C3)', value: 10 }, 3, 4, normalStyle);
+        //     worksheet.updateValueInCell({ type: 'sharedString', value: 'Total' }, 4, 1, {
+        //         fill: {
+        //             pattern: 'solid',
+        //             foreColor: '090A0C'
+        //         },
+        //         fontColor: 'ffffff',
+        //         bold: true,
+        //         border: {
+        //             color: 'ffff00',
+        //             style: 'double',
+        //             right: {
+        //                 style: 'none'
         //             }
         //         }
         //     });
-        // worksheet.updateSharedFormula('(F5 - E5)', 'G5', 'G6');
-        // worksheet.updateSharedFormula('(E5 + E6)', 'E7', 'F7');
-        // worksheet.updateSharedFormula('(G5 / E5) * 100', 'H5', 'H6');
+        //     worksheet.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
+        //     var totalCells = worksheet.getRow(4, 2, 3);
+        //     totalCells.style({
+        //         fill: {
+        //             pattern: 'solid',
+        //             foreColor: '090A0C'
+        //         },
+        //         fontColor: 'ffffff',
+        //         border: {
+        //             color: 'ffff00',
+        //             style: 'double',
+        //             right: {
+        //                 style: 'none'
+        //             },
+        //             left: {
+        //                 style: 'none'
+        //             }
+        //         },
+        //         numberFormat: '#,##0.00'
+        //     });
+        //     worksheet.getCell(4, 4)
+        //         .style({
+        //             border: {
+        //                 right: {
+        //                     color: 'ffff00',
+        //                     style: 'double'
+        //                 },
+        //                 top: {
+        //                     style: 'none'
+        //                 }
+        //             }
+        //         });
+        //     worksheet.getRange(2, 4, 2, 1)
+        //         .style(totalCellsStyle);
+        //     worksheet.getCell(1, 2)
+        //         .style({
+        //             border: {
+        //                 left: {
+        //                     color: 'ffff00',
+        //                     style: 'double'
+        //                 }
+        //             }
+        //         });
+        //     worksheet.getCell(1, 4)
+        //         .style({
+        //             border: {
+        //                 right: {
+        //                     color: 'ffff00',
+        //                     style: 'double'
+        //                 },
+        //                 bottom: {
+        //                     style: 'none'
+        //                 }
+        //             }
+        //         });
+        //     workbook.download('workbook.xlsx');
+        // })();
 
-        var normalStyle = {
-            fontName: 'Arial',
-            fontSize: 10,
-            numberFormat: '#,##0.00'
-        };
-        var headerStyle = {
-            fill: {
-                pattern: 'solid',
-                foreColor: '090A0C'
-            },
-            fontColor: 'ffffff',
-            bold: true,
-            border: {
-                color: 'ffff00',
-                style: 'double',
-                right: {
-                    style: 'none'
-                },
-                left: {
-                    style: 'none'
-                }
-            }
-        };
-        var totalCellsStyle = {
-            fill: {
-                pattern: 'solid',
-                foreColor: '090A0C'
-            },
-            fontColor: 'ffffff',
-            border: {
-                color: 'ffff00',
-                style: 'double',
-                top: {
-                    style: 'none'
-                },
-                bottom: {
-                    style: 'none'
-                }
-            }
-        }
-        worksheet.updateValueInCell(null, 1, 1);
-        worksheet.updateValueInCell({ type: 'string', value: 'Data 1' }, 1, 2, headerStyle);
-        worksheet.updateValueInCell('Data 2', 1, 3, headerStyle);
-        worksheet.updateValueInCell({ type: 'sharedString', value: 'Total' }, 1, 4, headerStyle);
-        worksheet.updateValueInCell(undefined, 2, 1);
-        worksheet.updateValueInCell({ type: "numeric", value: 5 }, 2, 2, normalStyle);
-        worksheet.updateValueInCell(9, 2, 3, normalStyle);
-        worksheet.updateValueInCell({ type: 'formula', formula: '(B2 + C2)', value: 14 }, 2, 4, normalStyle);
-        worksheet.updateValueInCell(null, 3, 1);
-        worksheet.updateValueInCell(7, 3, 2, normalStyle);
-        worksheet.updateValueInCell(3, 3, 3, normalStyle);
-        worksheet.updateValueInCell({ type: 'formula', formula: '(B3 + C3)', value: 10 }, 3, 4, normalStyle);
-        worksheet.updateValueInCell({ type: 'sharedString', value: 'Total' }, 4, 1, {
-            fill: {
-                pattern: 'solid',
-                foreColor: '090A0C'
-            },
-            fontColor: 'ffffff',
-            bold: true,
-            border: {
-                color: 'ffff00',
-                style: 'double',
-                right: {
-                    style: 'none'
-                }
-            }
-        });
-        worksheet.updateSharedFormula('(B2 + B3)', 'B4', 'D4');
-        var totalCells = worksheet.getRow(4, 2, 3);
-        totalCells.style({
-            fill: {
-                pattern: 'solid',
-                foreColor: '090A0C'
-            },
-            fontColor: 'ffffff',
-            border: {
-                color: 'ffff00',
-                style: 'double',
-                right: {
-                    style: 'none'
-                },
-                left: {
-                    style: 'none'
-                }
-            },
-            numberFormat: '#,##0.00'
-        });
-        worksheet.getCell(4, 4)
-            .style({
-                border: {
-                    right: {
-                        color: 'ffff00',
-                        style: 'double'
-                    },
-                    top: {
-                        style: 'none'
+        // Example 2
+        (function () {
+            var workbook = oxml.createXLSX();
+            var worksheet = workbook.addSheet('sheet1');
+            worksheet.updateValuesInRow('Total of Data', 1, 1, {
+                fill: {
+                    gradient: {
+                        degree: 90,
+                        stops: [{
+                            position: 0,
+                            color: 'FF92D050'
+                        },
+                        {
+                            position: 1,
+                            color: 'FF0070C0'
+                        }]
                     }
-                }
+                },
+                fontColor: 'ffffff',
+                bold: true,
+                underline: true
             });
-        worksheet.getRange(2, 4, 2, 1)
-            .style(totalCellsStyle);
-        worksheet.getCell(1, 2)
-            .style({
-                border: {
-                    left: {
-                        color: 'ffff00',
-                        style: 'double'
-                    }
-                }
+            worksheet.updateValuesInRow(['Data 1', 'Data 2', { type: 'sharedString', value: 'Total' }], 2, 2, {
+                bold: true,
+                italic: true,
+                underline: true,
+                fontName: 'Calibri Light',
+                fontColor: '0000ff'
             });
-        worksheet.getCell(1, 4)
-            .style({
-                border: {
-                    right: {
-                        color: 'ffff00',
-                        style: 'double'
-                    },
-                    bottom: {
-                        style: 'none'
-                    }
-                }
+            worksheet.updateValuesInRow([5, 9], 3, 2);
+            worksheet.updateValuesInRow([null, 7, 3], 4);
+            worksheet.updateSharedFormula('(B3 + C3)', 'D3', 'D4', {
+                bold: true
             });
-        workbook.download('workbook.xlsx');
+            workbook.download('workbook.xlsx');
+        })();
     });
