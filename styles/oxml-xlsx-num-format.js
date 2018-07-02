@@ -44,8 +44,7 @@ define(['utils'], function (utils) {
         if (numFormat.formatString) {
             delete _styles._numFormats[utils.stringify(savedNumFormatDetails)];
             _styles._numFormats[utils.stringify(numFormat)] = savedNumFormat;
-        }
-        else {
+        } else {
             numFormat.formatString = savedNumFormatDetails.formatString;
         }
         return savedNumFormat;
@@ -55,7 +54,7 @@ define(['utils'], function (utils) {
         var count = 0, index;
         for (index = 0; index < _styles.styles.length; index++) {
             if (_styles.styles[index]._numFormat === numFormat) {
-                count++;
+                count += Object.keys(_styles.styles[index].cellIndices).length;
                 if (count > 1)
                     return count;
             }
@@ -105,7 +104,7 @@ define(['utils'], function (utils) {
             numFormatIndex: numFormatIndex || false,
             newStyleCreated: newStyleCreated
         };
-    }
+    };
 
     var getNumFormatForCell = function (_styles, options, cellStyle) {
         // Create Num Format Object

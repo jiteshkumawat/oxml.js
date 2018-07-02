@@ -3,7 +3,6 @@ define(['utils'], function (utils) {
         var stylesString = '', fontKey;
         stylesString += '<fonts count="' + _styles._fontsCount + '">';
         for (fontKey in _styles._fonts) {
-            // Excel requires the child elements to be in the following sequence: i, strike, condense, extend, outline, shadow, u, vertAlign, sz, color, name, family, charset, scheme.
             var font = JSON.parse(fontKey);
             stylesString += '<font>';
             stylesString += font.strike ? '<strike/>' : '';
@@ -11,15 +10,18 @@ define(['utils'], function (utils) {
             stylesString += font.bold ? '<b/>' : '';
             stylesString += font.underline ? '<u/>' : '';
             stylesString += font.size ? '<sz val="' + font.size + '"/>' : '';
-            stylesString += font.color ? '<color rgb="' + font.color + '"/>' : '';
+            stylesString += font.color ? '<color rgb="'
+                + font.color + '"/>' : '';
             stylesString += font.name ? '<name val="' + font.name + '"/>' : '';
-            stylesString += font.family ? '<family val="' + font.family + '"/>' : '';
-            stylesString += font.scheme ? '<scheme val="' + font.scheme + '"/>' : '';
+            stylesString += font.family ? '<family val="'
+                + font.family + '"/>' : '';
+            stylesString += font.scheme ? '<scheme val="'
+                + font.scheme + '"/>' : '';
             stylesString += '</font>';
         }
         stylesString += '</fonts>';
         return stylesString;
-    }
+    };
 
     var createFont = function (options) {
         var font = {};
@@ -45,10 +47,13 @@ define(['utils'], function (utils) {
         for (var index2 = 0; index2 < cellIndices.length; index2++) {
             var cellIndex = cellIndices[0];
             for (; index < _styles.styles.length; index++) {
-                if (_styles.styles[index].cellIndices[cellIndex] !== undefined || _styles.styles[index].cellIndices[cellIndex] !== null) {
+                if (_styles.styles[index].cellIndices[cellIndex] !== undefined
+                    || _styles.styles[index].cellIndices[cellIndex] !== null) {
                     cellStyle = _styles.styles[index];
                     fontCount++;
-                    if (Object.keys(cellStyle.cellIndices).length !== cellIndices.length || fontCount > 1 || cellStyle._font === 0) {
+                    if (Object.keys(cellStyle.cellIndices).length
+                        !== cellIndices.length
+                        || fontCount > 1 || cellStyle._font === 0) {
                         return false;
                     }
                 }
@@ -70,6 +75,12 @@ define(['utils'], function (utils) {
     };
 
     var updateFont = function (font, savedFont, _styles) {
+        mergeFont(font, savedFont, _styles, true);
+        _styles._fonts[utils.stringify(font)] = savedFont;
+        return savedFont;
+    };
+
+    var mergeFont = function (font, savedFont, _styles, deleteSavedFont) {
         var savedFontDetails;
         for (var key in _styles._fonts) {
             if (_styles._fonts[key] === savedFont) {
@@ -77,21 +88,22 @@ define(['utils'], function (utils) {
                 break;
             }
         }
-        delete _styles._fonts[utils.stringify(savedFontDetails)];
+        if (deleteSavedFont) {
+            delete _styles._fonts[utils.stringify(savedFontDetails)];
+        }
         for (var key in font) {
             if (font[key])
                 savedFontDetails[key] = font[key];
             font[key] = savedFontDetails[key];
         }
-        _styles._fonts[utils.stringify(savedFontDetails)] = savedFont;
-        return savedFont;
+        return font;
     };
 
     var getFontCounts = function (font, _styles) {
         var count = 0, index;
         for (index = 0; index < _styles.styles.length; index++) {
             if (_styles.styles[index]._font === font) {
-                count++;
+                count += Object.keys(_styles.styles[index].cellIndices).length;
                 if (count > 1)
                     return count;
             }
@@ -139,6 +151,16 @@ define(['utils'], function (utils) {
             if (fontCount <= 1) {
                 // Update font
                 fontIndex = updateFont(font, cellStyle._font, _styles);
+            } else {
+                // Merge Font
+                font = mergeFont(font, cellStyle._font, _styles);
+                savedFont = searchFont(font, _styles);
+                if (savedFont !== undefined && savedFont !== null) {
+                    fontIndex = savedFont;
+                } else {
+                    fontIndex = null;
+                    newStyleCreated = true;
+                }
             }
         }
         if (fontIndex === undefined || fontIndex === null)

@@ -39,7 +39,7 @@ define([], function () {
                         sheetValues += cellStr;
                     }
 
-                    sheetValues += '</row>'
+                    sheetValues += '</row>';
                 }
             }
         }
@@ -70,8 +70,7 @@ define([], function () {
                             type: value.type,
                             value: value.value
                         };
-                    }
-                    else {
+                    } else {
                         // Add shared string
                         value.value = _sheet._workBook.createSharedString(value.value, _sheet._workBook);
                         return {
@@ -109,7 +108,7 @@ define([], function () {
             return {
                 type: "string",
                 value: value + ""
-            }
+            };
         }
         return null;
     };
@@ -194,10 +193,9 @@ define([], function () {
                             cells.push({ rowIndex: index + rowIndex - 1, columnIndex: index2 + columnIndex - 1 });
                         }
                     }
-                }
-                else {
+                } else {
                     cellIndices.push(String.fromCharCode(65 + columnIndex - 1) + (rowIndex + index));
-                    cells.push({ rowIndex: index + rowIndex - 1, columnIndex: index2 - 1 })
+                    cells.push({ rowIndex: index + rowIndex - 1, columnIndex: index2 - 1 });
                 }
             }
         }
@@ -223,8 +221,7 @@ define([], function () {
                             _sheet.values[sheetRowIndex][index2 + columnIndex - 1] = value;
                         }
                     }
-                }
-                else {
+                } else {
                     var value = sanitizeValue(values[index], _sheet);
                     if (value) {
                         if (styleIndex) {
@@ -263,8 +260,8 @@ define([], function () {
                 updateSingleStyle(_sheet, options, rowIndex, columnIndex);
                 return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
             },
-            value: _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null,
-            type: _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null
+            value: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null,
+            type: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null
         };
     };
 
@@ -275,8 +272,8 @@ define([], function () {
                 updateRangeStyle(_sheet, options, cells);
                 return getCellRangeAttributes(_sheet, cellIndices, cells);
             }
-        }
-    }
+        };
+    };
 
     var updateSingleStyle = function (_sheet, options, rowIndex, columnIndex) {
         var _styles = _sheet._workBook.createStyles();
@@ -292,11 +289,11 @@ define([], function () {
                 _sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex] = {
                     type: "string",
                     value: ""
-                }
+                };
             }
             _sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex].styleIndex = styleIndex;
         }
-    }
+    };
 
     var updateSharedFormula = function (_sheet, formula, fromCell, toCell) {
         var nextId;
@@ -351,10 +348,7 @@ define([], function () {
                     si: nextId
                 };
             }
-        }
-
-        // Update all cell in column
-        else if (toCellChar === fromCellChar) {
+        } else if (toCellChar === fromCellChar) {
             var torowIndex = parseInt(toCellNum, 10);
             for (rowIndex++; rowIndex <= torowIndex; rowIndex++) {
                 if (!_sheet.values[rowIndex - 1]) {
@@ -394,11 +388,11 @@ define([], function () {
             rId: rId,
             values: [],
             _workBook: workBook
-        }
+        };
         return {
             _sheet: _sheet,
             generateContent: function () {
-                generateContent(_sheet)
+                generateContent(_sheet);
             },
             attach: function (file) {
                 attach(_sheet, file);
@@ -467,7 +461,7 @@ define([], function () {
                 return destroy(_sheet);
             }
         };
-    }
+    };
 
     // window.oxml.createSheet = createSheet;
     return { createSheet: createSheet };

@@ -11,7 +11,7 @@ define(['utils'], function (utils) {
     var generateContent = function (_styles) {
         // Create Styles
         var stylesString = '';
-        var index = 0, borderKey;
+        var borderKey;
         stylesString += '<borders count="' + _styles._bordersCount + '">';
         for (borderKey in _styles._borders) {
             var border = JSON.parse(borderKey);
@@ -22,7 +22,7 @@ define(['utils'], function (utils) {
                 stylesString += getBorderString(border.top, 'top');
                 stylesString += getBorderString(border.bottom, 'bottom');
                 stylesString += getBorderString(border.diagonal, 'diagonal');
-                stylesString += '</border>'
+                stylesString += '</border>';
             } else {
                 stylesString += '<border />';
             }
@@ -96,6 +96,12 @@ define(['utils'], function (utils) {
     };
 
     var updateBorder = function (border, savedBorder, _styles) {
+        mergeBorder(border, savedBorder, _styles, true);
+        _styles._borders[utils.stringify(border)] = savedBorder;
+        return savedBorder;
+    };
+
+    var mergeBorder = function (border, savedBorder, _styles, deleteSavedBorder) {
         var savedBorderDetails;
         for (var key in _styles._borders) {
             if (_styles._borders[key] === savedBorder) {
@@ -103,25 +109,25 @@ define(['utils'], function (utils) {
                 break;
             }
         }
-        delete _styles._borders[utils.stringify(savedBorderDetails)];
+        if (deleteSavedBorder) {
+            delete _styles._borders[utils.stringify(savedBorderDetails)];
+        }
         if (border) {
             for (var key in border) {
-                if (border[key].color && border[key].style)
+                if (border[key].color || border[key].style)
                     savedBorderDetails[key] = border[key];
                 border[key] = savedBorderDetails[key];
             }
-        }
-        else
+        } else
             border = savedBorderDetails;
-        _styles._borders[utils.stringify(savedBorderDetails)] = savedBorder;
-        return savedBorder;
+        return border;
     };
 
     var getBorderCounts = function (border, _styles) {
         var count = 0, index;
         for (index = 0; index < _styles.styles.length; index++) {
             if (_styles.styles[index]._border === border) {
-                count++;
+                count += Object.keys(_styles.styles[index].cellIndices).length;
                 if (count > 1)
                     return count;
             }
@@ -148,8 +154,12 @@ define(['utils'], function (utils) {
                 borderIndex = updateBorder(border, cellStyle._border, _styles);
             }
         }
-        if (borderIndex === undefined || borderIndex === null)
+        if (borderIndex === undefined || borderIndex === null) {
+            if (cellStyle && cellStyle._border) {
+                border = mergeBorder(border, cellStyle._border, _styles, false);
+            }
             borderIndex = addBorder(border, _styles);
+        }
 
         return {
             border: border,
@@ -177,11 +187,11 @@ define(['utils'], function (utils) {
             borderIndex: borderIndex,
             newStyleCreated: newStyleCreated
         };
-    }
+    };
 
     return {
         getBorderForCell: getBorderForCell,
         getBorderForCells: getBorderForCells,
         generateContent: generateContent
-    }
+    };
 });

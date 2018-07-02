@@ -1,4 +1,4 @@
-define(['utils'], function(utils){
+define(['utils'], function (utils) {
     var generateContent = function (_styles) {
         // Create Styles
         var stylesString = '';
@@ -20,21 +20,38 @@ define(['utils'], function(utils){
         var fillString = '<fill>';
         if (fill.pattern) {
             var patternType = fill.pattern || 'none';
-            var colorString = fill.fgColor ? '<fgColor rgb="' + fill.fgColor + '"/>' : '';
-            colorString += fill.bgColor ? '<bgColor rgb="' + fill.bgColor + '"/>' : '';
-            fillString += '<patternFill patternType="' + patternType + '">' + colorString + '</patternFill>';
-        }
-        else if (fill.gradient) {
-            var typeString = fill.gradient.type ? ' type="' + fill.gradient.type + '" ' : '';
-            var leftString = fill.gradient.left ? ' left="' + fill.gradient.left + '" ' : '';
-            var rightString = fill.gradient.right ? ' right="' + fill.gradient.right + '"' : '';
-            var topString = fill.gradient.top ? ' top="' + fill.gradient.top + '" ' : '';
-            var bottomString = fill.gradient.bottom ? ' bottom="' + fill.gradient.bottom + '" ' : '';
-            var degreeString = fill.gradient.degree ? ' degree="' + fill.gradient.degree + '" ' : '';
-            fillString += '<gradientFill ' + typeString + leftString + rightString + topString + bottomString + degreeString + ' >';
-            for (var stopIndex = 0; stopIndex < fill.gradient.stops.length; stopIndex++) {
-                fillString += '<stop position="' + fill.gradient.stops[stopIndex].position + '">';
-                fillString += '<color rgb="' + fill.gradient.stops[stopIndex].color + '" /></stop>';
+            var colorString =
+                fill.fgColor ? '<fgColor rgb="' + fill.fgColor + '"/>' : '';
+            colorString +=
+                fill.bgColor ? '<bgColor rgb="' + fill.bgColor + '"/>' : '';
+            fillString += '<patternFill patternType="'
+                + patternType + '">' + colorString + '</patternFill>';
+        } else if (fill.gradient) {
+            var typeString =
+                fill.gradient.type ? ' type="' + fill.gradient.type + '" ' : '';
+            var leftString =
+                fill.gradient.left ? ' left="' + fill.gradient.left + '" ' : '';
+            var rightString =
+                fill.gradient.right ? ' right="'
+                    + fill.gradient.right + '"' : '';
+            var topString =
+                fill.gradient.top ? ' top="' + fill.gradient.top + '" ' : '';
+            var bottomString =
+                fill.gradient.bottom ? ' bottom="'
+                    + fill.gradient.bottom + '" ' : '';
+            var degreeString =
+                fill.gradient.degree ? ' degree="'
+                    + fill.gradient.degree + '" ' : '';
+            fillString += '<gradientFill '
+                + typeString + leftString + rightString
+                + topString + bottomString + degreeString + ' >';
+            for (var stopIndex = 0;
+                stopIndex < fill.gradient.stops.length;
+                stopIndex++) {
+                fillString += '<stop position="'
+                    + fill.gradient.stops[stopIndex].position + '">';
+                fillString += '<color rgb="'
+                    + fill.gradient.stops[stopIndex].color + '" /></stop>';
             }
             fillString += '</gradientFill>';
         } else {
@@ -43,15 +60,18 @@ define(['utils'], function(utils){
         return fillString + '</fill>';
     };
 
-    
+
     var createFill = function (options) {
         if (options.fill && options.fill.pattern) {
             var fill = {};
             fill.pattern = options.fill.pattern;
             fill.fgColor = options.fill.foreColor || false;
-            fill.bgColor = options.fill.backColor || options.fill.color || false;
+            fill.bgColor = options.fill.backColor
+                || options.fill.color || false;
             return fill;
-        } else if (options.fill && options.fill.gradient && options.fill.gradient.stop) {
+        } else if (options.fill
+            && options.fill.gradient
+            && options.fill.gradient.stop) {
             var fill = {};
             fill.gradient = {};
             fill.gradient.degree = options.fill.gradient.degree || false;
@@ -61,10 +81,14 @@ define(['utils'], function(utils){
             fill.gradient.top = options.fill.gradient.top || false;
             fill.gradient.type = options.fill.gradient.type || false;
             fill.gradient.stops = [];
-            for (var stopIndex = 0; stopIndex < options.fill.gradient.stop.length; stopIndex++) {
+            for (var stopIndex = 0;
+                stopIndex < options.fill.gradient.stop.length;
+                stopIndex++) {
                 var stop = {};
-                stop.position = options.fill.gradient.stop[stopIndex].position || 0;
-                stop.color = options.fill.gradient.stop[stopIndex].color || false;
+                stop.position =
+                    options.fill.gradient.stop[stopIndex].position || 0;
+                stop.color =
+                    options.fill.gradient.stop[stopIndex].color || false;
                 fill.gradient.stops.push(stop);
             }
             return fill;
@@ -87,15 +111,17 @@ define(['utils'], function(utils){
     };
 
     var searchSavedFillsForUpdate = function (_styles, cellIndices) {
-        var index = 0, fillCount = 0;
-        var cellStyle;
+        var index = 0, fillCount = 0, cellStyle;
         for (var index2 = 0; index2 < cellIndices.length; index2++) {
             var cellIndex = cellIndices[0];
             for (; index < _styles.styles.length; index++) {
-                if (_styles.styles[index].cellIndices[cellIndex] !== undefined || _styles.styles[index].cellIndices[cellIndex] !== null) {
+                if (_styles.styles[index].cellIndices[cellIndex] !== undefined
+                    || _styles.styles[index].cellIndices[cellIndex] !== null) {
                     cellStyle = _styles.styles[index];
                     fillCount++;
-                    if (Object.keys(cellStyle.cellIndices).length !== cellIndices.length || fillCount > 1 || cellStyle._fill === 0) {
+                    if (Object.keys(cellStyle.cellIndices).length
+                        !== cellIndices.length
+                        || fillCount > 1 || cellStyle._fill === 0) {
                         return false;
                     }
                 }
@@ -107,6 +133,12 @@ define(['utils'], function(utils){
     };
 
     var updateFill = function (fill, savedFill, _styles) {
+        mergeFill(fill, savedFill, _styles, true);
+        _styles._fills[utils.stringify(fill)] = savedFill;
+        return savedFill;
+    };
+
+    var mergeFill = function (fill, savedFill, _styles, deleteExisting) {
         var savedFillDetails;
         for (var key in _styles._fills) {
             if (_styles._fills[key] === savedFill) {
@@ -114,14 +146,14 @@ define(['utils'], function(utils){
                 break;
             }
         }
-        delete _styles._fills[utils.stringify(savedFillDetails)];
+        if (deleteExisting)
+            delete _styles._fills[utils.stringify(savedFillDetails)];
         for (var key in fill) {
             if (fill[key])
                 savedFillDetails[key] = fill[key];
             fill[key] = savedFillDetails[key];
         }
-        _styles._fills[utils.stringify(savedFillDetails)] = savedFill;
-        return savedFill;
+        return fill;
     };
 
     var getFillForCells = function (_styles, options) {
@@ -166,8 +198,14 @@ define(['utils'], function(utils){
                 fillIndex = updateFill(fill, cellStyle._fill, _styles);
             }
         }
-        if (fillIndex === undefined || fillIndex === null)
+        if (fillIndex === undefined || fillIndex === null) {
+            if (cellStyle && cellStyle._fill) {
+                fill = mergeFill(fill, cellStyle._fill, _styles, false);
+            }
             fillIndex = addFill(fill, _styles);
+        }
+        if (!fillIndex && cellStyle && cellStyle._fill)
+            fillIndex = cellStyle._fill;
 
         return {
             fill: fill,
@@ -180,7 +218,7 @@ define(['utils'], function(utils){
         var count = 0, index;
         for (index = 0; index < _styles.styles.length; index++) {
             if (_styles.styles[index]._fill === fill) {
-                count++;
+                count += Object.keys(_styles.styles[index].cellIndices).length;
                 if (count > 1)
                     return count;
             }
