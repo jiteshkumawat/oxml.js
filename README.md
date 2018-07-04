@@ -172,4 +172,4 @@ Below are few of the examples for creating values:
 For more detailed examples on open-xlsx.js, refer examples repository [openxml.js examples](https://jiteshkumawat.github.io/oxml.js-examples/index.html).
 
 ## License
-This project is licensed under MIT license. See license.md for more details.
+This project is licensed under MIT license. See [LICENSE](https://github.com/jiteshkumawat/oxml.js/blob/master/LICENSE) for more details.
