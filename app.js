@@ -155,36 +155,14 @@ requirejs(['fileSaver', 'oxml-xlsx'],
         (function () {
             var workbook = oxml.createXLSX();
             var worksheet = workbook.addSheet('sheet1');
-            worksheet.updateValuesInRow('Total of Data', 1, 1, {
-                fill: {
-                    gradient: {
-                        degree: 90,
-                        stops: [{
-                            position: 0,
-                            color: 'FF92D050'
-                        },
-                        {
-                            position: 1,
-                            color: 'FF0070C0'
-                        }]
-                    }
-                },
-                fontColor: 'ffffff',
-                bold: true,
-                underline: true
-            });
-            worksheet.updateValuesInRow(['Data 1', 'Data 2', { type: 'sharedString', value: 'Total' }], 2, 2, {
-                bold: true,
-                italic: true,
-                underline: true,
-                fontName: 'Calibri Light',
-                fontColor: '0000ff'
-            });
-            worksheet.updateValuesInRow([5, 9], 3, 2);
-            worksheet.updateValuesInRow([null, 7, 3], 4);
-            worksheet.updateSharedFormula('(B3 + C3)', 'D3', 'D4', {
-                bold: true
-            });
+            worksheet
+					.getRange(2, 2, 3, 1)
+					.style({
+						fill: {
+							pattern: 'solid',
+							foreColor: '090A0C'
+						}
+					});
             workbook.download('workbook.xlsx');
         })();
     });

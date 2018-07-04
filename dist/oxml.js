@@ -488,6 +488,9 @@ define('oxml_sheet',[], function () {
     var updateSingleStyle = function (_sheet, options, rowIndex, columnIndex) {
         var _styles = _sheet._workBook.createStyles();
         var styleIndex = _styles.addStyles(options).index;
+        if (!_sheet.values[rowIndex]) {
+            _sheet.values[rowIndex] = [];
+        }
         _sheet.values[rowIndex][columnIndex].styleIndex = styleIndex;
     };
 
@@ -495,6 +498,9 @@ define('oxml_sheet',[], function () {
         var _styles = _sheet._workBook.createStyles();
         var styleIndex = _styles.addStyles(options).index;
         for (var cellIndex = 0; cellIndex < cells.length; cellIndex++) {
+            if (!_sheet.values[cells[cellIndex].rowIndex]) {
+                _sheet.values[cells[cellIndex].rowIndex] = [];
+            }
             if (!_sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex]) {
                 _sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex] = {
                     type: "string",
