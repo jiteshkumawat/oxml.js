@@ -242,6 +242,10 @@ define([], function () {
                     values = [values];
                 } else {
                     totalRows = totalRows > values.length ? totalRows : values.length;
+                    for (var index = 0; index < values.length; index++) {
+                        if (values[index] && values[index].length)
+                            totalColumns = totalColumns < values[index].length ? values[index].length : totalColumns;
+                    }
                 }
                 return cells(_sheet, cRowIndex, cColumnIndex, totalRows, totalColumns, values, options, isRow);
             }
@@ -372,15 +376,8 @@ define([], function () {
         delete _sheet._sharedFormula;
     };
 
-    var validateIndex = function (index) {
-        if (isNaN(index) || index <= 0) {
-            return 1;
-        }
-        return index;
-    };
-
     var cell = function (_sheet, rowIndex, columnIndex, value, options) {
-        if (typeof rowIndex !== "number" || typeof columnIndex !== "number")
+        if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number")
             return;
         if (!options && (value === undefined || value === null)) {
             var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
@@ -390,14 +387,12 @@ define([], function () {
         } else if (value === undefined || value === null) {
             return cellStyle(_sheet, rowIndex, columnIndex, options);
         } else {
-            rowIndex = validateIndex(rowIndex);
-            columnIndex = validateIndex(columnIndex);
             return updateValueInCell(value, _sheet, rowIndex, columnIndex, options);
         }
     };
 
     var cells = function (_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, isRow) {
-        if (typeof rowIndex !== "number" || typeof columnIndex !== "number" || typeof totalRows !== "number" || typeof totalColumns !== "number")
+        if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number" || typeof totalRows !== "number" || typeof totalColumns !== "number")
             return;
         var cells = [], cellIndices = [], tmpRows = totalRows;
         for (var index = rowIndex - 1; tmpRows > 0; index++ , tmpRows--) {
@@ -420,8 +415,6 @@ define([], function () {
             updateRangeStyle(_sheet, options, cells);
             return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow);
         } else {
-            rowIndex = validateIndex(rowIndex);
-            columnIndex = validateIndex(columnIndex);
             updateValuesInMatrix(values, _sheet, rowIndex, columnIndex, options, cellIndices, cells, totalRows, totalColumns);
             return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow);
         }
@@ -450,13 +443,6 @@ define([], function () {
             attach: function (file) {
                 attach(_sheet, file);
             },
-            updateValuesInMatrix: function (values, rowIndex, columnIndex, options) {
-                rowIndex = validateIndex(rowIndex);
-                columnIndex = validateIndex(columnIndex);
-                if (values && values.length) {
-                    return updateValuesInMatrix(values, _sheet, rowIndex, columnIndex, options);
-                }
-            },
             updateSharedFormula: function (formula, fromCell, toCell, options) {
                 return updateSharedFormula(_sheet, formula, fromCell, toCell, options);
             },
@@ -477,16 +463,24 @@ define([], function () {
                 }
                 return cells(_sheet, rowIndex, columnIndex, values ? values.length : totalRows, 1, values, options, false);
             },
-            getRange: function (rowIndex, columnIndex, totalRows, totalColumns) {
-                var cellIndices = [], cells = [];
-                for (var index = 0; index < totalRows; index++) {
-                    var index2;
-                    for (index2 = 0; index2 < totalColumns; index2++) {
-                        cellIndices.push(String.fromCharCode(65 + columnIndex + index2 - 1) + (rowIndex + index));
-                        cells.push({ rowIndex: index + rowIndex - 1, columnIndex: index2 + columnIndex - 1 });
+            grid: function (rowIndex, columnIndex, values, options) {
+                var index, totalRows = 0, totalColumns = 0;
+                if (values && values.length) {
+                    totalRows = values.length;
+                    for (index = 0; index < values.length; index++) {
+                        if (values[index] && values[index].length)
+                            totalColumns = totalColumns < values[index].length ? values[index].length : totalColumns;
+                    }
+                } else if (_sheet.values && _sheet.values.length) {
+                    totalRows = _sheet.values.length - rowIndex + 1;
+                    for (var index = 0; index < _sheet.values.length; index++) {
+                        if (_sheet.values[index] && _sheet.values[index].length) {
+                            totalColumns = totalColumns < _sheet.values[index].length ? _sheet.values[index].length : totalColumns;
+                        }
                     }
                 }
-                return getCellRangeAttributes(_sheet, cellIndices, cells);
+
+                return cells(_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options);
             },
             destroy: function () {
                 return destroy(_sheet);
