@@ -30,7 +30,7 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             // console.log(cell);
             // workbook.download('tmp.xlsx');
             debugger;
-            var row = worksheet.row(2, 2).set(['Hello', 'World']).set(['Green']).style({ bold: true });
+            var row = worksheet.column(2, 2, ['Hello', 'World'], { bold: true });
             workbook.download('tmp.xlsx');
         })();
     });
