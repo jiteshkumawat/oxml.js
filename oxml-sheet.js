@@ -472,7 +472,7 @@ define([], function () {
                 if (!values || !values.length) {
                     for (index = 0; index < rowIndex; index++) {
                         if (_sheet.values[index])
-                            totalRows = totalRows < _sheet.values[index].length ? _sheet.values[index] : totalRows;
+                            totalRows = totalRows < _sheet.values[index].length ? _sheet.values[index].length : totalRows;
                     }
                 }
                 return cells(_sheet, rowIndex, columnIndex, values ? values.length : totalRows, 1, values, options, true, false, true);

@@ -30,7 +30,8 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             // console.log(cell);
             // workbook.download('tmp.xlsx');
             debugger;
-            var row = worksheet.column(2,3, ['Data1', 'Data2', 'Data3']);
+            worksheet.column(2,3, ['Data1', 'Data2', 'Data3']);
+            var row = worksheet.column(2,3);
             row.set(['Data4']);
             row.set([1,2,3,4,5]);
             row.set([]);
