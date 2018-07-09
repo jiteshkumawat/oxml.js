@@ -201,7 +201,7 @@ define([], function () {
         };
     };
 
-    var getCellRangeAttributes = function (_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns, isRow) {
+    var getCellRangeAttributes = function (_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns, isRow, isColumn) {
         var cellRange = [], index;
         for (index = 0; index < _cells.length; index++) {
             var rowIndex = _cells[index].rowIndex, columnIndex = _cells[index].columnIndex;
@@ -236,14 +236,18 @@ define([], function () {
             cellIndices: cellIndices,
             cells: cellRange,
             set: function (values, options) {
+                var tVal = [];
                 if (!values || !values.length || !totalColumns || !totalRows)
                     return getCellRangeAttributes(_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns);
-                if (isRow) {
-                    var tVal = [];
-                    for (var index = 0; index < _sheet.values[cRowIndex - 1].length - cColumnIndex + 1 && index < values.length; index++) {
+                if (isRow || isColumn) {
+                    for (var index = 0; index < this.cells.length && index < values.length; index++) {
                         tVal.push(values[index]);
                     }
+                }
+                if (isRow) {
                     values = [tVal];
+                } else if (isColumn) {
+                    values = tVal;
                 } else {
                     totalRows = totalRows > values.length ? totalRows : values.length;
                     for (var index = 0; index < values.length; index++) {
@@ -251,7 +255,7 @@ define([], function () {
                             totalColumns = totalColumns < values[index].length ? values[index].length : totalColumns;
                     }
                 }
-                cells(_sheet, cRowIndex, cColumnIndex, totalRows, totalColumns, values, options, false, isRow);
+                cells(_sheet, cRowIndex, cColumnIndex, totalRows, totalColumns, values, options, false, isRow, isColumn);
                 var cellsAttributes = getCellRangeAttributes(_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns);
                 this.cells = cellsAttributes.cells;
                 return cellsAttributes;
@@ -398,7 +402,7 @@ define([], function () {
         }
     };
 
-    var cells = function (_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, isReturn, isRow) {
+    var cells = function (_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, isReturn, isRow, isColumn) {
         if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number" || typeof totalRows !== "number" || typeof totalColumns !== "number")
             return;
         var cells = [], cellIndices = [], tmpRows = totalRows;
@@ -412,21 +416,21 @@ define([], function () {
             }
         }
         if (!options && !values) {
-            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow);
+            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
         } else if (!options && values && !values.length) {
             values.cellIndices = cellIndices;
             updateRangeStyle(_sheet, values, cells);
             if (!isReturn) return;
-            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow);
+            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
         } else if (values === undefined || values === null) {
             options.cellIndices = cellIndices;
             updateRangeStyle(_sheet, options, cells);
             if (!isReturn) return;
-            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow);
+            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
         } else {
             updateValuesInMatrix(values, _sheet, rowIndex, columnIndex, options, cellIndices, cells, totalRows, totalColumns);
             if (!isReturn) return;
-            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow);
+            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
         }
     };
 
@@ -461,7 +465,7 @@ define([], function () {
             },
             row: function (rowIndex, columnIndex, values, options) {
                 var totalColumns = _sheet.values[rowIndex - 1] ? _sheet.values[rowIndex - 1].length : 0;
-                return cells(_sheet, rowIndex, columnIndex, 1, values ? values.length : totalColumns, values ? [values] : null, options, true, true);
+                return cells(_sheet, rowIndex, columnIndex, 1, values ? values.length : totalColumns, values ? [values] : null, options, true, true, false);
             },
             column: function (rowIndex, columnIndex, values, options) {
                 var index, totalRows = 0;
@@ -471,7 +475,7 @@ define([], function () {
                             totalRows = totalRows < _sheet.values[index].length ? _sheet.values[index] : totalRows;
                     }
                 }
-                return cells(_sheet, rowIndex, columnIndex, values ? values.length : totalRows, 1, values, options, true, false);
+                return cells(_sheet, rowIndex, columnIndex, values ? values.length : totalRows, 1, values, options, true, false, true);
             },
             grid: function (rowIndex, columnIndex, values, options) {
                 var index, totalRows = 0, totalColumns = 0;
