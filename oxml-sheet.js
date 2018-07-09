@@ -249,11 +249,18 @@ define([], function () {
                 } else if (isColumn) {
                     values = tVal;
                 } else {
-                    totalRows = totalRows > values.length ? totalRows : values.length;
-                    for (var index = 0; index < values.length; index++) {
-                        if (values[index] && values[index].length)
-                            totalColumns = totalColumns < values[index].length ? values[index].length : totalColumns;
+                    var tVal = [];
+                    for (var index = 0; index < values.length && index < totalRows; index++) {
+                        var tVal2 = [];
+                        if (values[index].length > totalColumns) {
+                            for (var index2 = 0; index2 < values[index].length && index2 < totalColumns; index2++) {
+                                tVal2.push(values[index][index2]);
+                            }
+                            values[index] = tVal2;
+                        }
+                        tVal.push(values[index]);
                     }
+                    values = tVal;
                 }
                 cells(_sheet, cRowIndex, cColumnIndex, totalRows, totalColumns, values, options, false, isRow, isColumn);
                 var cellsAttributes = getCellRangeAttributes(_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns);
@@ -464,16 +471,13 @@ define([], function () {
                 return cell(_sheet, rowIndex, columnIndex, value, options);
             },
             row: function (rowIndex, columnIndex, values, options) {
-                var totalColumns = _sheet.values[rowIndex - 1] ? _sheet.values[rowIndex - 1].length : 0;
+                var totalColumns = _sheet.values[rowIndex - 1] ? _sheet.values[rowIndex - 1].length - columnIndex + 1 : 0;
                 return cells(_sheet, rowIndex, columnIndex, 1, values ? values.length : totalColumns, values ? [values] : null, options, true, true, false);
             },
             column: function (rowIndex, columnIndex, values, options) {
-                var index, totalRows = 0;
+                var totalRows = 0;
                 if (!values || !values.length) {
-                    for (index = 0; index < rowIndex; index++) {
-                        if (_sheet.values[index])
-                            totalRows = totalRows < _sheet.values[index].length ? _sheet.values[index].length : totalRows;
-                    }
+                    totalRows = _sheet.values && _sheet.values.length && _sheet.values.length > rowIndex ? _sheet.values.length - rowIndex + 1 : 0;
                 }
                 return cells(_sheet, rowIndex, columnIndex, values ? values.length : totalRows, 1, values, options, true, false, true);
             },
@@ -489,7 +493,7 @@ define([], function () {
                     totalRows = _sheet.values.length - rowIndex + 1;
                     for (var index = 0; index < _sheet.values.length; index++) {
                         if (_sheet.values[index] && _sheet.values[index].length) {
-                            totalColumns = totalColumns < _sheet.values[index].length ? _sheet.values[index].length : totalColumns;
+                            totalColumns = totalColumns < _sheet.values[index].length - columnIndex + 1 ? _sheet.values[index].length - columnIndex + 1 : totalColumns;
                         }
                     }
                 }

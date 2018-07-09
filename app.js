@@ -31,9 +31,7 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             // workbook.download('tmp.xlsx');
             debugger;
             worksheet.column(2,3, ['Data1', 'Data2', 'Data3']);
-            var row = worksheet.column(2,3);
-            row.set(['Data4']);
-            row.set([1,2,3,4,5]);
+            var row = worksheet.column(3,3);
             row.set([]);
             workbook.download('tmp.xlsx');
         })();
