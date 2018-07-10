@@ -36,7 +36,13 @@ for detailed documentation and example of all the methods available in oxml.js.
 
 ## Builds
 
-Oxml.js comes in two different build files, i.e., oxml.min.js and oxml.js. They are available in distributions (dist) folder. This project is configured to build with require.js and almond.js, files for the same are kept in build folder. Use build-full.js and build-min.js configuration files with r.js for generating full and minified files respectively.
+Oxml.js comes in different build files, which are following:
+* *oxml.min.js*: This is the minified file of complete oxml.js library.
+* *oxml.js*: This is non minified file of complete oxml.js library.
+* *oxml-xlsx-minimal.min.js*: This is the minified version minimal library of only xlsx. It use only creation of excel, without any styles.
+* *oxml-xlsx-minimal.min.js*: This is the complete minimal library of only xlsx. It use only creation of excel, without any styles.
+
+They all are available in distributions (dist) folder. This project is configured to build with require.js and almond.js, files for the same are kept in build folder. Use build-full.js and build-min.js configuration files with r.js for generating full and minified files respectively.
 
 ## License
 This project is licensed under MIT license. See [LICENSE](https://github.com/jiteshkumawat/oxml.js/blob/master/LICENSE) for more details.
