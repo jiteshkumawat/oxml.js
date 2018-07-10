@@ -33,7 +33,6 @@ Simple refer scripts file from dist folder and start working on workbook documen
 
 Oxml.js is simple to use and does not require background knowledge of Open XML. Refer [openxml.js examples](https://jiteshkumawat.github.io/oxml.js-examples/index.html)
 for detailed documentation and example of all the methods available in oxml.js.
-For more detailed examples on open-xlsx.js, refer examples repository [openxml.js examples](https://jiteshkumawat.github.io/oxml.js-examples/index.html).
 
 ## Builds
 
