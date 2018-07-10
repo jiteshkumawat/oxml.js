@@ -1,7 +1,7 @@
 define([], function () {
     'use strict';
 
-    var cellString = function (value, cellIndex) {
+    var cellString = function (value, cellIndex, rowIndex, columnIndex) {
         if (!value) {
             return '';
         }
@@ -11,14 +11,25 @@ define([], function () {
         } else if (value.type === 'sharedString') {
             return '<c r="' + cellIndex + '" t="s" ' + styleString + '><v>' + value.value + '</v></c>';
         } else if (value.type === "sharedFormula") {
-            if (value.formula) {
-                return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" ref="' + value.range + '" si="' + value.si + '">' + value.formula + '</f></c>';
+            var v = "";
+            if (value.value && typeof value.value === "function") {
+                v = '<v>' + value.value(rowIndex + 1, columnIndex + 1) + '</v>';
+            } else if (value.value !== undefined && value.value !== null) {
+                v = '<v>' + value.value + '</v>';
             }
-            return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" si="' + value.si + '"></f></c>';
+            if (value.formula) {
+                return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" ref="' + value.range + '" si="' + value.si + '">' + value.formula + '</f>' + v + '</c>';
+            }
+            return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" si="' + value.si + '"></f>' + v + '</c>';
         } else if (value.type === 'string') {
             return '<c r="' + cellIndex + '" t="inlineStr" ' + styleString + '><is><t>' + value.value + '</t></is></c>';
         } else if (value.type === 'formula') {
-            var v = (value.value !== null && value.value !== undefined) ? '<v>' + value.value + '</v>' : '';
+            var v = "";
+            if (value.value && typeof value.value === "function") {
+                v = '<v>' + value.value(rowIndex + 1, columnIndex + 1) + '</v>';
+            } else if (value.value !== undefined && value.value !== null) {
+                v = '<v>' + value.value + '</v>';
+            }
             return '<c r="' + cellIndex + '" ' + styleString + '><f>' + value.formula + '</f>' + v + '</c>';
         }
     };
@@ -35,7 +46,7 @@ define([], function () {
                         var columnChar = String.fromCharCode(65 + columnIndex);
                         var value = _sheet.values[rowIndex][columnIndex];
                         var cellIndex = columnChar + (rowIndex + 1);
-                        var cellStr = cellString(value, cellIndex);
+                        var cellStr = cellString(value, cellIndex, rowIndex, columnIndex);
                         sheetValues += cellStr;
                     }
 
@@ -309,6 +320,13 @@ define([], function () {
             return;
         }
 
+        var val;
+        if (typeof formula === "object" && !formula.length) {
+            if (formula.type !== "formula") return;
+            val = formula.value;
+            formula = formula.formula;
+        }
+
         var fromCellChar = fromCell.match(/\D+/)[0];
         var fromCellNum = fromCell.match(/\d+/)[0];
 
@@ -337,7 +355,8 @@ define([], function () {
             type: "sharedFormula",
             si: nextId,
             formula: formula,
-            range: fromCell + ":" + toCell
+            range: fromCell + ":" + toCell,
+            value: val
         };
         cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
         cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
@@ -354,7 +373,8 @@ define([], function () {
             for (columIndex++; columIndex <= toColumnIndex; columIndex++) {
                 _sheet.values[rowIndex - 1][columIndex] = {
                     type: "sharedFormula",
-                    si: nextId
+                    si: nextId,
+                    value: val
                 };
                 cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
                 cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
@@ -370,7 +390,8 @@ define([], function () {
 
                 _sheet.values[rowIndex - 1][columIndex] = {
                     type: "sharedFormula",
-                    si: nextId
+                    si: nextId,
+                    value: val
                 };
             }
         }
@@ -464,7 +485,7 @@ define([], function () {
             attach: function (file) {
                 attach(_sheet, file);
             },
-            updateSharedFormula: function (formula, fromCell, toCell, options) {
+            sharedFormula: function (fromCell, toCell, formula, options) {
                 return updateSharedFormula(_sheet, formula, fromCell, toCell, options);
             },
             cell: function (rowIndex, columnIndex, value, options) {
