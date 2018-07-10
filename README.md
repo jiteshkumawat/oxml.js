@@ -11,7 +11,7 @@ Open XML documents are just a ziped collection of XML files, thus only library r
 * [File Saver](https://github.com/eligrey/FileSaver.js/)
   *- But not required. oxml.js can work on modern browsers without File Saver. Please see browser supported section for more details.*
 
-## :floppy_disk: Installation
+## Installation
 
 Oxml.js can be installed by referring development js file, or minified js file in dist directory. This small library (~30KB) is based on javascript and require only dependency JSZip for creating compressed files. File Saver can help in achieving browser compatibility, however is not a required library.
 
