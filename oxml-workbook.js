@@ -34,7 +34,7 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles'], fu
         return '';
     };
 
-    var addSheet = function (_workBook, sheetName) {
+    var addSheet = function (_workBook, sheetName, xlsxContentTypes) {
         var lastSheetRel = getLastSheet(_workBook);
         var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
         sheetName = sheetName || "sheet" + nextSheetRelId;
@@ -43,7 +43,7 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles'], fu
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
             "sheets/sheet" + nextSheetRelId + ".xml");
         // Update Sheets
-        var sheet = oxmlSheet.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId, _workBook);
+        var sheet = oxmlSheet.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId, _workBook, xlsxContentTypes);
         _workBook.sheets.push(sheet);
         // Add Content Type
         _workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml", {
@@ -138,7 +138,7 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles'], fu
         _workBook._rels = oxmlRels.createRelation('workbook.xml.rels', "workbook/_rels");
 
         _workBook.addSheet = function (sheetName) {
-            return addSheet(_workBook, sheetName);
+            return addSheet(_workBook, sheetName, xlsxContentTypes);
         };
         _workBook.generateContent = function () {
             return generateContent(_workBook);

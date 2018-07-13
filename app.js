@@ -15,6 +15,7 @@ requirejs.config({
         oxml_xlsx_fill: 'styles/oxml-xlsx-fill',
         oxml_xlsx_border: 'styles/oxml-xlsx-border',
         oxml_xlsx_num_format: 'styles/oxml-xlsx-num-format',
+        oxml_table: 'oxml-table',
         utils: 'utils/utils'
     }
 });
@@ -55,6 +56,7 @@ requirejs(['fileSaver', 'oxml-xlsx'],
                     return sum;
                 }
             });
+            worksheet.table('Table1', 'C2', 'E6');
             workbook.download('tmp.xlsx');
         })();
     });

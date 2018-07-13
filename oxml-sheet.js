@@ -1,4 +1,4 @@
-define([], function () {
+define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
     'use strict';
 
     var cellString = function (value, cellIndex, rowIndex, columnIndex) {
@@ -34,7 +34,7 @@ define([], function () {
         }
     };
 
-    var generateContent = function (_sheet) {
+    var generateContent = function (_sheet, file) {
         var rowIndex = 0, sheetValues = '';
         if (_sheet.values && _sheet.values.length) {
             for (rowIndex = 0; rowIndex < _sheet.values.length; rowIndex++) {
@@ -54,13 +54,26 @@ define([], function () {
                 }
             }
         }
-        var sheet = '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + sheetValues + '</sheetData></worksheet>';
+        var tables = '';
+        if (_sheet.tables && _sheet.tables.length) {
+            tables += '<tableParts count="' + _sheet.tables.length + '">';
+            for (var index = 0; index < _sheet.tables.length; index++) {
+                tables += '<tablePart r:id="rId' + _sheet.tables[index].rid + '"/>';
+                if (file) _sheet.tables[index].attach(file);
+            }
+            tables += '</tableParts>';
+        }
+        var sheet = '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData>' +
+            sheetValues + '</sheetData>' + tables + '</worksheet>';
         return sheet;
     };
 
     var attach = function (_sheet, file) {
-        var content = generateContent(_sheet);
+        var content = generateContent(_sheet, file);
         file.addFile(content, "sheet" + _sheet.sheetId + ".xml", "workbook/sheets");
+        if (_sheet._rels) {
+            _sheet._rels.attach(file);
+        }
     };
 
     var sanitizeValue = function (value, _sheet) {
@@ -469,7 +482,44 @@ define([], function () {
         return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
     };
 
-    var createSheet = function (sheetName, sheetId, rId, workBook) {
+    var addTable = function (_sheet, xlsxContentTypes, tableName, fromCell, toCell) {
+        var titles = [];
+        var fromColumIndex = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
+        var fromRowIndex = parseInt(fromCell.match(/\d+/)[0], 10);
+        var toColumnIndex = toCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
+        var titleRow = _sheet.values[fromRowIndex - 1];
+        for (var index = fromColumIndex; index <= toColumnIndex; index++) {
+            titles.push(titleRow[index].value || '');
+        }
+
+        if (!_sheet._rels) {
+            _sheet._rels = oxmlRels.createRelation("sheet" + _sheet.sheetId + ".xml.rels", "workbook/sheets/_rels");
+        }
+        var relId = getNextRelation(_sheet);
+        _sheet._rels.addRelation("rId" + relId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
+            "../tables/table" + relId + ".xml");
+
+        xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml", {
+            PartName: "/workbook/tables/table" + relId + ".xml"
+        });
+
+        if (!_sheet.tables) _sheet.tables = [];
+        var table = oxmlTable.addTable(tableName, fromCell, toCell, titles, relId);
+        _sheet.tables.push(table);
+        return table;
+    };
+
+    var getNextRelation = function (_sheet) {
+        var lastSheetRel = {};
+        if (_sheet._rels.relations.length) {
+            lastSheetRel = _sheet._rels.relations[_sheet._rels.relations.length - 1];
+        }
+        var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
+        return nextSheetRelId;
+    };
+
+    var createSheet = function (sheetName, sheetId, rId, workBook, xlsxContentTypes) {
         var _sheet = {
             sheetName: sheetName,
             sheetId: sheetId,
@@ -520,6 +570,9 @@ define([], function () {
                 }
 
                 return cells(_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, true, false);
+            },
+            table: function (tableName, fromCell, toCell) {
+                addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell);
             },
             destroy: function () {
                 return destroy(_sheet);
