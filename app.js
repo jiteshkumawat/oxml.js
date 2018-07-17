@@ -57,12 +57,12 @@ requirejs(['fileSaver', 'oxml-xlsx'],
                 }
             });
             worksheet.table('Table1', 'C2', 'E6', {
-                filters: [
-                    { column: 1, values: [10], type: "custom", operator: "notEqual", and: true }
-                ]
-            }).set({
-                filters: [{ column: 2, value: 12 }]
-            });
+                sort: 1
+            }).set({sort: {
+                direction: "descending",
+                caseSensitive: false,
+                column: 2
+            }});
             workbook.download('tmp.xlsx');
         })();
     });
