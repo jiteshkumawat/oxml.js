@@ -56,9 +56,13 @@ requirejs(['fileSaver', 'oxml-xlsx'],
                     return sum;
                 }
             });
-            worksheet.table('Table1', 'C2', 'E6', { filters: [
-                {column: 1, values: [10, 11], type: "custom", operator: "notEqual", and: true}
-            ] });
+            worksheet.table('Table1', 'C2', 'E6', {
+                filters: [
+                    { column: 1, values: [10], type: "custom", operator: "notEqual", and: true }
+                ]
+            }).set({
+                filters: [{ column: 2, value: 12 }]
+            });
             workbook.download('tmp.xlsx');
         })();
     });

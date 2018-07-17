@@ -40,8 +40,8 @@ define([], function () {
     var applyOptions = function (options, _table, _sheet) {
         if (options) {
             if (options.filters) {
+                if (!_table.filters) _table.filters = [];
                 if (typeof options.filters === "object" && options.filters.length) {
-                    _table.filters = [];
                     for (var index = 0; index < options.filters.length; index++) {
                         var values;
                         if (options.filters[index].value) {
@@ -70,8 +70,6 @@ define([], function () {
                             values: values
                         });
                     }
-                } else {
-                    _table.filters = [];
                 }
             }
         }
@@ -137,6 +135,9 @@ define([], function () {
             },
             attach: function (file) {
                 attach(_table, file);
+            },
+            set: function (options) {
+                applyOptions(options, _table, _sheet);
             }
         };
     };
