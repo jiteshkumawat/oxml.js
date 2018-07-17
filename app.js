@@ -56,7 +56,9 @@ requirejs(['fileSaver', 'oxml-xlsx'],
                     return sum;
                 }
             });
-            worksheet.table('Table1', 'C2', 'E6');
+            worksheet.table('Table1', 'C2', 'E6', { filters: [
+                {column: 1, values: [10, 11], type: "custom", operator: "notEqual", and: true}
+            ] });
             workbook.download('tmp.xlsx');
         })();
     });

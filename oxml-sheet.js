@@ -39,7 +39,8 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
         if (_sheet.values && _sheet.values.length) {
             for (rowIndex = 0; rowIndex < _sheet.values.length; rowIndex++) {
                 if (_sheet.values[rowIndex] && _sheet.values[rowIndex].length > 0) {
-                    sheetValues += '<row r="' + (rowIndex + 1) + '">\n';
+                    var hidden = _sheet.values[rowIndex].hidden ? ' hidden="1" ' : '';
+                    sheetValues += '<row r="' + (rowIndex + 1) + '"' + hidden + '>\n';
 
                     var columnIndex = 0;
                     for (columnIndex = 0; columnIndex < _sheet.values[rowIndex].length; columnIndex++) {
@@ -482,7 +483,7 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
         return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
     };
 
-    var addTable = function (_sheet, xlsxContentTypes, tableName, fromCell, toCell) {
+    var addTable = function (_sheet, xlsxContentTypes, tableName, fromCell, toCell, options) {
         var titles = [];
         var fromColumIndex = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
         var fromRowIndex = parseInt(fromCell.match(/\d+/)[0], 10);
@@ -505,7 +506,7 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
         });
 
         if (!_sheet.tables) _sheet.tables = [];
-        var table = oxmlTable.addTable(tableName, fromCell, toCell, titles, relId);
+        var table = oxmlTable.addTable(tableName, fromCell, toCell, titles, relId, options, _sheet);
         _sheet.tables.push(table);
         return table;
     };
@@ -571,8 +572,8 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
 
                 return cells(_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, true, false);
             },
-            table: function (tableName, fromCell, toCell) {
-                addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell);
+            table: function (tableName, fromCell, toCell, options) {
+                addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell, options);
             },
             destroy: function () {
                 return destroy(_sheet);
