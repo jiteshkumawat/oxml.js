@@ -227,8 +227,10 @@ define(['utils'], function (utils) {
     };
 
     return {
+        createFill: createFill,
         generateContent: generateContent,
         getFillForCell: getFillForCell,
-        getFillForCells: getFillForCells
+        getFillForCells: getFillForCells,
+        generateSingleContent: getFillString
     };
 });

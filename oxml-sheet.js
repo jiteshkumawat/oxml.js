@@ -574,7 +574,7 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
             },
             table: function (tableName, fromCell, toCell, options) {
                 var _table = addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell, options);
-                return { set: _table.set };
+                return _table.tableOptions();
             },
             destroy: function () {
                 return destroy(_sheet);

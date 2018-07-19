@@ -33,7 +33,14 @@ define([], function () {
         tableContent += '<tableColumns count="' + _table.columns.length + '">';
         for (var index = 0; index < _table.columns.length; index++)
             tableContent += '<tableColumn name="' + _table.columns[index] + '" id="' + (index + 1) + '"/>';
-        tableContent += '</tableColumns>' + '</table>';
+        var tableStyle = '';
+        if (_table.tableStyle)
+            tableStyle = '<tableStyleInfo name="' + _table.tableStyle.name
+                + '" showColumnStripes="' + (_table.tableStyle.showColumnStripes ? '1' : '0')
+                + '" showRowStripes="' + (_table.tableStyle.showRowStripes ? '1' : '0') + '" showLastColumn="'
+                + (_table.tableStyle.showLastColumn ? '1' : '0') + '" showFirstColumn="'
+                + (_table.tableStyle.showFirstColumn ? '1' : '0') + '"/>';
+        tableContent += '</tableColumns>' + tableStyle + '</table>';
         return tableContent;
     };
 
@@ -150,6 +157,33 @@ define([], function () {
         }
     };
 
+    var style = function (options, tableStyleName, _sheet, _table) {
+        var _styles = _sheet._workBook.createStyles();
+        _styles.addTableStyle(options, tableStyleName);
+        _table.tableStyle = {
+            name: tableStyleName,
+            showColumnStripes: !!(options.evenColumn || options.oddColumn),
+            showRowStripes: !!(options.evenRow || options.oddRow),
+            showLastColumn: !!options.lastColumn,
+            showFirstColumn: !!options.firstColumn
+        };
+    };
+
+    var tableOptions = function (_table, _sheet, relId) {
+        return {
+            _table: _table,
+            set: function (options) {
+                applyOptions(options, _table, _sheet);
+                return tableOptions(_table, _sheet, relId);
+            },
+            style: function (options, tableStyleName) {
+                if (!tableStyleName) tableStyleName = 'customTableStyle' + relId;
+                style(options, tableStyleName, _sheet, _table);
+                return tableOptions(_table, _sheet, relId);
+            }
+        };
+    };
+
     var addTable = function (displayName, fromCell, toCell, columns, relId, options, _sheet) {
         var rowFrom = parseInt(fromCell.match(/\d+/)[0], 10);
         var rowTo = parseInt(toCell.match(/\d+/)[0], 10);
@@ -176,8 +210,8 @@ define([], function () {
             attach: function (file) {
                 attach(_table, file);
             },
-            set: function (options) {
-                applyOptions(options, _table, _sheet);
+            tableOptions: function () {
+                return tableOptions(_table, _sheet, relId);
             }
         };
     };

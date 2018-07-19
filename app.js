@@ -56,13 +56,40 @@ requirejs(['fileSaver', 'oxml-xlsx'],
                     return sum;
                 }
             });
-            worksheet.table('Table1', 'C2', 'E6', {
-                sort: 1
-            }).set({sort: {
-                direction: "descending",
-                caseSensitive: false,
-                column: 2
-            }});
+            worksheet.table('Table1', 'C2', 'E6').set({
+                sort: {
+                    direction: "descending",
+                    caseSensitive: false,
+                    column: 2
+                }
+            }).style({
+                bold: true,
+                fill: {
+                    backColor: '00ff00',
+                    pattern: 'solid'
+                },
+                firstRow: {
+                    fontColor: 'ffffff',
+                    fill: {
+                        backColor: '000000',
+                        pattern: 'solid'
+                    }
+                },
+                oddRow: {
+                    fontColor: '000000',
+                    fill: {
+                        backColor: 'cbcbcb',
+                        pattern: 'solid'
+                    }
+                },
+                evenRow: {
+                    fontColor: 'ffffff',
+                    fill: {
+                        backColor: '0000ff',
+                        pattern: 'solid'
+                    }
+                }
+            });
             workbook.download('tmp.xlsx');
         })();
     });

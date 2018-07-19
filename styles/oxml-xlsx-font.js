@@ -4,22 +4,27 @@ define(['utils'], function (utils) {
         stylesString += '<fonts count="' + _styles._fontsCount + '">';
         for (fontKey in _styles._fonts) {
             var font = JSON.parse(fontKey);
-            stylesString += '<font>';
-            stylesString += font.strike ? '<strike/>' : '';
-            stylesString += font.italic ? '<i/>' : '';
-            stylesString += font.bold ? '<b/>' : '';
-            stylesString += font.underline ? '<u/>' : '';
-            stylesString += font.size ? '<sz val="' + font.size + '"/>' : '';
-            stylesString += font.color ? '<color rgb="'
-                + font.color + '"/>' : '';
-            stylesString += font.name ? '<name val="' + font.name + '"/>' : '';
-            stylesString += font.family ? '<family val="'
-                + font.family + '"/>' : '';
-            stylesString += font.scheme ? '<scheme val="'
-                + font.scheme + '"/>' : '';
-            stylesString += '</font>';
+            stylesString += generateSingleContent(font);
         }
         stylesString += '</fonts>';
+        return stylesString;
+    };
+
+    var generateSingleContent = function (font) {
+        var stylesString = '<font>';
+        stylesString += font.strike ? '<strike/>' : '';
+        stylesString += font.italic ? '<i/>' : '';
+        stylesString += font.bold ? '<b/>' : '';
+        stylesString += font.underline ? '<u/>' : '';
+        stylesString += font.size ? '<sz val="' + font.size + '"/>' : '';
+        stylesString += font.color ? '<color rgb="'
+            + font.color + '"/>' : '';
+        stylesString += font.name ? '<name val="' + font.name + '"/>' : '';
+        stylesString += font.family ? '<family val="'
+            + font.family + '"/>' : '';
+        stylesString += font.scheme ? '<scheme val="'
+            + font.scheme + '"/>' : '';
+        stylesString += '</font>';
         return stylesString;
     };
 
@@ -174,8 +179,10 @@ define(['utils'], function (utils) {
     };
 
     return {
+        createFont: createFont,
         getFontForCell: getFontForCell,
         getFontForCells: getFontForCells,
-        generateContent: generateContent
+        generateContent: generateContent,
+        generateSingleContent: generateSingleContent
     };
 });

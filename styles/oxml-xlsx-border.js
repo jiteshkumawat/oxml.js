@@ -16,18 +16,23 @@ define(['utils'], function (utils) {
         for (borderKey in _styles._borders) {
             var border = JSON.parse(borderKey);
             if (border) {
-                stylesString += '<border>';
-                stylesString += getBorderString(border.left, 'left');
-                stylesString += getBorderString(border.right, 'right');
-                stylesString += getBorderString(border.top, 'top');
-                stylesString += getBorderString(border.bottom, 'bottom');
-                stylesString += getBorderString(border.diagonal, 'diagonal');
-                stylesString += '</border>';
+                stylesString += generateSingleContent(border);
             } else {
                 stylesString += '<border />';
             }
         }
         stylesString += '</borders>';
+        return stylesString;
+    };
+
+    var generateSingleContent = function (border) {
+        var stylesString = '<border>';
+        stylesString += getBorderString(border.left, 'left');
+        stylesString += getBorderString(border.right, 'right');
+        stylesString += getBorderString(border.top, 'top');
+        stylesString += getBorderString(border.bottom, 'bottom');
+        stylesString += getBorderString(border.diagonal, 'diagonal');
+        stylesString += '</border>';
         return stylesString;
     };
 
@@ -190,8 +195,10 @@ define(['utils'], function (utils) {
     };
 
     return {
+        createBorder: createBorder,
         getBorderForCell: getBorderForCell,
         getBorderForCells: getBorderForCells,
-        generateContent: generateContent
+        generateContent: generateContent,
+        generateSingleContent: generateSingleContent
     };
 });

@@ -32,12 +32,116 @@ define(['utils',
                     + '" ' + numFormatString
                     + borderString + fillString + ' />';
             }
-            stylesString += '</cellXfs></styleSheet>';
+            var tableStyles = '';
+            if (_styles.tableStyles && _styles.tableStyles.length) tableStyles = generateTableContent(_styles);
+            stylesString += '</cellXfs>' + tableStyles + '</styleSheet>';
             return stylesString;
         };
 
+        var generateTableContent = function (_styles) {
+            var dxfsCount = 0, tableStyles = '', tableStylesCount = 0, tableStyleCount;
+            for (var index = 0; index < _styles.tableStyles.length; index++) {
+                var dxfString = '', individualTalbeStyle;
+                dxfsCount++;
+                tableStylesCount++;
+                tableStyleCount = 1;
+                dxfString += generateDxfContent(_styles.tableStyles[index]);
+                individualTalbeStyle = '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="wholeTable"/>';
+                if (_styles.tableStyles[index].evenColumn) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="secondColumnStripe"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].evenColumn);
+                }
+                if (_styles.tableStyles[index].oddColumn) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstColumnStripe"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].oddColumn);
+                }
+                if (_styles.tableStyles[index].evenRow) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="secondRowStripe"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].evenRow);
+                }
+                if (_styles.tableStyles[index].oddRow) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstRowStripe"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].oddRow);
+                }
+                if (_styles.tableStyles[index].firstColumn) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstColumn"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].firstColumn);
+                }
+                if (_styles.tableStyles[index].lastColumn) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="lastColumn"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].lastColumn);
+                }
+                if (_styles.tableStyles[index].firstRow) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="headerRow"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].firstRow);
+                }
+                if (_styles.tableStyles[index].lastRow) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="totalRow"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].lastRow);
+                }
+                if (_styles.tableStyles[index].firstRowFirstCell) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstHeaderCell"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].firstRowFirstCell);
+                }
+                if (_styles.tableStyles[index].firstRowLastCell) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="lastHeaderCell"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].firstRowLastCell);
+                }
+                if (_styles.tableStyles[index].lastRowFirstCell) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstTotalCell"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].lastRowFirstCell);
+                }
+                if (_styles.tableStyles[index].lastRowLastCell) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="lastTotalCell"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].lastRowLastCell);
+                }
+                tableStyles += '<tableStyle count="' + tableStyleCount + '" name="' + _styles.tableStyles[index].name + '">' + individualTalbeStyle + '</tableStyle>';
+            }
+            tableStyles = '<tableStyles count="' + tableStylesCount + '">' + tableStyles + '</tableStyles>';
+            dxfString = '<dxfs count="' + dxfsCount + '">' + dxfString + '</dxfs>' + tableStyles;
+            return dxfString;
+        };
+
+        var generateDxfContent = function (style) {
+            dxfString = '<dxf>';
+            if (style.font) {
+                dxfString += oxmlXlsxFont.generateSingleContent(style.font);
+            }
+            if (style.fill) {
+                dxfString += oxmlXlsxFill.generateSingleContent(style.fill);
+            }
+            if (style.border) {
+                dxfString += oxmlXlsxBorder.generateSingleContent(style.border);
+            }
+            dxfString += '</dxf>';
+            return dxfString;
+        };
+
         var attach = function (file, _styles) {
-            // Add REL
             var styles = generateContent(_styles);
             file.addFile(styles, _styles.fileName, "workbook");
         };
@@ -204,6 +308,34 @@ define(['utils',
             }
         };
 
+        var addTableStyle = function (options, tableStyleName, _styles) {
+            if (!_styles.tableStyles) _styles.tableStyles = [];
+            var tableStyle = prepareTableStyleObj(options);
+            tableStyle.name = tableStyleName;
+            if (options.evenColumn) tableStyle.evenColumn = prepareTableStyleObj(options.evenColumn);
+            if (options.oddColumn) tableStyle.oddColumn = prepareTableStyleObj(options.oddColumn);
+            if (options.evenRow) tableStyle.evenRow = prepareTableStyleObj(options.evenRow);
+            if (options.oddRow) tableStyle.oddRow = prepareTableStyleObj(options.oddRow);
+            if (options.firstColumn) tableStyle.firstColumn = prepareTableStyleObj(options.firstColumn);
+            if (options.lastColumn) tableStyle.lastColumn = prepareTableStyleObj(options.lastColumn);
+            if (options.firstRow) tableStyle.firstRow = prepareTableStyleObj(options.firstRow);
+            if (options.lastRow) tableStyle.lastRow = prepareTableStyleObj(options.lastRow);
+            if (options.firstRowFirstCell) tableStyle.firstRowFirstCell = prepareTableStyleObj(options.firstRowFirstCell);
+            if (options.firstRowLastCell) tableStyle.firstRowLastCell = prepareTableStyleObj(options.firstRowLastCell);
+            if (options.lastRowFirstCell) tableStyle.lastRowFirstCell = prepareTableStyleObj(options.lastRowFirstCell);
+            if (options.lastRowLastCell) tableStyle.lastRowLastCell = prepareTableStyleObj(options.lastRowLastCell);
+            _styles.tableStyles.push(tableStyle);
+            return tableStyle;
+        };
+
+        var prepareTableStyleObj = function (options) {
+            var tableStyle = {};
+            tableStyle.font = oxmlXlsxFont.createFont(options);
+            tableStyle.fill = oxmlXlsxFill.createFill(options);
+            tableStyle.border = oxmlXlsxBorder.createBorder(options);
+            return tableStyle;
+        };
+
         return {
             createStyle: function (_workbook, _rel, _contentType) {
                 var sheetId = createStyleParts(_workbook, _rel, _contentType);
@@ -248,6 +380,9 @@ define(['utils',
                     },
                     addStyles: function (options) {
                         return addStyles(options, _styles);
+                    },
+                    addTableStyle: function (options, tableStyleName) {
+                        return addTableStyle(options, tableStyleName, _styles);
                     }
                 };
             }
