@@ -1,5 +1,9 @@
 (function (root, factory) {
-        root.oxml = factory();
+        if (typeof define === 'function' && define.amd) {
+                define([], factory);
+        } else {
+                root.oxml = factory();
+        }
 }(this, function () {
 
 

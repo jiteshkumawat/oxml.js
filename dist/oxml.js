@@ -11,7 +11,7 @@ define('fileHandler',[], function () {
     "use strict";
 
     var createCompressedFile = function () {
-        if (!window.JSZip) {
+        if (!window && !window.JSZip) {
             return;
         }
         var zip = new JSZip();
