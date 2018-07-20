@@ -52,8 +52,7 @@ define('fileHandler',[], function () {
                                 resolve();
                             });
                         }
-                    }
-                    catch (err){
+                    } catch (err) {
                         if (callback) {
                             callback("Err: Not able to create file object.");
                         } else if (typeof Promise !== "undefined") {
@@ -70,7 +69,7 @@ define('fileHandler',[], function () {
 
     return {
         createFile: createCompressedFile
-    }
+    };
 });
 define('oxml_rels',[], function () {
     'use strict';
@@ -109,7 +108,7 @@ define('oxml_rels',[], function () {
         delete _rels.generateContent;
         _rels.attach = null;
         delete _rels.attach;
-    }
+    };
 
     // Create Relation
     var createRelation = function (fileName, folderName) {
@@ -129,12 +128,11 @@ define('oxml_rels',[], function () {
         };
         _rels.destroy = function () {
             destroy(_rels);
-        }
+        };
         return _rels;
     };
 
     return { createRelation: createRelation };
-
 });
 define('oxml_content_types',[], function () {
     'use strict';
@@ -206,9 +204,228 @@ define('oxml_content_types',[], function () {
     return {
         createContentType: createContentType
     };
-
 });
-define('oxml_sheet',[], function () {
+define('oxml_table',[], function () {
+    var generateContent = function (_table) {
+        var tableContent = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><table totalsRowShown="0" ref="' + _table.fromCell +
+            ':' + _table.toCell + '" displayName="' + _table.displayName + '" name="' + _table.displayName +
+            '" id="' + _table.rid + '" xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+        if (_table.filters) {
+            tableContent += '<autoFilter ref="' + _table.fromCell +
+                ':' + _table.toCell + '">';
+            for (var index = 0; index < _table.filters.length; index++) {
+                tableContent += '<filterColumn colId="' + _table.filters[index].column + '">';
+                if (_table.filters[index].values[0].type === "default") {
+                    tableContent += '<filters>';
+                    for (var index2 = 0; index2 < _table.filters[index].values.length; index2++) {
+                        tableContent += '<filter val="' + _table.filters[index].values[index2].value + '"/>';
+                    }
+                    tableContent += '</filters>';
+                } else if (_table.filters[index].values[0].type === "custom") {
+                    tableContent += '<customFilters and="' + (_table.filters[index].values[0].and ? '1' : '0') + '">';
+                    for (var index2 = 0; index2 < _table.filters[index].values.length; index2++) {
+                        tableContent += '<customFilter operator="' + _table.filters[index].values[index2].operator + '" val="' + _table.filters[index].values[index2].value + '"/>';
+                    }
+                    tableContent += '</customFilters>';
+                }
+                tableContent += '</filterColumn>';
+            }
+            tableContent += '</autoFilter>';
+        }
+        if (_table.sort) {
+            tableContent += '<sortState caseSensitive="' + (_table.sort.caseSensitive ? '1' : '0') + '" ref="' + _table.sort.dataRange + '">';
+            tableContent += '<sortCondition' + (_table.sort.direction === "ascending" ? "" : ' descending="1"') + ' ref="' + _table.sort.range + '"/>';
+            tableContent += '</sortState>';
+        }
+        tableContent += '<tableColumns count="' + _table.columns.length + '">';
+        for (var index = 0; index < _table.columns.length; index++)
+            tableContent += '<tableColumn name="' + _table.columns[index] + '" id="' + (index + 1) + '"/>';
+        var tableStyle = '';
+        if (_table.tableStyle)
+            tableStyle = '<tableStyleInfo name="' + _table.tableStyle.name
+                + '" showColumnStripes="' + (_table.tableStyle.showColumnStripes ? '1' : '0')
+                + '" showRowStripes="' + (_table.tableStyle.showRowStripes ? '1' : '0') + '" showLastColumn="'
+                + (_table.tableStyle.showLastColumn ? '1' : '0') + '" showFirstColumn="'
+                + (_table.tableStyle.showFirstColumn ? '1' : '0') + '"/>';
+        tableContent += '</tableColumns>' + tableStyle + '</table>';
+        return tableContent;
+    };
+
+    var attach = function (_table, file) {
+        var content = generateContent(_table);
+        file.addFile(content, "table" + _table.rid + ".xml", "workbook/tables");
+    };
+
+    var applyFilter = function (options, _table, _sheet) {
+        if (!_table.filters) _table.filters = [];
+        if (typeof options.filters === "object" && options.filters.length) {
+            for (var index = 0; index < options.filters.length; index++) {
+                var values;
+                if (options.filters[index].value) {
+                    values = [];
+                    values.push({
+                        value: options.filters[index].value,
+                        type: options.filters[index].type || "default",
+                        operator: options.filters[index].operator || null,
+                        and: options.filters[index].and !== false
+                    });
+                    hideRows(_sheet, options.filters[index].column - 1, [options.filters[index].value], _table.fromCell, _table.toCell, options.filters[index].operator);
+                } else if (options.filters[index].values && typeof options.filters[index].values === "object" && options.filters[index].values.length) {
+                    values = [];
+                    for (var index2 = 0; index2 < options.filters[index].values.length; index2++) {
+                        values.push({
+                            value: options.filters[index].values[index2],
+                            type: options.filters[index].type || "default",
+                            operator: options.filters[index].operator || null,
+                            and: options.filters[index].and !== false
+                        });
+                    }
+                    hideRows(_sheet, options.filters[index].column - 1, options.filters[index].values, _table.fromCell, _table.toCell, options.filters[index].operator);
+                }
+                _table.filters.push({
+                    column: options.filters[index].column - 1,
+                    values: values
+                });
+            }
+        }
+    };
+
+    var applySort = function (options, _table) {
+        var sort = {};
+        var columnFrom = _table.fromColumn - 1;
+        var columnTo = _table.toColumn - 1;
+        var rowFrom = _table.fromRow;
+        var rowTo = _table.toRow;
+        if (typeof options.sort === "number") {
+            columnFrom = String.fromCharCode(options.sort + columnFrom + 64);
+            sort.direction = "ascending";
+            sort.caseSensitive = true;
+        } else if (typeof options.sort === "object" && !options.sort.length && options.sort.column) {
+            columnFrom = String.fromCharCode(options.sort.column + columnFrom + 64);
+            sort.direction = options.sort.direction || "ascending";
+            sort.caseSensitive = options.sort.caseSensitive !== undefined ? options.sort.caseSensitive : true;
+        }
+        sort.range = columnFrom + (rowFrom + 1) + ":" + columnFrom + rowTo;
+        sort.dataRange = String.fromCharCode(_table.fromColumn + 64) + (rowFrom + 1) + ":" + String.fromCharCode(columnTo + 65) + rowTo;
+        _table.sort = sort;
+    };
+
+    var applyOptions = function (options, _table, _sheet) {
+        if (options) {
+            if (options.filters) {
+                applyFilter(options, _table, _sheet);
+            }
+            if (options.sort) {
+                applySort(options, _table);
+            }
+        }
+    };
+
+    var hideRows = function (_sheet, column, values, fromCell, toCell, operator) {
+        var rowFrom = parseInt(fromCell.match(/\d+/)[0], 10);
+        var rowTo = parseInt(toCell.match(/\d+/)[0], 10);
+        var columnFrom = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
+        column += columnFrom;
+        for (var index = rowFrom; index < rowTo; index++) {
+            var isHidden = false;
+            if (_sheet.values[index]) {
+                if (operator && (operator === "greaterThan" || operator === "greaterThanOrEqual" || operator === "lessThan" || operator === "lessThanOrEqual")) {
+                    isHidden = true;
+                    for (var index2 = 0; index2 < values.length; index2++) {
+                        switch (operator) {
+                            case "greaterThan":
+                                if (_sheet.values[index][column].value > values[index2])
+                                    isHidden = false;
+                                break;
+                            case "greaterThanOrEqual":
+                                if (_sheet.values[index][column].value >= values[index2])
+                                    isHidden = false;
+                                break;
+                            case "lessThan":
+                                if (_sheet.values[index][column].value >= values[index2])
+                                    isHidden = false;
+                                break;
+                            case "lessThanOrEqual":
+                                if (_sheet.values[index][column].value >= values[index2])
+                                    isHidden = false;
+                                break;
+                        };
+                        if (!isHidden) break;
+                    }
+                } else if (operator === "notEqual") {
+                    isHidden = values.indexOf(_sheet.values[index][column].value) > -1;
+                } else {
+                    isHidden = !(values.indexOf(_sheet.values[index][column].value) > -1);
+                }
+            }
+            if (isHidden) {
+                _sheet.values[index].hidden = true;
+            }
+        }
+    };
+
+    var style = function (options, tableStyleName, _sheet, _table) {
+        var _styles = _sheet._workBook.createStyles();
+        _styles.addTableStyle(options, tableStyleName);
+        _table.tableStyle = {
+            name: tableStyleName,
+            showColumnStripes: !!(options.evenColumn || options.oddColumn),
+            showRowStripes: !!(options.evenRow || options.oddRow),
+            showLastColumn: !!options.lastColumn,
+            showFirstColumn: !!options.firstColumn
+        };
+    };
+
+    var tableOptions = function (_table, _sheet, relId) {
+        return {
+            _table: _table,
+            set: function (options) {
+                applyOptions(options, _table, _sheet);
+                return tableOptions(_table, _sheet, relId);
+            },
+            style: function (options, tableStyleName) {
+                if (!tableStyleName) tableStyleName = 'customTableStyle' + relId;
+                style(options, tableStyleName, _sheet, _table);
+                return tableOptions(_table, _sheet, relId);
+            }
+        };
+    };
+
+    var addTable = function (displayName, fromCell, toCell, columns, relId, options, _sheet) {
+        var rowFrom = parseInt(fromCell.match(/\d+/)[0], 10);
+        var rowTo = parseInt(toCell.match(/\d+/)[0], 10);
+        var columnFrom = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 64;
+        var columnTo = toCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 64;
+        var _table = {
+            rid: relId,
+            displayName: displayName,
+            columns: columns,
+            fromCell: fromCell,
+            toCell: toCell,
+            fromRow: rowFrom,
+            toRow: rowTo,
+            fromColumn: columnFrom,
+            toColumn: columnTo
+        };
+        applyOptions(options, _table, _sheet);
+        return {
+            _table: _table,
+            rid: relId,
+            generateContent: function () {
+                generateContent(_table);
+            },
+            attach: function (file) {
+                attach(_table, file);
+            },
+            tableOptions: function () {
+                return tableOptions(_table, _sheet, relId);
+            }
+        };
+    };
+
+    return { addTable: addTable };
+});
+define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
     'use strict';
 
     var cellString = function (value, cellIndex, rowIndex, columnIndex) {
@@ -244,12 +461,13 @@ define('oxml_sheet',[], function () {
         }
     };
 
-    var generateContent = function (_sheet) {
+    var generateContent = function (_sheet, file) {
         var rowIndex = 0, sheetValues = '';
         if (_sheet.values && _sheet.values.length) {
             for (rowIndex = 0; rowIndex < _sheet.values.length; rowIndex++) {
                 if (_sheet.values[rowIndex] && _sheet.values[rowIndex].length > 0) {
-                    sheetValues += '<row r="' + (rowIndex + 1) + '">\n';
+                    var hidden = _sheet.values[rowIndex].hidden ? ' hidden="1" ' : '';
+                    sheetValues += '<row r="' + (rowIndex + 1) + '"' + hidden + '>\n';
 
                     var columnIndex = 0;
                     for (columnIndex = 0; columnIndex < _sheet.values[rowIndex].length; columnIndex++) {
@@ -264,13 +482,26 @@ define('oxml_sheet',[], function () {
                 }
             }
         }
-        var sheet = '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + sheetValues + '</sheetData></worksheet>';
+        var tables = '';
+        if (_sheet.tables && _sheet.tables.length) {
+            tables += '<tableParts count="' + _sheet.tables.length + '">';
+            for (var index = 0; index < _sheet.tables.length; index++) {
+                tables += '<tablePart r:id="rId' + _sheet.tables[index].rid + '"/>';
+                if (file) _sheet.tables[index].attach(file);
+            }
+            tables += '</tableParts>';
+        }
+        var sheet = '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData>' +
+            sheetValues + '</sheetData>' + tables + '</worksheet>';
         return sheet;
     };
 
     var attach = function (_sheet, file) {
-        var content = generateContent(_sheet);
+        var content = generateContent(_sheet, file);
         file.addFile(content, "sheet" + _sheet.sheetId + ".xml", "workbook/sheets");
+        if (_sheet._rels) {
+            _sheet._rels.attach(file);
+        }
     };
 
     var sanitizeValue = function (value, _sheet) {
@@ -679,7 +910,44 @@ define('oxml_sheet',[], function () {
         return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
     };
 
-    var createSheet = function (sheetName, sheetId, rId, workBook) {
+    var addTable = function (_sheet, xlsxContentTypes, tableName, fromCell, toCell, options) {
+        var titles = [];
+        var fromColumIndex = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
+        var fromRowIndex = parseInt(fromCell.match(/\d+/)[0], 10);
+        var toColumnIndex = toCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
+        var titleRow = _sheet.values[fromRowIndex - 1];
+        for (var index = fromColumIndex; index <= toColumnIndex; index++) {
+            titles.push(titleRow[index].value || '');
+        }
+
+        if (!_sheet._rels) {
+            _sheet._rels = oxmlRels.createRelation("sheet" + _sheet.sheetId + ".xml.rels", "workbook/sheets/_rels");
+        }
+        var relId = getNextRelation(_sheet);
+        _sheet._rels.addRelation("rId" + relId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
+            "../tables/table" + relId + ".xml");
+
+        xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml", {
+            PartName: "/workbook/tables/table" + relId + ".xml"
+        });
+
+        if (!_sheet.tables) _sheet.tables = [];
+        var table = oxmlTable.addTable(tableName, fromCell, toCell, titles, relId, options, _sheet);
+        _sheet.tables.push(table);
+        return table;
+    };
+
+    var getNextRelation = function (_sheet) {
+        var lastSheetRel = {};
+        if (_sheet._rels.relations.length) {
+            lastSheetRel = _sheet._rels.relations[_sheet._rels.relations.length - 1];
+        }
+        var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
+        return nextSheetRelId;
+    };
+
+    var createSheet = function (sheetName, sheetId, rId, workBook, xlsxContentTypes) {
         var _sheet = {
             sheetName: sheetName,
             sheetId: sheetId,
@@ -731,6 +999,10 @@ define('oxml_sheet',[], function () {
 
                 return cells(_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, true, false);
             },
+            table: function (tableName, fromCell, toCell, options) {
+                var _table = addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell, options);
+                return _table.tableOptions();
+            },
             destroy: function () {
                 return destroy(_sheet);
             }
@@ -740,18 +1012,18 @@ define('oxml_sheet',[], function () {
     return { createSheet: createSheet };
 });
 define('utils',[], function () {
-    sortObject = function(obj) {
-        if(typeof obj !== 'object' || obj.length)
-            return obj
+    sortObject = function (obj) {
+        if (typeof obj !== 'object' || obj.length)
+            return obj;
         var temp = {};
         var keys = [];
-        for(var key in obj)
+        for (var key in obj)
             keys.push(key);
         keys.sort();
-        for(var index in keys)
-            temp[keys[index]] = sortObject(obj[keys[index]]);       
+        for (var index in keys)
+            temp[keys[index]] = sortObject(obj[keys[index]]);
         return temp;
-    }
+    };
 
     var stringify = function (obj) {
         return JSON.stringify(sortObject(obj));
@@ -767,22 +1039,27 @@ define('oxml_xlsx_font',['utils'], function (utils) {
         stylesString += '<fonts count="' + _styles._fontsCount + '">';
         for (fontKey in _styles._fonts) {
             var font = JSON.parse(fontKey);
-            stylesString += '<font>';
-            stylesString += font.strike ? '<strike/>' : '';
-            stylesString += font.italic ? '<i/>' : '';
-            stylesString += font.bold ? '<b/>' : '';
-            stylesString += font.underline ? '<u/>' : '';
-            stylesString += font.size ? '<sz val="' + font.size + '"/>' : '';
-            stylesString += font.color ? '<color rgb="'
-                + font.color + '"/>' : '';
-            stylesString += font.name ? '<name val="' + font.name + '"/>' : '';
-            stylesString += font.family ? '<family val="'
-                + font.family + '"/>' : '';
-            stylesString += font.scheme ? '<scheme val="'
-                + font.scheme + '"/>' : '';
-            stylesString += '</font>';
+            stylesString += generateSingleContent(font);
         }
         stylesString += '</fonts>';
+        return stylesString;
+    };
+
+    var generateSingleContent = function (font) {
+        var stylesString = '<font>';
+        stylesString += font.strike ? '<strike/>' : '';
+        stylesString += font.italic ? '<i/>' : '';
+        stylesString += font.bold ? '<b/>' : '';
+        stylesString += font.underline ? '<u/>' : '';
+        stylesString += font.size ? '<sz val="' + font.size + '"/>' : '';
+        stylesString += font.color ? '<color rgb="'
+            + font.color + '"/>' : '';
+        stylesString += font.name ? '<name val="' + font.name + '"/>' : '';
+        stylesString += font.family ? '<family val="'
+            + font.family + '"/>' : '';
+        stylesString += font.scheme ? '<scheme val="'
+            + font.scheme + '"/>' : '';
+        stylesString += '</font>';
         return stylesString;
     };
 
@@ -937,9 +1214,11 @@ define('oxml_xlsx_font',['utils'], function (utils) {
     };
 
     return {
+        createFont: createFont,
         getFontForCell: getFontForCell,
         getFontForCells: getFontForCells,
-        generateContent: generateContent
+        generateContent: generateContent,
+        generateSingleContent: generateSingleContent
     };
 });
 define('oxml_xlsx_num_format',['utils'], function (utils) {
@@ -1102,18 +1381,23 @@ define('oxml_xlsx_border',['utils'], function (utils) {
         for (borderKey in _styles._borders) {
             var border = JSON.parse(borderKey);
             if (border) {
-                stylesString += '<border>';
-                stylesString += getBorderString(border.left, 'left');
-                stylesString += getBorderString(border.right, 'right');
-                stylesString += getBorderString(border.top, 'top');
-                stylesString += getBorderString(border.bottom, 'bottom');
-                stylesString += getBorderString(border.diagonal, 'diagonal');
-                stylesString += '</border>';
+                stylesString += generateSingleContent(border);
             } else {
                 stylesString += '<border />';
             }
         }
         stylesString += '</borders>';
+        return stylesString;
+    };
+
+    var generateSingleContent = function (border) {
+        var stylesString = '<border>';
+        stylesString += getBorderString(border.left, 'left');
+        stylesString += getBorderString(border.right, 'right');
+        stylesString += getBorderString(border.top, 'top');
+        stylesString += getBorderString(border.bottom, 'bottom');
+        stylesString += getBorderString(border.diagonal, 'diagonal');
+        stylesString += '</border>';
         return stylesString;
     };
 
@@ -1276,9 +1560,11 @@ define('oxml_xlsx_border',['utils'], function (utils) {
     };
 
     return {
+        createBorder: createBorder,
         getBorderForCell: getBorderForCell,
         getBorderForCells: getBorderForCells,
-        generateContent: generateContent
+        generateContent: generateContent,
+        generateSingleContent: generateSingleContent
     };
 });
 define('oxml_xlsx_fill',['utils'], function (utils) {
@@ -1510,9 +1796,11 @@ define('oxml_xlsx_fill',['utils'], function (utils) {
     };
 
     return {
+        createFill: createFill,
         generateContent: generateContent,
         getFillForCell: getFillForCell,
-        getFillForCells: getFillForCells
+        getFillForCells: getFillForCells,
+        generateSingleContent: getFillString
     };
 });
 define('oxml_xlsx_styles',['utils',
@@ -1549,12 +1837,116 @@ define('oxml_xlsx_styles',['utils',
                     + '" ' + numFormatString
                     + borderString + fillString + ' />';
             }
-            stylesString += '</cellXfs></styleSheet>';
+            var tableStyles = '';
+            if (_styles.tableStyles && _styles.tableStyles.length) tableStyles = generateTableContent(_styles);
+            stylesString += '</cellXfs>' + tableStyles + '</styleSheet>';
             return stylesString;
         };
 
+        var generateTableContent = function (_styles) {
+            var dxfsCount = 0, tableStyles = '', tableStylesCount = 0, tableStyleCount;
+            for (var index = 0; index < _styles.tableStyles.length; index++) {
+                var dxfString = '', individualTalbeStyle;
+                dxfsCount++;
+                tableStylesCount++;
+                tableStyleCount = 1;
+                dxfString += generateDxfContent(_styles.tableStyles[index]);
+                individualTalbeStyle = '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="wholeTable"/>';
+                if (_styles.tableStyles[index].evenColumn) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="secondColumnStripe"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].evenColumn);
+                }
+                if (_styles.tableStyles[index].oddColumn) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstColumnStripe"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].oddColumn);
+                }
+                if (_styles.tableStyles[index].evenRow) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="secondRowStripe"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].evenRow);
+                }
+                if (_styles.tableStyles[index].oddRow) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstRowStripe"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].oddRow);
+                }
+                if (_styles.tableStyles[index].firstColumn) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstColumn"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].firstColumn);
+                }
+                if (_styles.tableStyles[index].lastColumn) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="lastColumn"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].lastColumn);
+                }
+                if (_styles.tableStyles[index].firstRow) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="headerRow"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].firstRow);
+                }
+                if (_styles.tableStyles[index].lastRow) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="totalRow"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].lastRow);
+                }
+                if (_styles.tableStyles[index].firstRowFirstCell) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstHeaderCell"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].firstRowFirstCell);
+                }
+                if (_styles.tableStyles[index].firstRowLastCell) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="lastHeaderCell"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].firstRowLastCell);
+                }
+                if (_styles.tableStyles[index].lastRowFirstCell) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="firstTotalCell"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].lastRowFirstCell);
+                }
+                if (_styles.tableStyles[index].lastRowLastCell) {
+                    dxfsCount++;
+                    tableStyleCount++;
+                    individualTalbeStyle += '<tableStyleElement dxfId="' + (dxfsCount - 1) + '" type="lastTotalCell"/>';
+                    dxfString += generateDxfContent(_styles.tableStyles[index].lastRowLastCell);
+                }
+                tableStyles += '<tableStyle count="' + tableStyleCount + '" name="' + _styles.tableStyles[index].name + '">' + individualTalbeStyle + '</tableStyle>';
+            }
+            tableStyles = '<tableStyles count="' + tableStylesCount + '">' + tableStyles + '</tableStyles>';
+            dxfString = '<dxfs count="' + dxfsCount + '">' + dxfString + '</dxfs>' + tableStyles;
+            return dxfString;
+        };
+
+        var generateDxfContent = function (style) {
+            dxfString = '<dxf>';
+            if (style.font) {
+                dxfString += oxmlXlsxFont.generateSingleContent(style.font);
+            }
+            if (style.fill) {
+                dxfString += oxmlXlsxFill.generateSingleContent(style.fill);
+            }
+            if (style.border) {
+                dxfString += oxmlXlsxBorder.generateSingleContent(style.border);
+            }
+            dxfString += '</dxf>';
+            return dxfString;
+        };
+
         var attach = function (file, _styles) {
-            // Add REL
             var styles = generateContent(_styles);
             file.addFile(styles, _styles.fileName, "workbook");
         };
@@ -1721,6 +2113,34 @@ define('oxml_xlsx_styles',['utils',
             }
         };
 
+        var addTableStyle = function (options, tableStyleName, _styles) {
+            if (!_styles.tableStyles) _styles.tableStyles = [];
+            var tableStyle = prepareTableStyleObj(options);
+            tableStyle.name = tableStyleName;
+            if (options.evenColumn) tableStyle.evenColumn = prepareTableStyleObj(options.evenColumn);
+            if (options.oddColumn) tableStyle.oddColumn = prepareTableStyleObj(options.oddColumn);
+            if (options.evenRow) tableStyle.evenRow = prepareTableStyleObj(options.evenRow);
+            if (options.oddRow) tableStyle.oddRow = prepareTableStyleObj(options.oddRow);
+            if (options.firstColumn) tableStyle.firstColumn = prepareTableStyleObj(options.firstColumn);
+            if (options.lastColumn) tableStyle.lastColumn = prepareTableStyleObj(options.lastColumn);
+            if (options.firstRow) tableStyle.firstRow = prepareTableStyleObj(options.firstRow);
+            if (options.lastRow) tableStyle.lastRow = prepareTableStyleObj(options.lastRow);
+            if (options.firstRowFirstCell) tableStyle.firstRowFirstCell = prepareTableStyleObj(options.firstRowFirstCell);
+            if (options.firstRowLastCell) tableStyle.firstRowLastCell = prepareTableStyleObj(options.firstRowLastCell);
+            if (options.lastRowFirstCell) tableStyle.lastRowFirstCell = prepareTableStyleObj(options.lastRowFirstCell);
+            if (options.lastRowLastCell) tableStyle.lastRowLastCell = prepareTableStyleObj(options.lastRowLastCell);
+            _styles.tableStyles.push(tableStyle);
+            return tableStyle;
+        };
+
+        var prepareTableStyleObj = function (options) {
+            var tableStyle = {};
+            tableStyle.font = oxmlXlsxFont.createFont(options);
+            tableStyle.fill = oxmlXlsxFill.createFill(options);
+            tableStyle.border = oxmlXlsxBorder.createBorder(options);
+            return tableStyle;
+        };
+
         return {
             createStyle: function (_workbook, _rel, _contentType) {
                 var sheetId = createStyleParts(_workbook, _rel, _contentType);
@@ -1765,6 +2185,9 @@ define('oxml_xlsx_styles',['utils',
                     },
                     addStyles: function (options) {
                         return addStyles(options, _styles);
+                    },
+                    addTableStyle: function (options, tableStyleName) {
+                        return addTableStyle(options, tableStyleName, _styles);
                     }
                 };
             }
@@ -1806,7 +2229,7 @@ define('oxml_workbook',['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_x
         return '';
     };
 
-    var addSheet = function (_workBook, sheetName) {
+    var addSheet = function (_workBook, sheetName, xlsxContentTypes) {
         var lastSheetRel = getLastSheet(_workBook);
         var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
         sheetName = sheetName || "sheet" + nextSheetRelId;
@@ -1815,7 +2238,7 @@ define('oxml_workbook',['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_x
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
             "sheets/sheet" + nextSheetRelId + ".xml");
         // Update Sheets
-        var sheet = oxmlSheet.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId, _workBook);
+        var sheet = oxmlSheet.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId, _workBook, xlsxContentTypes);
         _workBook.sheets.push(sheet);
         // Add Content Type
         _workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml", {
@@ -1910,7 +2333,7 @@ define('oxml_workbook',['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_x
         _workBook._rels = oxmlRels.createRelation('workbook.xml.rels', "workbook/_rels");
 
         _workBook.addSheet = function (sheetName) {
-            return addSheet(_workBook, sheetName);
+            return addSheet(_workBook, sheetName, xlsxContentTypes);
         };
         _workBook.generateContent = function () {
             return generateContent(_workBook);

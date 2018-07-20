@@ -43,8 +43,7 @@ define([], function () {
                                 resolve();
                             });
                         }
-                    }
-                    catch (err){
+                    } catch (err) {
                         if (callback) {
                             callback("Err: Not able to create file object.");
                         } else if (typeof Promise !== "undefined") {
@@ -61,5 +60,5 @@ define([], function () {
 
     return {
         createFile: createCompressedFile
-    }
+    };
 });

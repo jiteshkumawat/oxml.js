@@ -35,7 +35,7 @@ define([], function () {
         delete _rels.generateContent;
         _rels.attach = null;
         delete _rels.attach;
-    }
+    };
 
     // Create Relation
     var createRelation = function (fileName, folderName) {
@@ -55,10 +55,9 @@ define([], function () {
         };
         _rels.destroy = function () {
             destroy(_rels);
-        }
+        };
         return _rels;
     };
 
     return { createRelation: createRelation };
-
 });

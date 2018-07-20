@@ -68,5 +68,4 @@ define([], function () {
     return {
         createContentType: createContentType
     };
-
 });
