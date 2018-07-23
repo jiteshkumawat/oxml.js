@@ -2,12 +2,14 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
     'use strict';
 
     var oxml = {};
-    var jsZip;
 
     var downloadFile = function (fileName, callback, _xlsx) {
         try {
-            if (typeof window === "undefined") jsZip = require('jszip');
-            else if (typeof JSZip === "undefined") {
+            var jsZip, fs;
+            if (typeof window === "undefined") {
+                jsZip = _jsZip();
+                fs = _fs;
+            } else if (typeof JSZip === "undefined") {
                 if (callback) {
                     callback('Err: JSZip reference not found.');
                 } else if (typeof Promise !== "undefined") {
@@ -17,7 +19,7 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
                 }
             } else jsZip = new JSZip();
 
-            var file = fileHandler.createFile(jsZip);
+            var file = fileHandler.createFile(jsZip, fs);
 
             // Attach Content Types
             _xlsx.contentTypes.attach(file);

@@ -4,8 +4,10 @@
         } else if (typeof define === 'function'){
                 define(factory);
         } else if (typeof module !== 'undefined' && module.exports) { // Node.js
-                module.exports = factory();
+                var jsZip = require('jszip');
+                var fs = require('fs');
+                module.exports = factory(jsZip, fs);
         } else {
                 root.oxml = factory();
         }
-}(this, function () {
+}(this, function (_jsZip, _fs) {

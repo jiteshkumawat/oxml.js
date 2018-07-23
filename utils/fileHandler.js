@@ -1,7 +1,7 @@
 define([], function () {
     "use strict";
 
-    var createCompressedFile = function (jsZip) {
+    var createCompressedFile = function (jsZip, fs) {
 
         var zip = jsZip;
 
@@ -53,9 +53,17 @@ define([], function () {
                         }
                     });
             } else {
-                var fs = require('../lib/jszip.min');
-                return zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
+                if(callback){
+                    zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
                     .pipe(fs.createWriteStream(fileName));
+                    callback();
+                    return;
+                }
+                return new Promise(function (resolve, reject) {
+                    zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
+                    .pipe(fs.createWriteStream(fileName));
+                    resolve();
+                });
             }
         };
 
