@@ -1,11 +1,9 @@
 define([], function () {
     "use strict";
 
-    var createCompressedFile = function () {
-        if (!window && !window.JSZip) {
-            return;
-        }
-        var zip = new JSZip();
+    var createCompressedFile = function (jsZip) {
+
+        var zip = jsZip;
 
         var compressedFile = {
             _zip: zip
@@ -20,39 +18,45 @@ define([], function () {
         };
 
         compressedFile.saveFile = function (fileName, callback) {
-            return zip.generateAsync({ type: "blob" })
-                .then(function (content) {
-                    try {
-                        if (window.saveAs) {
-                            return saveAs(content, fileName);
-                        }
-                        var url = window.URL.createObjectURL(content);
-                        var element = document.createElement('a');
-                        element.setAttribute('href', url);
-                        element.setAttribute('download', fileName);
+            if (typeof window !== "undefined") {
+                return zip.generateAsync({ type: "blob" })
+                    .then(function (content) {
+                        try {
+                            if (window.saveAs) {
+                                return saveAs(content, fileName);
+                            }
+                            var url = window.URL.createObjectURL(content);
+                            var element = document.createElement('a');
+                            element.setAttribute('href', url);
+                            element.setAttribute('download', fileName);
 
-                        element.style.display = 'none';
-                        document.body.appendChild(element);
-                        element.click();
-                        document.body.removeChild(element);
+                            element.style.display = 'none';
+                            document.body.appendChild(element);
+                            element.click();
+                            document.body.removeChild(element);
 
-                        if (callback) {
-                            callback();
-                        } else if (typeof Promise !== "undefined") {
-                            return new Promise(function (resolve, reject) {
-                                resolve();
-                            });
+                            if (callback) {
+                                callback();
+                            } else if (typeof Promise !== "undefined") {
+                                return new Promise(function (resolve, reject) {
+                                    resolve();
+                                });
+                            }
+                        } catch (err) {
+                            if (callback) {
+                                callback("Err: Not able to create file object.");
+                            } else if (typeof Promise !== "undefined") {
+                                return new Promise(function (resolve, reject) {
+                                    reject("Err: Not able to create file object.");
+                                });
+                            }
                         }
-                    } catch (err) {
-                        if (callback) {
-                            callback("Err: Not able to create file object.");
-                        } else if (typeof Promise !== "undefined") {
-                            return new Promise(function (resolve, reject) {
-                                reject("Err: Not able to create file object.");
-                            });
-                        }
-                    }
-                });
+                    });
+            } else {
+                var fs = require('../lib/jszip.min');
+                return zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
+                    .pipe(fs.createWriteStream(fileName));
+            }
         };
 
         return compressedFile;
