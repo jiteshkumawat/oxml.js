@@ -1,6 +1,6 @@
 {
   "name": "oxmljs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Javascript library for creating and manipulating open xml documents such as docx and xlsx.",
   "main": "dist/oxml.js",
   "scripts": {
