@@ -4,7 +4,7 @@
   "description": "Javascript library for creating and manipulating open xml documents such as docx and xlsx.",
   "main": "dist/oxml.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/jasmine-node spec"
   },
   "keywords": [
     "js",
@@ -18,6 +18,7 @@
     "jszip"
   ],
   "dependencies": {
+    "jasmine-node": "^1.15.0",
     "jszip": "^3.1.5"
   }
 }
