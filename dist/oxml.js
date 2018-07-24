@@ -53,15 +53,15 @@ define('fileHandler',[], function () {
                             document.body.removeChild(element);
 
                             if (callback) {
-                                callback();
+                                callback(zip);
                             } else if (typeof Promise !== "undefined") {
                                 return new Promise(function (resolve, reject) {
-                                    resolve();
+                                    resolve(zip);
                                 });
                             }
                         } catch (err) {
                             if (callback) {
-                                callback("Err: Not able to create file object.");
+                                callback(null, "Err: Not able to create file object.");
                             } else if (typeof Promise !== "undefined") {
                                 return new Promise(function (resolve, reject) {
                                     reject("Err: Not able to create file object.");
@@ -73,13 +73,13 @@ define('fileHandler',[], function () {
                 if(callback){
                     zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
                     .pipe(fs.createWriteStream(fileName));
-                    callback();
+                    callback(zip);
                     return;
                 }
                 return new Promise(function (resolve, reject) {
                     zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
                     .pipe(fs.createWriteStream(fileName));
-                    resolve();
+                    resolve(zip);
                 });
             }
         };
