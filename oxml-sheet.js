@@ -217,9 +217,11 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
             cellIndex: cellIndex,
             rowIndex: rowIndex + 1,
             columnIndex: String.fromCharCode(65 + columnIndex),
+            formula: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined,
             set: function (value, options) {
                 cell(_sheet, rowIndex + 1, columnIndex + 1, value, options);
                 this.value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
+                this.formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
                 this.type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
                 return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
             }
@@ -231,6 +233,7 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
         for (index = 0; index < _cells.length; index++) {
             var rowIndex = _cells[index].rowIndex, columnIndex = _cells[index].columnIndex;
             var value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
+            var formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
             var type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
             var cellIndex = String.fromCharCode(65 + columnIndex) + (rowIndex + 1);
             cellRange.push({
@@ -242,11 +245,13 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
                 rowIndex: rowIndex,
                 columnIndex: String.fromCharCode(65 + columnIndex),
                 value: value,
+                formula: formula,
                 cellIndex: cellIndex,
                 type: type,
                 set: function (value, options) {
                     cell(_sheet, rowIndex + 1, columnIndex + 1, value, options);
                     this.value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
+                    this.formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
                     this.type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
                     return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
                 }

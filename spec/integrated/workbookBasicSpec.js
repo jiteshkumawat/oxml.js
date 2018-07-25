@@ -6,6 +6,10 @@ describe('workbook basic tests', function () {
         workbook = oxml.xlsx();
     });
 
+    afterEach(function(){
+        workbook = null;
+    });
+
     it('workbook attributes', function () {
         // ASSERT
         expect(workbook).toBeDefined();
