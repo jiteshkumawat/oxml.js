@@ -1,5 +1,5 @@
 const oxml = require('../../dist/oxml.js');
-describe('shared string values', function () {
+describe('shared formula values', function () {
     var workbook, worksheet;
     beforeEach(function () {
         workbook = oxml.xlsx();
@@ -11,40 +11,140 @@ describe('shared string values', function () {
         workbook = null;
     });
 
-    it('can be determined with JSON', function () {
+    it('can be determined with JSON in column', function () {
         // ACT
-        var cell = worksheet.cell(1, 1, { value: 'DummyString', type: 'sharedString' });
+        var cells = worksheet.sharedFormula('C1', 'C3', '(A1+B1)');
 
         // ASSERT
-        expect(cell.value).toBe(0);
-        expect(cell.type).toBe('sharedString');
+        expect(cells.cellIndices).toMatch(['C1', 'C2', 'C3']);
+        expect(cells.cells[0].formula).toBe('(A1+B1)');
+        expect(cells.cells[0].rowIndex).toBe(1);
+        expect(cells.cells[0].columnIndex).toBe('C');
+        expect(cells.cells[0].cellIndex).toBe('C1');
+        expect(cells.cells[0].type).toBe('sharedFormula');
+        expect(cells.cells[0].sharedFormulaIndex).toBe(0);
+        expect(cells.cells[1].formula).toBeUndefined();
+        expect(cells.cells[1].rowIndex).toBe(2);
+        expect(cells.cells[1].columnIndex).toBe('C');
+        expect(cells.cells[1].cellIndex).toBe('C2');
+        expect(cells.cells[1].type).toBe('sharedFormula');
+        expect(cells.cells[1].sharedFormulaIndex).toBe(0);
+        expect(cells.cells[2].formula).toBeUndefined();
+        expect(cells.cells[2].rowIndex).toBe(3);
+        expect(cells.cells[2].columnIndex).toBe('C');
+        expect(cells.cells[2].cellIndex).toBe('C3');
+        expect(cells.cells[2].type).toBe('sharedFormula');
+        expect(cells.cells[2].sharedFormulaIndex).toBe(0);
     });
 
-    it('shares value with similar strings', function () {
+    it('can be determined with JSON in row', function () {
         // ACT
-        var cell1 = worksheet.cell(1, 1, { value: 'DummyString', type: 'sharedString' });
-        var cell2 = worksheet.cell(1, 2, { value: 'DummyString', type: 'sharedString' });
+        var cells = worksheet.sharedFormula('A3', 'C3', '(A1+A2)');
 
         // ASSERT
-        expect(cell1.value).toBe(0);
-        expect(cell2.value).toBe(0);
+        expect(cells.cellIndices).toMatch(['A3', 'B3', 'C3']);
+        expect(cells.cells[0].formula).toBe('(A1+A2)');
+        expect(cells.cells[0].rowIndex).toBe(3);
+        expect(cells.cells[0].columnIndex).toBe('A');
+        expect(cells.cells[0].cellIndex).toBe('A3');
+        expect(cells.cells[0].type).toBe('sharedFormula');
+        expect(cells.cells[0].sharedFormulaIndex).toBe(0);
+        expect(cells.cells[1].formula).toBeUndefined();
+        expect(cells.cells[1].rowIndex).toBe(3);
+        expect(cells.cells[1].columnIndex).toBe('B');
+        expect(cells.cells[1].cellIndex).toBe('B3');
+        expect(cells.cells[1].type).toBe('sharedFormula');
+        expect(cells.cells[1].sharedFormulaIndex).toBe(0);
+        expect(cells.cells[2].formula).toBeUndefined();
+        expect(cells.cells[2].rowIndex).toBe(3);
+        expect(cells.cells[2].columnIndex).toBe('C');
+        expect(cells.cells[2].cellIndex).toBe('C3');
+        expect(cells.cells[2].type).toBe('sharedFormula');
+        expect(cells.cells[2].sharedFormulaIndex).toBe(0);
     });
 
-    it('creates a shared string file', function (done) {
+    it('not defined without formula', function () {
         // ACT
-        var cell1 = worksheet.cell(1, 1, { value: 'DummyString', type: 'sharedString' });
-        var cell2 = worksheet.cell(1, 2, { value: 'DummyString', type: 'sharedString' });
+        var cells = worksheet.sharedFormula('C1', 'C2', undefined);
 
         // ASSERT
-        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
-            expect(zip.files["workbook/sharedstrings.xml"]).toBeDefined();
-            zip.file('workbook/sharedstrings.xml').async('string').then(function(data){
-                var index = data.indexOf('<si><t>DummyString</t></si>');
-                var index2 = data.lastIndexOf('<si><t>DummyString</t></si>');
-                expect(index).toBeGreaterThan(-1);
-                expect(index).toBe(index2);
-                done();
-            });
-        });
+        expect(cells).toBeUndefined();
+    });
+
+    it('not defined without Cell Indices', function () {
+        // ACT
+        var cells1 = worksheet.sharedFormula(undefined, 'C2', '(A1+B1)');
+        var cells2 = worksheet.sharedFormula('C1', undefined, '(A1+B1)');
+
+        // ASSERT
+        expect(cells1).toBeUndefined();
+        expect(cells2).toBeUndefined();
+    });
+
+    it('formula can be defined as JSON', function () {
+        // ACT
+        var cells = worksheet.sharedFormula('C1', 'C2', { formula: '(A1+B1)' });
+
+        // ASSERT
+        expect(cells).toBeDefined();
+        expect(cells.cellIndices).toMatch(['C1', 'C2']);
+        expect(cells.cells[0].formula).toBe('(A1+B1)');
+        expect(cells.cells[0].rowIndex).toBe(1);
+        expect(cells.cells[0].columnIndex).toBe('C');
+        expect(cells.cells[0].cellIndex).toBe('C1');
+        expect(cells.cells[0].type).toBe('sharedFormula');
+        expect(cells.cells[0].sharedFormulaIndex).toBe(0);
+        expect(cells.cells[1].formula).toBeUndefined();
+        expect(cells.cells[1].rowIndex).toBe(2);
+        expect(cells.cells[1].columnIndex).toBe('C');
+        expect(cells.cells[1].cellIndex).toBe('C2');
+        expect(cells.cells[1].type).toBe('sharedFormula');
+        expect(cells.cells[1].sharedFormulaIndex).toBe(0);
+    });
+
+    it('formula can be defined as JSON with cached value', function () {
+        // ACT
+        var cells = worksheet.sharedFormula('C1', 'C2', { formula: '(A1+B1)', value: 'dummyValue' });
+
+        // ASSERT
+        expect(cells).toBeDefined();
+        expect(cells.cellIndices).toMatch(['C1', 'C2']);
+        expect(cells.cells[0].formula).toBe('(A1+B1)');
+        expect(cells.cells[0].rowIndex).toBe(1);
+        expect(cells.cells[0].columnIndex).toBe('C');
+        expect(cells.cells[0].cellIndex).toBe('C1');
+        expect(cells.cells[0].type).toBe('sharedFormula');
+        expect(cells.cells[0].sharedFormulaIndex).toBe(0);
+        expect(cells.cells[0].value).toBe('dummyValue');
+        expect(cells.cells[1].formula).toBeUndefined();
+        expect(cells.cells[1].rowIndex).toBe(2);
+        expect(cells.cells[1].columnIndex).toBe('C');
+        expect(cells.cells[1].cellIndex).toBe('C2');
+        expect(cells.cells[1].type).toBe('sharedFormula');
+        expect(cells.cells[1].value).toBe('dummyValue');
+        expect(cells.cells[1].sharedFormulaIndex).toBe(0);
+    });
+
+    it('formula can be defined as JSON with cached value function', function () {
+        // ACT
+        var cells = worksheet.sharedFormula('C1', 'C2', { formula: '(A1+B1)', value: (rowIndex, columnIndex) => { return 2; } });
+
+        // ASSERT
+        expect(cells).toBeDefined();
+        expect(cells.cellIndices).toMatch(['C1', 'C2']);
+        expect(cells.cells[0].formula).toBe('(A1+B1)');
+        expect(cells.cells[0].rowIndex).toBe(1);
+        expect(cells.cells[0].columnIndex).toBe('C');
+        expect(cells.cells[0].cellIndex).toBe('C1');
+        expect(cells.cells[0].type).toBe('sharedFormula');
+        expect(cells.cells[0].sharedFormulaIndex).toBe(0);
+        expect(cells.cells[0].value).toBeDefined();
+        expect(cells.cells[1].formula).toBeUndefined();
+        expect(cells.cells[1].rowIndex).toBe(2);
+        expect(cells.cells[1].columnIndex).toBe('C');
+        expect(cells.cells[1].cellIndex).toBe('C2');
+        expect(cells.cells[1].type).toBe('sharedFormula');
+        expect(cells.cells[1].value).toBeDefined();
+        expect(cells.cells[1].sharedFormulaIndex).toBe(0);
     });
 });

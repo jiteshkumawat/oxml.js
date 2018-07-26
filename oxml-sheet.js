@@ -198,7 +198,7 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
                 var _styles = _sheet._workBook.createStyles();
                 value.styleIndex = _styles.addStyles(options).index;
             }
-            if (!value.styleIndex && _sheet.values[sheetRowIndex][columnIndex - 1])
+            if (value && !value.styleIndex && _sheet.values[sheetRowIndex][columnIndex - 1])
                 value.styleIndex = _sheet.values[sheetRowIndex][columnIndex - 1].styleIndex;
             _sheet.values[sheetRowIndex][columnIndex - 1] = value;
         }
@@ -236,17 +236,19 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
             var formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
             var type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
             var cellIndex = String.fromCharCode(65 + columnIndex) + (rowIndex + 1);
+            var sharedFormulaIndex = type === "sharedFormula" ? _sheet.values[rowIndex][columnIndex].si : undefined;
             cellRange.push({
                 style: function (options) {
                     options.cellIndex = cellIndex;
                     updateSingleStyle(_sheet, options, rowIndex, columnIndex);
                     return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
                 },
-                rowIndex: rowIndex,
+                rowIndex: rowIndex + 1,
                 columnIndex: String.fromCharCode(65 + columnIndex),
                 value: value,
                 formula: formula,
                 cellIndex: cellIndex,
+                sharedFormulaIndex: sharedFormulaIndex,
                 type: type,
                 set: function (value, options) {
                     cell(_sheet, rowIndex + 1, columnIndex + 1, value, options);
@@ -341,7 +343,7 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
 
         var val;
         if (typeof formula === "object" && !formula.length) {
-            if (formula.type !== "formula") return;
+            if (!formula.formula) return;
             val = formula.value;
             formula = formula.formula;
         }
