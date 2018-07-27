@@ -730,14 +730,16 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
                 } else {
                     var tVal = [];
                     for (var index = 0; index < values.length && index < totalRows; index++) {
-                        var tVal2 = [];
-                        if (values[index].length > totalColumns) {
-                            for (var index2 = 0; index2 < values[index].length && index2 < totalColumns; index2++) {
-                                tVal2.push(values[index][index2]);
+                        if (values[index]) {
+                            var tVal2 = [];
+                            if (values[index].length > totalColumns) {
+                                for (var index2 = 0; index2 < values[index].length && index2 < totalColumns; index2++) {
+                                    tVal2.push(values[index][index2]);
+                                }
+                                values[index] = tVal2;
                             }
-                            values[index] = tVal2;
-                        }
-                        tVal.push(values[index]);
+                            tVal.push(values[index]);
+                        } else tVal.push([]);
                     }
                     values = tVal;
                 }
