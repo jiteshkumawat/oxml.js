@@ -1,13 +1,18 @@
 (function (root, factory) {
+        /* istanbul ignore next */
         if (typeof define === 'function' && define.amd) { // AMD
                 define([], factory);
-        } else if (typeof define === 'function'){
+        } 
+        /* istanbul ignore next */
+        else if (typeof define === 'function'){
                 define(factory);
         } else if (typeof module !== 'undefined' && module.exports) { // Node.js
                 var jsZip = require('jszip');
                 var fs = require('fs');
                 module.exports = factory(jsZip, fs);
-        } else {
+        } 
+        /* istanbul ignore next */
+        else {
                 root.oxml = factory();
         }
 }(this, function (_jsZip, _fs) {

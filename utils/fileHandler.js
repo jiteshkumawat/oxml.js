@@ -18,6 +18,7 @@ define([], function () {
         };
 
         compressedFile.saveFile = function (fileName, callback) {
+            /* istanbul ignore if  */
             if (typeof window !== "undefined") {
                 return zip.generateAsync({ type: "blob" })
                     .then(function (content) {
