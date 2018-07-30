@@ -39,7 +39,7 @@ describe('workbook basic tests', function () {
         expect(typeof worksheet.table).toBe("function");
     });
 
-    it('workbook is downloaded', function (done) {
+    it('workbook is downloaded with promise', function (done) {
         // ARRANGE
         workbook.sheet('sheet1');
 
@@ -58,6 +58,26 @@ describe('workbook basic tests', function () {
             done();
         }).catch(function () {
             done.fail();
+        });
+    });
+
+    it('workbook is downloaded with callback', function (done) {
+        // ARRANGE
+        workbook.sheet('sheet1');
+
+        // ACT
+        workbook.download(__dirname + '/demo.xlsx', function (zip) {
+            // ASSERT
+            expect(zip.files["[Content_Types].xml"]).toBeDefined();
+            expect(zip.files["_rels/"]).toBeDefined();
+            expect(zip.files["_rels/.rels"]).toBeDefined();
+            expect(zip.files["workbook/"]).toBeDefined();
+            expect(zip.files["workbook/_rels/"]).toBeDefined();
+            expect(zip.files["workbook/_rels/workbook.xml.rels"]).toBeDefined();
+            expect(zip.files["workbook/sheets/"]).toBeDefined();
+            expect(zip.files["workbook/sheets/sheet1.xml"]).toBeDefined();
+            expect(zip.files["workbook/workbook.xml"]).toBeDefined();
+            done();
         });
     });
 

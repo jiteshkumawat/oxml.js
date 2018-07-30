@@ -69,21 +69,10 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
             return downloadFile(fileName, callback, _xlsx);
         };
 
-        var destroy = function () {
-            _xlsx.workBook.destroy();
-            delete _xlsx.workBook;
-            _xlsx._rels.destroy();
-            delete _xlsx._rels;
-            _xlsx.contentTypes.destroy();
-            delete _xlsx.contentTypes;
-            _xlsx = null;
-        };
-
         return {
             _xlsx: _xlsx,
             sheet: _xlsx.workBook.addSheet,
-            download: download,
-            destroy: destroy
+            download: download
         };
     };
 

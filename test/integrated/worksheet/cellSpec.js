@@ -301,6 +301,14 @@ describe('cell method', function () {
         expect(cell.type).toBe('numeric');
     });
 
+    it('value can be only numeric, string, formula, sharedstring, or sharedformula', function () {
+        // ACT
+        var cell = worksheet.cell(2, 1, {value: 'Value1', type: 'someRandom'});
+
+        // ASSERT
+        expect(cell.value).toBeNull();
+    });
+
     it('requires rowId and columnId', function () {
         // ACT
         var cell1 = worksheet.cell();

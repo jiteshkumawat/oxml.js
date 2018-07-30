@@ -26,17 +26,6 @@ define([], function () {
         file.addFile(rels, _rels.fileName, _rels.folderName);
     };
 
-    var destroy = function (_rels) {
-        _rels.relations = null;
-        delete _rels.relations;
-        _rels.addRelation = null;
-        delete _rels.addRelation;
-        _rels.generateContent = null;
-        delete _rels.generateContent;
-        _rels.attach = null;
-        delete _rels.attach;
-    };
-
     // Create Relation
     var createRelation = function (fileName, folderName) {
         var _rels = {
@@ -47,14 +36,8 @@ define([], function () {
         _rels.addRelation = function (id, type, target) {
             addRelation(id, type, target, _rels);
         };
-        _rels.generateContent = function () {
-            return generateContent(_rels);
-        };
         _rels.attach = function (file) {
             return attach(file, _rels);
-        };
-        _rels.destroy = function () {
-            destroy(_rels);
         };
         return _rels;
     };

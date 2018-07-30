@@ -429,15 +429,6 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
         return getCellRangeAttributes(_sheet, cellIndices, cells);
     };
 
-    var destroy = function (_sheet) {
-        delete _sheet.sheetName;
-        delete _sheet.sheetId;
-        delete _sheet.rId;
-        delete _sheet.values;
-        delete _sheet._workBook;
-        delete _sheet._sharedFormula;
-    };
-
     var cell = function (_sheet, rowIndex, columnIndex, value, options) {
         if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number")
             return;
@@ -539,9 +530,6 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
         };
         return {
             _sheet: _sheet,
-            generateContent: function () {
-                generateContent(_sheet);
-            },
             attach: function (file) {
                 attach(_sheet, file);
             },
@@ -584,9 +572,6 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
             table: function (tableName, fromCell, toCell, options) {
                 var _table = addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell, options);
                 return _table.tableOptions();
-            },
-            destroy: function () {
-                return destroy(_sheet);
             }
         };
     };

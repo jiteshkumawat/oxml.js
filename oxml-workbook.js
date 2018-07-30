@@ -98,37 +98,6 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles'], fu
         return _workBook._sharedStrings[str];
     };
 
-    var destroy = function (_workBook) {
-        var index;
-        delete _workBook.xlsxContentTypes;
-        delete _workBook.xlsxRels;
-        _workBook._rels.destroy();
-        _workBook._rels.destroy = null;
-        delete _workBook._rels.destroy;
-        _workBook._rels = null;
-        delete _workBook._rels;
-        _workBook.generateContent = null;
-        delete _workBook.generateContent;
-        _workBook.attach = null;
-        delete _workBook.attach;
-        _workBook.addSheet = null;
-        delete _workBook.addSheet;
-        _workBook.createSharedString = null;
-        delete _workBook.createSharedString;
-        _workBook.getSharedString = null;
-        delete _workBook.getSharedString;
-        _workBook._sharedStrings = null;
-        delete _workBook._sharedStrings;
-        for (index = 0; index < _workBook.sheets.length; index++) {
-            _workBook.sheets[index].destroy();
-            _workBook.sheets[index].destroy = null;
-            delete _workBook.sheets[index].destroy;
-            _workBook.sheets[index] = null;
-        }
-        _workBook.sheets = null;
-        delete _workBook.sheets;
-    };
-
     var createWorkbook = function (xlsxContentTypes, xlsxRels) {
         var _workBook = {
             sheets: [],
@@ -151,9 +120,6 @@ define(['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles'], fu
         };
         _workBook.getSharedString = function (str) {
             return getSharedString(str, _workBook);
-        };
-        _workBook.destroy = function () {
-            destroy(_workBook);
         };
         _workBook.createStyles = function () {
             if (!_workBook._styles)

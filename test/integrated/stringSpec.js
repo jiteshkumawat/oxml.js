@@ -37,4 +37,22 @@ describe('string values', function () {
         expect(cell.value).toBe('DummyString');
         expect(cell.type).toBe('string');
     });
+
+    it('can download workbook with string values', (done) => {
+        // ACT
+        worksheet.cell(1, 1, { value: "dummyString" });
+
+        // ACT
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            // ASSERT
+            expect(zip.files["workbook/sheets/sheet1.xml"]).toBeDefined();
+            zip.file('workbook/sheets/sheet1.xml').async('string').then(function(data){
+                var index = data.indexOf('<c r="A1" t="inlineStr" ><is><t>dummyString</t></is></c>');
+                expect(index).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
 });

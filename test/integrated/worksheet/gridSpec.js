@@ -263,7 +263,7 @@ describe('grid method', function () {
     it('do not update cells out of range', () => {
         // ACT
         var grid = worksheet.grid(1, 1, [
-            [1, 2, 3],
+            [undefined, undefined, {}],
             [3, 2, 7],
             [8, 4, 8]
         ]);

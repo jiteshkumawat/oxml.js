@@ -31,6 +31,24 @@ describe('formula values', function () {
         expect(cell.formula).toBe('(A1+A2)');
     });
 
+    it('workbook with formula values can be downloaded', function (done) {
+        // ACT
+        var cell = worksheet.cell(2, 2, { type: 'formula', formula: '(A1+A2)', value: 'dummyValue' });
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/sheets/sheet1.xml"]).toBeDefined();
+            zip.file('workbook/sheets/sheet1.xml').async('string').then(function(data){
+                var index = data.indexOf('<v>dummyValue</v>');
+                expect(index).toBeGreaterThan(-1);
+                done();
+            });
+        });
+
+        // ASSERT
+        expect(cell.value).toBeDefined();
+        expect(cell.type).toBe('formula');
+        expect(cell.formula).toBe('(A1+A2)');
+    });
+
     it('store cached values with function', function (done) {
         // ACT
         var cell = worksheet.cell(2, 2, { type: 'formula', formula: '(A1+A2)', value: (rowIndex, columnIndex) => { return 2; } });

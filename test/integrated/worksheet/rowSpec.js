@@ -134,7 +134,7 @@ describe('row method', function () {
     it('returns all the values starting from rowIndex, columnIndex in a row', () => {
         // ACT
         worksheet.row(1,1,['Some', 'Dummy', 'Text']);
-        row = worksheet.row(1,2);
+        var row = worksheet.row(1,2);
 
         // ASSERT
         expect(row.cellIndices).toMatch(['B1', 'C1']);
@@ -149,6 +149,57 @@ describe('row method', function () {
         expect(row.cells[1].cellIndex).toBe('C1');
         expect(row.cells[1].type).toBe('string');
         expect(row.cells.length).toBe(2);
+    });
+
+    it('set method requires values attribute', () => {
+        // ACT
+        var row = worksheet.row(1,1,['Some', 'Dummy', 'Text']);
+        row.set();
+        row.set([]);
+
+        // ASSERT
+        expect(row.cellIndices).toMatch(['A1','B1', 'C1']);
+        expect(row.cells[0].rowIndex).toBe(1);
+        expect(row.cells[0].columnIndex).toBe('A');
+        expect(row.cells[0].value).toBe('Some');
+        expect(row.cells[0].cellIndex).toBe('A1');
+        expect(row.cells[0].type).toBe('string');
+        expect(row.cells[1].rowIndex).toBe(1);
+        expect(row.cells[1].columnIndex).toBe('B');
+        expect(row.cells[1].value).toBe('Dummy');
+        expect(row.cells[1].cellIndex).toBe('B1');
+        expect(row.cells[1].type).toBe('string');
+        expect(row.cells[2].rowIndex).toBe(1);
+        expect(row.cells[2].columnIndex).toBe('C');
+        expect(row.cells[2].value).toBe('Text');
+        expect(row.cells[2].cellIndex).toBe('C1');
+        expect(row.cells[2].type).toBe('string');
+        expect(row.cells.length).toBe(3);
+    });
+
+    it('update single value using cells array', () => {
+        // ACT
+        var row = worksheet.row(1,1,['Some', 'Dummy', 'Text']);
+        row.cells[0].set('Updated');
+
+        // ASSERT
+        expect(row.cellIndices).toMatch(['A1','B1', 'C1']);
+        expect(row.cells[0].rowIndex).toBe(1);
+        expect(row.cells[0].columnIndex).toBe('A');
+        expect(row.cells[0].value).toBe('Updated');
+        expect(row.cells[0].cellIndex).toBe('A1');
+        expect(row.cells[0].type).toBe('string');
+        expect(row.cells[1].rowIndex).toBe(1);
+        expect(row.cells[1].columnIndex).toBe('B');
+        expect(row.cells[1].value).toBe('Dummy');
+        expect(row.cells[1].cellIndex).toBe('B1');
+        expect(row.cells[1].type).toBe('string');
+        expect(row.cells[2].rowIndex).toBe(1);
+        expect(row.cells[2].columnIndex).toBe('C');
+        expect(row.cells[2].value).toBe('Text');
+        expect(row.cells[2].cellIndex).toBe('C1');
+        expect(row.cells[2].type).toBe('string');
+        expect(row.cells.length).toBe(3);
     });
 
     it('do not return any cell, if not defined starting from rowIndex, columnIndex in a row', () => {

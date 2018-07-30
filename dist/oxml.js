@@ -127,17 +127,6 @@ define('oxml_rels',[], function () {
         file.addFile(rels, _rels.fileName, _rels.folderName);
     };
 
-    var destroy = function (_rels) {
-        _rels.relations = null;
-        delete _rels.relations;
-        _rels.addRelation = null;
-        delete _rels.addRelation;
-        _rels.generateContent = null;
-        delete _rels.generateContent;
-        _rels.attach = null;
-        delete _rels.attach;
-    };
-
     // Create Relation
     var createRelation = function (fileName, folderName) {
         var _rels = {
@@ -148,14 +137,8 @@ define('oxml_rels',[], function () {
         _rels.addRelation = function (id, type, target) {
             addRelation(id, type, target, _rels);
         };
-        _rels.generateContent = function () {
-            return generateContent(_rels);
-        };
         _rels.attach = function (file) {
             return attach(file, _rels);
-        };
-        _rels.destroy = function () {
-            destroy(_rels);
         };
         return _rels;
     };
@@ -199,17 +182,6 @@ define('oxml_content_types',[], function () {
         _contentType.contentTypes.push(content);
     };
 
-    var destroy = function (_contentType) {
-        _contentType.addContentType = null;
-        delete _contentType.addContentType;
-        _contentType.generateContent = null;
-        delete _contentType.generateContent;
-        _contentType.attach = null;
-        delete _contentType.attach;
-        _contentType.contentTypes = null;
-        delete _contentType.contentTypes;
-    };
-
     var createContentType = function () {
         var _contentType = {
             contentTypes: []
@@ -217,14 +189,8 @@ define('oxml_content_types',[], function () {
         _contentType.addContentType = function (name, contentType, attributes) {
             addContentType(name, contentType, attributes, _contentType);
         };
-        _contentType.generateContent = function () {
-            return generateContent(_contentType);
-        };
         _contentType.attach = function (file) {
             return attach(file, _contentType);
-        };
-        _contentType.destroy = function () {
-            destroy(_contentType);
         };
         return _contentType;
     };
@@ -884,15 +850,6 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
         return getCellRangeAttributes(_sheet, cellIndices, cells);
     };
 
-    var destroy = function (_sheet) {
-        delete _sheet.sheetName;
-        delete _sheet.sheetId;
-        delete _sheet.rId;
-        delete _sheet.values;
-        delete _sheet._workBook;
-        delete _sheet._sharedFormula;
-    };
-
     var cell = function (_sheet, rowIndex, columnIndex, value, options) {
         if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number")
             return;
@@ -994,9 +951,6 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
         };
         return {
             _sheet: _sheet,
-            generateContent: function () {
-                generateContent(_sheet);
-            },
             attach: function (file) {
                 attach(_sheet, file);
             },
@@ -1039,9 +993,6 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
             table: function (tableName, fromCell, toCell, options) {
                 var _table = addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell, options);
                 return _table.tableOptions();
-            },
-            destroy: function () {
-                return destroy(_sheet);
             }
         };
     };
@@ -2330,37 +2281,6 @@ define('oxml_workbook',['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_x
         return _workBook._sharedStrings[str];
     };
 
-    var destroy = function (_workBook) {
-        var index;
-        delete _workBook.xlsxContentTypes;
-        delete _workBook.xlsxRels;
-        _workBook._rels.destroy();
-        _workBook._rels.destroy = null;
-        delete _workBook._rels.destroy;
-        _workBook._rels = null;
-        delete _workBook._rels;
-        _workBook.generateContent = null;
-        delete _workBook.generateContent;
-        _workBook.attach = null;
-        delete _workBook.attach;
-        _workBook.addSheet = null;
-        delete _workBook.addSheet;
-        _workBook.createSharedString = null;
-        delete _workBook.createSharedString;
-        _workBook.getSharedString = null;
-        delete _workBook.getSharedString;
-        _workBook._sharedStrings = null;
-        delete _workBook._sharedStrings;
-        for (index = 0; index < _workBook.sheets.length; index++) {
-            _workBook.sheets[index].destroy();
-            _workBook.sheets[index].destroy = null;
-            delete _workBook.sheets[index].destroy;
-            _workBook.sheets[index] = null;
-        }
-        _workBook.sheets = null;
-        delete _workBook.sheets;
-    };
-
     var createWorkbook = function (xlsxContentTypes, xlsxRels) {
         var _workBook = {
             sheets: [],
@@ -2383,9 +2303,6 @@ define('oxml_workbook',['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_x
         };
         _workBook.getSharedString = function (str) {
             return getSharedString(str, _workBook);
-        };
-        _workBook.destroy = function () {
-            destroy(_workBook);
         };
         _workBook.createStyles = function () {
             if (!_workBook._styles)
@@ -2471,21 +2388,10 @@ define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_work
             return downloadFile(fileName, callback, _xlsx);
         };
 
-        var destroy = function () {
-            _xlsx.workBook.destroy();
-            delete _xlsx.workBook;
-            _xlsx._rels.destroy();
-            delete _xlsx._rels;
-            _xlsx.contentTypes.destroy();
-            delete _xlsx.contentTypes;
-            _xlsx = null;
-        };
-
         return {
             _xlsx: _xlsx,
             sheet: _xlsx.workBook.addSheet,
-            download: download,
-            destroy: destroy
+            download: download
         };
     };
 

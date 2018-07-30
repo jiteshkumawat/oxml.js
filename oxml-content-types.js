@@ -35,17 +35,6 @@ define([], function () {
         _contentType.contentTypes.push(content);
     };
 
-    var destroy = function (_contentType) {
-        _contentType.addContentType = null;
-        delete _contentType.addContentType;
-        _contentType.generateContent = null;
-        delete _contentType.generateContent;
-        _contentType.attach = null;
-        delete _contentType.attach;
-        _contentType.contentTypes = null;
-        delete _contentType.contentTypes;
-    };
-
     var createContentType = function () {
         var _contentType = {
             contentTypes: []
@@ -53,14 +42,8 @@ define([], function () {
         _contentType.addContentType = function (name, contentType, attributes) {
             addContentType(name, contentType, attributes, _contentType);
         };
-        _contentType.generateContent = function () {
-            return generateContent(_contentType);
-        };
         _contentType.attach = function (file) {
             return attach(file, _contentType);
-        };
-        _contentType.destroy = function () {
-            destroy(_contentType);
         };
         return _contentType;
     };
