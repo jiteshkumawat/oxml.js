@@ -271,7 +271,7 @@ define(['utils',
                             for (index = 0; index < options.cellIndices.length; index++) {
                                 var cellIndex = options.cellIndices[index];
                                 var savedCellStyle = searchStyleForCell(_styles, cellIndex);
-                                delete savedCellStyle.cellIndices[cellIndex];
+                                if (savedCellStyle) delete savedCellStyle.cellIndices[cellIndex];
                                 cellStyle.cellIndices[cellIndex] = Object.keys(cellStyle.cellIndices).length;
                             }
                             return cellStyle;

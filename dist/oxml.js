@@ -1354,9 +1354,9 @@ define('oxml_xlsx_num_format',['utils'], function (utils) {
 define('oxml_xlsx_border',['utils'], function (utils) {
     var getBorderString = function (border, borderType) {
         if (border.style || border.color) {
-            var borderStyleString = border.style ? ' style="' + border.style + '" ' : '';
+            var borderStyleString = border.style ? ' style="' + border.style + '"' : '';
             var borderColorString = border.color ? '<color rgb="' + border.color + '"/>' : '';
-            return '<' + borderType + ' ' + borderStyleString + '>' + borderColorString + '</' + borderType + '>';
+            return '<' + borderType + borderStyleString + '>' + borderColorString + '</' + borderType + '>';
         }
         return '<' + borderType + '/>';
     };
@@ -2064,7 +2064,7 @@ define('oxml_xlsx_styles',['utils',
                             for (index = 0; index < options.cellIndices.length; index++) {
                                 var cellIndex = options.cellIndices[index];
                                 var savedCellStyle = searchStyleForCell(_styles, cellIndex);
-                                delete savedCellStyle.cellIndices[cellIndex];
+                                if (savedCellStyle) delete savedCellStyle.cellIndices[cellIndex];
                                 cellStyle.cellIndices[cellIndex] = Object.keys(cellStyle.cellIndices).length;
                             }
                             return cellStyle;

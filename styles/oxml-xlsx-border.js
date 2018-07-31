@@ -1,9 +1,9 @@
 define(['utils'], function (utils) {
     var getBorderString = function (border, borderType) {
         if (border.style || border.color) {
-            var borderStyleString = border.style ? ' style="' + border.style + '" ' : '';
+            var borderStyleString = border.style ? ' style="' + border.style + '"' : '';
             var borderColorString = border.color ? '<color rgb="' + border.color + '"/>' : '';
-            return '<' + borderType + ' ' + borderStyleString + '>' + borderColorString + '</' + borderType + '>';
+            return '<' + borderType + borderStyleString + '>' + borderColorString + '</' + borderType + '>';
         }
         return '<' + borderType + '/>';
     };

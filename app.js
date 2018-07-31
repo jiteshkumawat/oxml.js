@@ -31,62 +31,19 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             // console.log(cell);
             // workbook.download('tmp.xlsx');
             debugger;
-            worksheet.grid(2, 3, [
-                ['Cost', 'Sales', 'Profit'],
-                [10, 12],
-                [9, 12],
-                [11, 12],
-                ['Total']
-            ]);
-            worksheet.sharedFormula('E3', 'E5', {
-                type: 'formula', formula: '(D3 - C3)', value: function (rowIndex, columnIndex) {
-                    var sale = worksheet.cell(rowIndex, columnIndex - 1).value;
-                    var cost = worksheet.cell(rowIndex, columnIndex - 2).value;
-                    return sale - cost;
+            worksheet.row(1, 1, [1, 2, 3]).style({
+                border: {
+                    bottom: {
+                        color: '000000',
+                        style: 'thick'
+                    }
                 }
             });
-            worksheet.sharedFormula('C6', 'D6', {
-                type: 'formula', formula: 'SUM(C3:C5)', value: function (rowIndex, columnIndex) {
-                    var column = worksheet.column(3, 3), sum = 0;
-                    for (var index = 0; index < column.cells.length; index++) {
-                        if (column.cells[index].value && typeof column.cells[index].value === "number") {
-                            sum += column.cells[index].value;
-                        }
-                    }
-                    return sum;
-                }
-            });
-            worksheet.table('Table1', 'C2', 'E6').set({
-                sort: {
-                    direction: "descending",
-                    caseSensitive: false,
-                    column: 2
-                }
-            }).style({
-                bold: true,
-                fill: {
-                    backColor: '00ff00',
-                    pattern: 'solid'
-                },
-                firstRow: {
-                    fontColor: 'ffffff',
-                    fill: {
-                        backColor: '000000',
-                        pattern: 'solid'
-                    }
-                },
-                oddRow: {
-                    fontColor: '000000',
-                    fill: {
-                        backColor: 'cbcbcb',
-                        pattern: 'solid'
-                    }
-                },
-                evenRow: {
-                    fontColor: 'ffffff',
-                    fill: {
-                        backColor: '0000ff',
-                        pattern: 'solid'
+            worksheet.row(1, 2, [1, 2, 3]).style({
+                border: {
+                    bottom: {
+                        color: '000000',
+                        style: 'thick'
                     }
                 }
             });
