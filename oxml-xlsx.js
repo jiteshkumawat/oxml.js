@@ -9,7 +9,9 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
             if (typeof window === "undefined") {
                 jsZip = _jsZip();
                 fs = _fs;
-            } else if (typeof JSZip === "undefined") {
+            } 
+            /* istanbul ignore next */
+            else if (typeof JSZip === "undefined") {
                 if (callback) {
                     callback('Err: JSZip reference not found.');
                 } else if (typeof Promise !== "undefined") {
@@ -17,24 +19,22 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
                         reject("Err: JSZip reference not found.");
                     });
                 }
-            } else jsZip = new JSZip();
+            } 
+            /* istanbul ignore next */
+            else jsZip = new JSZip();
 
             var file = fileHandler.createFile(jsZip, fs);
-
-            // Attach Content Types
             _xlsx.contentTypes.attach(file);
-
-            // Attach RELS
             _xlsx._rels.attach(file);
-
-            // Attach WorkBook
             _xlsx.workBook.attach(file);
-
             return file.saveFile(fileName, callback);
         } catch (err) {
+            /* istanbul ignore next */
             if (callback) {
                 callback('Err: Not able to create Workbook.');
-            } else if (typeof Promise !== "undefined") {
+            } 
+            /* istanbul ignore next */
+            else if (typeof Promise !== "undefined") {
                 return new Promise(function (resolve, reject) {
                     reject("Err: Not able to create Workbook.");
                 });
@@ -77,7 +77,7 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
     };
 
     oxml.xlsx = createXLSX;
-
+    /* istanbul ignore next */
     if (typeof window !== "undefined" && !window.oxml) {
         window.oxml = oxml;
     }

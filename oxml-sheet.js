@@ -129,11 +129,6 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
                 type: "string",
                 value: value
             };
-        } else if (typeof value === "boolean") {
-            return {
-                type: "string",
-                value: value + ""
-            };
         }
         return null;
     };
@@ -489,8 +484,9 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
         var fromRowIndex = parseInt(fromCell.match(/\d+/)[0], 10);
         var toColumnIndex = toCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
         var titleRow = _sheet.values[fromRowIndex - 1];
+        if (!titleRow) return;
         for (var index = fromColumIndex; index <= toColumnIndex; index++) {
-            titles.push(titleRow[index].value || '');
+            titles.push(titleRow[index] && titleRow[index].value ? titleRow[index].value : '');
         }
 
         if (!_sheet._rels) {
@@ -571,7 +567,7 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
             },
             table: function (tableName, fromCell, toCell, options) {
                 var _table = addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell, options);
-                return _table.tableOptions();
+                return (_table ? _table.tableOptions() : undefined);
             }
         };
     };

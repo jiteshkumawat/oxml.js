@@ -254,32 +254,34 @@ define('oxml_table',[], function () {
         if (!_table.filters) _table.filters = [];
         if (typeof options.filters === "object" && options.filters.length) {
             for (var index = 0; index < options.filters.length; index++) {
-                var values;
-                if (options.filters[index].value) {
-                    values = [];
-                    values.push({
-                        value: options.filters[index].value,
-                        type: options.filters[index].type || "default",
-                        operator: options.filters[index].operator || null,
-                        and: options.filters[index].and !== false
-                    });
-                    hideRows(_sheet, options.filters[index].column - 1, [options.filters[index].value], _table.fromCell, _table.toCell, options.filters[index].operator);
-                } else if (options.filters[index].values && typeof options.filters[index].values === "object" && options.filters[index].values.length) {
-                    values = [];
-                    for (var index2 = 0; index2 < options.filters[index].values.length; index2++) {
+                if (options.filters[index].column) {
+                    var values;
+                    if (options.filters[index].value) {
+                        values = [];
                         values.push({
-                            value: options.filters[index].values[index2],
+                            value: options.filters[index].value,
                             type: options.filters[index].type || "default",
                             operator: options.filters[index].operator || null,
                             and: options.filters[index].and !== false
                         });
+                        hideRows(_sheet, options.filters[index].column - 1, [options.filters[index].value], _table.fromCell, _table.toCell, options.filters[index].operator);
+                    } else if (options.filters[index].values && typeof options.filters[index].values === "object" && options.filters[index].values.length) {
+                        values = [];
+                        for (var index2 = 0; index2 < options.filters[index].values.length; index2++) {
+                            values.push({
+                                value: options.filters[index].values[index2],
+                                type: options.filters[index].type || "default",
+                                operator: options.filters[index].operator || null,
+                                and: options.filters[index].and !== false
+                            });
+                        }
+                        hideRows(_sheet, options.filters[index].column - 1, options.filters[index].values, _table.fromCell, _table.toCell, options.filters[index].operator);
                     }
-                    hideRows(_sheet, options.filters[index].column - 1, options.filters[index].values, _table.fromCell, _table.toCell, options.filters[index].operator);
+                    _table.filters.push({
+                        column: options.filters[index].column - 1,
+                        values: values
+                    });
                 }
-                _table.filters.push({
-                    column: options.filters[index].column - 1,
-                    values: values
-                });
             }
         }
     };
@@ -372,7 +374,12 @@ define('oxml_table',[], function () {
 
     var tableOptions = function (_table, _sheet, relId) {
         return {
-            _table: _table,
+            name: _table.displayName,
+            columns: _table.columns,
+            fromCell: _table.fromCell,
+            toCell: _table.toCell,
+            sort: _table.sort,
+            filters: _table.filters,
             set: function (options) {
                 applyOptions(options, _table, _sheet);
                 return tableOptions(_table, _sheet, relId);
@@ -405,9 +412,6 @@ define('oxml_table',[], function () {
         return {
             _table: _table,
             rid: relId,
-            generateContent: function () {
-                generateContent(_table);
-            },
             attach: function (file) {
                 attach(_table, file);
             },
@@ -549,11 +553,6 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
             return {
                 type: "string",
                 value: value
-            };
-        } else if (typeof value === "boolean") {
-            return {
-                type: "string",
-                value: value + ""
             };
         }
         return null;
@@ -910,8 +909,9 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
         var fromRowIndex = parseInt(fromCell.match(/\d+/)[0], 10);
         var toColumnIndex = toCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
         var titleRow = _sheet.values[fromRowIndex - 1];
+        if (!titleRow) return;
         for (var index = fromColumIndex; index <= toColumnIndex; index++) {
-            titles.push(titleRow[index].value || '');
+            titles.push(titleRow[index] && titleRow[index].value ? titleRow[index].value : '');
         }
 
         if (!_sheet._rels) {
@@ -992,7 +992,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
             },
             table: function (tableName, fromCell, toCell, options) {
                 var _table = addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell, options);
-                return _table.tableOptions();
+                return (_table ? _table.tableOptions() : undefined);
             }
         };
     };
@@ -2328,7 +2328,9 @@ define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_work
             if (typeof window === "undefined") {
                 jsZip = _jsZip();
                 fs = _fs;
-            } else if (typeof JSZip === "undefined") {
+            } 
+            /* istanbul ignore next */
+            else if (typeof JSZip === "undefined") {
                 if (callback) {
                     callback('Err: JSZip reference not found.');
                 } else if (typeof Promise !== "undefined") {
@@ -2336,24 +2338,22 @@ define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_work
                         reject("Err: JSZip reference not found.");
                     });
                 }
-            } else jsZip = new JSZip();
+            } 
+            /* istanbul ignore next */
+            else jsZip = new JSZip();
 
             var file = fileHandler.createFile(jsZip, fs);
-
-            // Attach Content Types
             _xlsx.contentTypes.attach(file);
-
-            // Attach RELS
             _xlsx._rels.attach(file);
-
-            // Attach WorkBook
             _xlsx.workBook.attach(file);
-
             return file.saveFile(fileName, callback);
         } catch (err) {
+            /* istanbul ignore next */
             if (callback) {
                 callback('Err: Not able to create Workbook.');
-            } else if (typeof Promise !== "undefined") {
+            } 
+            /* istanbul ignore next */
+            else if (typeof Promise !== "undefined") {
                 return new Promise(function (resolve, reject) {
                     reject("Err: Not able to create Workbook.");
                 });
@@ -2396,7 +2396,7 @@ define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_work
     };
 
     oxml.xlsx = createXLSX;
-
+    /* istanbul ignore next */
     if (typeof window !== "undefined" && !window.oxml) {
         window.oxml = oxml;
     }

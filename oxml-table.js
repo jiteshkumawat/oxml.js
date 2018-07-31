@@ -53,32 +53,34 @@ define([], function () {
         if (!_table.filters) _table.filters = [];
         if (typeof options.filters === "object" && options.filters.length) {
             for (var index = 0; index < options.filters.length; index++) {
-                var values;
-                if (options.filters[index].value) {
-                    values = [];
-                    values.push({
-                        value: options.filters[index].value,
-                        type: options.filters[index].type || "default",
-                        operator: options.filters[index].operator || null,
-                        and: options.filters[index].and !== false
-                    });
-                    hideRows(_sheet, options.filters[index].column - 1, [options.filters[index].value], _table.fromCell, _table.toCell, options.filters[index].operator);
-                } else if (options.filters[index].values && typeof options.filters[index].values === "object" && options.filters[index].values.length) {
-                    values = [];
-                    for (var index2 = 0; index2 < options.filters[index].values.length; index2++) {
+                if (options.filters[index].column) {
+                    var values;
+                    if (options.filters[index].value) {
+                        values = [];
                         values.push({
-                            value: options.filters[index].values[index2],
+                            value: options.filters[index].value,
                             type: options.filters[index].type || "default",
                             operator: options.filters[index].operator || null,
                             and: options.filters[index].and !== false
                         });
+                        hideRows(_sheet, options.filters[index].column - 1, [options.filters[index].value], _table.fromCell, _table.toCell, options.filters[index].operator);
+                    } else if (options.filters[index].values && typeof options.filters[index].values === "object" && options.filters[index].values.length) {
+                        values = [];
+                        for (var index2 = 0; index2 < options.filters[index].values.length; index2++) {
+                            values.push({
+                                value: options.filters[index].values[index2],
+                                type: options.filters[index].type || "default",
+                                operator: options.filters[index].operator || null,
+                                and: options.filters[index].and !== false
+                            });
+                        }
+                        hideRows(_sheet, options.filters[index].column - 1, options.filters[index].values, _table.fromCell, _table.toCell, options.filters[index].operator);
                     }
-                    hideRows(_sheet, options.filters[index].column - 1, options.filters[index].values, _table.fromCell, _table.toCell, options.filters[index].operator);
+                    _table.filters.push({
+                        column: options.filters[index].column - 1,
+                        values: values
+                    });
                 }
-                _table.filters.push({
-                    column: options.filters[index].column - 1,
-                    values: values
-                });
             }
         }
     };
@@ -171,7 +173,12 @@ define([], function () {
 
     var tableOptions = function (_table, _sheet, relId) {
         return {
-            _table: _table,
+            name: _table.displayName,
+            columns: _table.columns,
+            fromCell: _table.fromCell,
+            toCell: _table.toCell,
+            sort: _table.sort,
+            filters: _table.filters,
             set: function (options) {
                 applyOptions(options, _table, _sheet);
                 return tableOptions(_table, _sheet, relId);
@@ -204,9 +211,6 @@ define([], function () {
         return {
             _table: _table,
             rid: relId,
-            generateContent: function () {
-                generateContent(_table);
-            },
             attach: function (file) {
                 attach(_table, file);
             },
