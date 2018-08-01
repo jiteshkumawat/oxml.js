@@ -1585,30 +1585,30 @@ define('oxml_xlsx_fill',['utils'], function (utils) {
                 + patternType + '">' + colorString + '</patternFill>';
         } else if (fill.gradient) {
             var typeString =
-                fill.gradient.type ? ' type="' + fill.gradient.type + '" ' : '';
+                fill.gradient.type ? ' type="' + fill.gradient.type + '"' : '';
             var leftString =
-                fill.gradient.left ? ' left="' + fill.gradient.left + '" ' : '';
+                fill.gradient.left ? ' left="' + fill.gradient.left + '"' : '';
             var rightString =
                 fill.gradient.right ? ' right="'
                     + fill.gradient.right + '"' : '';
             var topString =
-                fill.gradient.top ? ' top="' + fill.gradient.top + '" ' : '';
+                fill.gradient.top ? ' top="' + fill.gradient.top + '"' : '';
             var bottomString =
                 fill.gradient.bottom ? ' bottom="'
-                    + fill.gradient.bottom + '" ' : '';
+                    + fill.gradient.bottom + '"' : '';
             var degreeString =
                 fill.gradient.degree ? ' degree="'
-                    + fill.gradient.degree + '" ' : '';
-            fillString += '<gradientFill '
+                    + fill.gradient.degree + '"' : '';
+            fillString += '<gradientFill'
                 + typeString + leftString + rightString
-                + topString + bottomString + degreeString + ' >';
+                + topString + bottomString + degreeString + '>';
             for (var stopIndex = 0;
                 stopIndex < fill.gradient.stops.length;
                 stopIndex++) {
                 fillString += '<stop position="'
                     + fill.gradient.stops[stopIndex].position + '">';
                 fillString += '<color rgb="'
-                    + fill.gradient.stops[stopIndex].color + '" /></stop>';
+                    + fill.gradient.stops[stopIndex].color + '"/></stop>';
             }
             fillString += '</gradientFill>';
         } else {
