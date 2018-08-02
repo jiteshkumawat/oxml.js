@@ -71,10 +71,6 @@ define(['utils'], function (utils) {
     };
 
     var addBorder = function (border, _styles) {
-        if (!_styles._borders) {
-            _styles._borders = {};
-            _styles._bordersCount = 0;
-        }
         var index = _styles._bordersCount++;
         _styles._borders[utils.stringify(border)] = "" + index;
         return _styles._borders[utils.stringify(border)];

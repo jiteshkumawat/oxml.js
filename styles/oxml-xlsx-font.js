@@ -70,10 +70,6 @@ define(['utils'], function (utils) {
     };
 
     var addFont = function (font, _styles) {
-        if (!_styles._fonts) {
-            _styles._fonts = {};
-            _styles._fontsCount = 0;
-        }
         var index = _styles._fontsCount++;
         _styles._fonts[utils.stringify(font)] = "" + index;
         return _styles._fonts[utils.stringify(font)];

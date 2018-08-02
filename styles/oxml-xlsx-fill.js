@@ -101,10 +101,6 @@ define(['utils'], function (utils) {
     };
 
     var addFill = function (fill, _styles) {
-        if (!_styles._fills) {
-            _styles._fills = {};
-            _styles._fillsCount = 0;
-        }
         var index = _styles._fillsCount++;
         _styles._fills[utils.stringify(fill)] = "" + index;
         return _styles._fills[utils.stringify(fill)];

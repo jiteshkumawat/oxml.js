@@ -1093,10 +1093,6 @@ define('oxml_xlsx_font',['utils'], function (utils) {
     };
 
     var addFont = function (font, _styles) {
-        if (!_styles._fonts) {
-            _styles._fonts = {};
-            _styles._fontsCount = 0;
-        }
         var index = _styles._fontsCount++;
         _styles._fonts[utils.stringify(font)] = "" + index;
         return _styles._fonts[utils.stringify(font)];
@@ -1424,10 +1420,6 @@ define('oxml_xlsx_border',['utils'], function (utils) {
     };
 
     var addBorder = function (border, _styles) {
-        if (!_styles._borders) {
-            _styles._borders = {};
-            _styles._bordersCount = 0;
-        }
         var index = _styles._bordersCount++;
         _styles._borders[utils.stringify(border)] = "" + index;
         return _styles._borders[utils.stringify(border)];
@@ -1658,10 +1650,6 @@ define('oxml_xlsx_fill',['utils'], function (utils) {
     };
 
     var addFill = function (fill, _styles) {
-        if (!_styles._fills) {
-            _styles._fills = {};
-            _styles._fillsCount = 0;
-        }
         var index = _styles._fillsCount++;
         _styles._fills[utils.stringify(fill)] = "" + index;
         return _styles._fills[utils.stringify(fill)];
