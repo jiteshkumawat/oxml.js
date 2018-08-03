@@ -430,7 +430,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
         if (!value) {
             return '';
         }
-        var styleString = value.styleIndex ? ' s="' + value.styleIndex + '" ' : '';
+        var styleString = value.styleIndex ? 's="' + value.styleIndex + '"' : '';
         if (value.type === 'numeric') {
             return '<c r="' + cellIndex + '" ' + styleString + '><v>' + value.value + '</v></c>';
         } else if (value.type === 'sharedString') {

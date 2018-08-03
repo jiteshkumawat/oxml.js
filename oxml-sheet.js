@@ -5,7 +5,7 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
         if (!value) {
             return '';
         }
-        var styleString = value.styleIndex ? ' s="' + value.styleIndex + '" ' : '';
+        var styleString = value.styleIndex ? 's="' + value.styleIndex + '"' : '';
         if (value.type === 'numeric') {
             return '<c r="' + cellIndex + '" ' + styleString + '><v>' + value.value + '</v></c>';
         } else if (value.type === 'sharedString') {
@@ -40,7 +40,7 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
             for (rowIndex = 0; rowIndex < _sheet.values.length; rowIndex++) {
                 if (_sheet.values[rowIndex] && _sheet.values[rowIndex].length > 0) {
                     var hidden = _sheet.values[rowIndex].hidden ? ' hidden="1" ' : '';
-                    sheetValues += '<row r="' + (rowIndex + 1) + '"' + hidden + '>\n';
+                    sheetValues += '<row r="' + (rowIndex + 1) + '"' + hidden + '>';
 
                     var columnIndex = 0;
                     for (columnIndex = 0; columnIndex < _sheet.values[rowIndex].length; columnIndex++) {

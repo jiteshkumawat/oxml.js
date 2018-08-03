@@ -210,4 +210,50 @@ describe('row method', function () {
         expect(row.cells.length).toBe(0);
         expect(row.cellIndices.length).toBe(0);
     });
+    
+    it('style with optional parameter', function (done) {
+        worksheet.row(2, 1, [1, 2, 3], {
+            bold: true,
+            italic: true
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/sheets/sheet1.xml").async('string').then(function (data) {
+                var index1 = data.indexOf('<c r="A2" s="1"><v>1</v></c>');
+                expect(index1).toBeGreaterThan(-1);
+                var index2 = data.indexOf('<c r="B2" s="1"><v>2</v></c>');
+                expect(index2).toBeGreaterThan(-1);
+                var index3 = data.indexOf('<c r="C2" s="1"><v>3</v></c>');
+                expect(index3).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
+    it('style with style method', function (done) {
+        worksheet.row(2, 1, [1, 2, 3]).style({
+            bold: true,
+            italic: true
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/sheets/sheet1.xml").async('string').then(function (data) {
+                var index1 = data.indexOf('<c r="A2" s="1"><v>1</v></c>');
+                expect(index1).toBeGreaterThan(-1);
+                var index2 = data.indexOf('<c r="B2" s="1"><v>2</v></c>');
+                expect(index2).toBeGreaterThan(-1);
+                var index3 = data.indexOf('<c r="C2" s="1"><v>3</v></c>');
+                expect(index3).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
 });
