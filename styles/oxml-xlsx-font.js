@@ -81,6 +81,18 @@ define(['utils'], function (utils) {
         return savedFont;
     };
 
+    var createTableFont = function (options, savedFont) {
+        var font = createFont(options);
+        if (savedFont) {
+            for (var key in font) {
+                if (font[key])
+                    savedFont[key] = font[key];
+            }
+            return savedFont;
+        }
+        return font;
+    };
+
     var mergeFont = function (font, savedFont, _styles, deleteSavedFont) {
         var savedFontDetails;
         for (var key in _styles._fonts) {
@@ -175,7 +187,7 @@ define(['utils'], function (utils) {
     };
 
     return {
-        createFont: createFont,
+        createTableFont: createTableFont,
         getFontForCell: getFontForCell,
         getFontForCells: getFontForCells,
         generateContent: generateContent,

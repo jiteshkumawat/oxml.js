@@ -102,6 +102,18 @@ define(['utils'], function (utils) {
         return savedBorder;
     };
 
+    var createTableBorder = function (options, savedBorder) {
+        var border = createBorder(options);
+        if (savedBorder) {
+            for (var key in border) {
+                if (border[key] && (border[key].color || border[key].style))
+                    savedBorder[key] = border[key];
+            }
+            return savedBorder;
+        }
+        return border;
+    };
+
     var mergeBorder = function (border, savedBorder, _styles, deleteSavedBorder) {
         var savedBorderDetails;
         for (var key in _styles._borders) {
@@ -191,7 +203,7 @@ define(['utils'], function (utils) {
     };
 
     return {
-        createBorder: createBorder,
+        createTableBorder: createTableBorder,
         getBorderForCell: getBorderForCell,
         getBorderForCells: getBorderForCells,
         generateContent: generateContent,

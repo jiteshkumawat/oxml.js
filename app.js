@@ -31,22 +31,40 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             // console.log(cell);
             // workbook.download('tmp.xlsx');
             debugger;
-            worksheet.row(1, 1, [1, 2, 3]).style({
-                border: {
-                    bottom: {
-                        color: '000000',
-                        style: 'thick'
+            worksheet.grid(1,1,[
+                ['Title1', 'Title2', 'Title3'],
+                [1,2,3],
+                [2,5,3]
+            ]);
+            var table = worksheet.table('Table1', 'A1','C3');
+    
+            // ACT
+            table.style({
+                fontSize: 12
+            }).style({
+                firstRow: {
+                    bold: true,
+                    fontColor: 'ffffff',
+                    fill: {
+                        pattern: 'solid',
+                        color: '000000'
                     }
                 }
-            });
-            worksheet.row(1, 2, [1, 2, 3]).style({
-                border: {
-                    bottom: {
-                        color: '000000',
-                        style: 'thick'
+            }).style({
+                evenRow: {
+                    fill: {
+                        pattern: 'solid',
+                        color: 'aaaaaa'
                     }
                 }
-            });
+            }).style({
+                oddRow: {
+                    fill: {
+                        pattern: 'solid',
+                        color: 'eeeeee'
+                    }
+                }
+            }, 'tableStyle1');
             workbook.download('tmp.xlsx');
         })();
     });

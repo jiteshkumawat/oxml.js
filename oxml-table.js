@@ -161,7 +161,7 @@ define([], function () {
 
     var style = function (options, tableStyleName, _sheet, _table) {
         var _styles = _sheet._workBook.createStyles();
-        _styles.addTableStyle(options, tableStyleName);
+        _styles.addTableStyle(options, tableStyleName, _table);
         _table.tableStyle = {
             name: tableStyleName,
             showColumnStripes: !!(options.evenColumn || options.oddColumn),

@@ -134,6 +134,11 @@ define(['utils'], function (utils) {
         return savedFill;
     };
 
+    var createTableFill = function (options, savedFill) {
+        var fill = createFill(options);
+        return fill || savedFill || false;
+    };
+
     var mergeFill = function (fill, savedFill, _styles, deleteExisting) {
         var savedFillDetails;
         for (var key in _styles._fills) {
@@ -223,7 +228,7 @@ define(['utils'], function (utils) {
     };
 
     return {
-        createFill: createFill,
+        createTableFill: createTableFill,
         generateContent: generateContent,
         getFillForCell: getFillForCell,
         getFillForCells: getFillForCells,

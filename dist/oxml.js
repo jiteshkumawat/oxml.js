@@ -362,7 +362,7 @@ define('oxml_table',[], function () {
 
     var style = function (options, tableStyleName, _sheet, _table) {
         var _styles = _sheet._workBook.createStyles();
-        _styles.addTableStyle(options, tableStyleName);
+        _styles.addTableStyle(options, tableStyleName, _table);
         _table.tableStyle = {
             name: tableStyleName,
             showColumnStripes: !!(options.evenColumn || options.oddColumn),
@@ -465,7 +465,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
             for (rowIndex = 0; rowIndex < _sheet.values.length; rowIndex++) {
                 if (_sheet.values[rowIndex] && _sheet.values[rowIndex].length > 0) {
                     var hidden = _sheet.values[rowIndex].hidden ? ' hidden="1" ' : '';
-                    sheetValues += '<row r="' + (rowIndex + 1) + '"' + hidden + '>\n';
+                    sheetValues += '<row r="' + (rowIndex + 1) + '"' + hidden + '>';
 
                     var columnIndex = 0;
                     for (columnIndex = 0; columnIndex < _sheet.values[rowIndex].length; columnIndex++) {
@@ -1104,6 +1104,18 @@ define('oxml_xlsx_font',['utils'], function (utils) {
         return savedFont;
     };
 
+    var createTableFont = function (options, savedFont) {
+        var font = createFont(options);
+        if (savedFont) {
+            for (var key in font) {
+                if (font[key])
+                    savedFont[key] = font[key];
+            }
+            return savedFont;
+        }
+        return font;
+    };
+
     var mergeFont = function (font, savedFont, _styles, deleteSavedFont) {
         var savedFontDetails;
         for (var key in _styles._fonts) {
@@ -1198,7 +1210,7 @@ define('oxml_xlsx_font',['utils'], function (utils) {
     };
 
     return {
-        createFont: createFont,
+        createTableFont: createTableFont,
         getFontForCell: getFontForCell,
         getFontForCells: getFontForCells,
         generateContent: generateContent,
@@ -1451,6 +1463,18 @@ define('oxml_xlsx_border',['utils'], function (utils) {
         return savedBorder;
     };
 
+    var createTableBorder = function (options, savedBorder) {
+        var border = createBorder(options);
+        if (savedBorder) {
+            for (var key in border) {
+                if (border[key] && (border[key].color || border[key].style))
+                    savedBorder[key] = border[key];
+            }
+            return savedBorder;
+        }
+        return border;
+    };
+
     var mergeBorder = function (border, savedBorder, _styles, deleteSavedBorder) {
         var savedBorderDetails;
         for (var key in _styles._borders) {
@@ -1540,7 +1564,7 @@ define('oxml_xlsx_border',['utils'], function (utils) {
     };
 
     return {
-        createBorder: createBorder,
+        createTableBorder: createTableBorder,
         getBorderForCell: getBorderForCell,
         getBorderForCells: getBorderForCells,
         generateContent: generateContent,
@@ -1683,6 +1707,11 @@ define('oxml_xlsx_fill',['utils'], function (utils) {
         return savedFill;
     };
 
+    var createTableFill = function (options, savedFill) {
+        var fill = createFill(options);
+        return fill || savedFill || false;
+    };
+
     var mergeFill = function (fill, savedFill, _styles, deleteExisting) {
         var savedFillDetails;
         for (var key in _styles._fills) {
@@ -1772,7 +1801,7 @@ define('oxml_xlsx_fill',['utils'], function (utils) {
     };
 
     return {
-        createFill: createFill,
+        createTableFill: createTableFill,
         generateContent: generateContent,
         getFillForCell: getFillForCell,
         getFillForCells: getFillForCells,
@@ -2089,31 +2118,64 @@ define('oxml_xlsx_styles',['utils',
             }
         };
 
-        var addTableStyle = function (options, tableStyleName, _styles) {
+        var addTableStyle = function (options, tableStyleName, _table, _styles) {
             if (!_styles.tableStyles) _styles.tableStyles = [];
-            var tableStyle = prepareTableStyleObj(options);
+
+            // Find existing table style
+            var existingTableStyle;
+            if (_table && _table.tableStyle) {
+                for (var index = 0; index < _styles.tableStyles.length; index++) {
+                    if (_table.tableStyle.name === _styles.tableStyles[index].name) {
+                        existingTableStyle = _styles.tableStyles[index];
+                        break;
+                    }
+                }
+            }
+
+            var tableStyle = prepareTableStyleObj(options, existingTableStyle);
             tableStyle.name = tableStyleName;
-            if (options.evenColumn) tableStyle.evenColumn = prepareTableStyleObj(options.evenColumn);
-            if (options.oddColumn) tableStyle.oddColumn = prepareTableStyleObj(options.oddColumn);
-            if (options.evenRow) tableStyle.evenRow = prepareTableStyleObj(options.evenRow);
-            if (options.oddRow) tableStyle.oddRow = prepareTableStyleObj(options.oddRow);
-            if (options.firstColumn) tableStyle.firstColumn = prepareTableStyleObj(options.firstColumn);
-            if (options.lastColumn) tableStyle.lastColumn = prepareTableStyleObj(options.lastColumn);
-            if (options.firstRow) tableStyle.firstRow = prepareTableStyleObj(options.firstRow);
-            if (options.lastRow) tableStyle.lastRow = prepareTableStyleObj(options.lastRow);
-            if (options.firstRowFirstCell) tableStyle.firstRowFirstCell = prepareTableStyleObj(options.firstRowFirstCell);
-            if (options.firstRowLastCell) tableStyle.firstRowLastCell = prepareTableStyleObj(options.firstRowLastCell);
-            if (options.lastRowFirstCell) tableStyle.lastRowFirstCell = prepareTableStyleObj(options.lastRowFirstCell);
-            if (options.lastRowLastCell) tableStyle.lastRowLastCell = prepareTableStyleObj(options.lastRowLastCell);
-            _styles.tableStyles.push(tableStyle);
+            if (options.evenColumn) tableStyle.evenColumn = prepareTableStyleObj(options.evenColumn, existingTableStyle && existingTableStyle.evenColumn)
+            else if (existingTableStyle && existingTableStyle.evenColumn) tableStyle.evenColumn = existingTableStyle.evenColumn;
+            if (options.oddColumn) tableStyle.oddColumn = prepareTableStyleObj(options.oddColumn, existingTableStyle && existingTableStyle.oddColumn);
+            else if (existingTableStyle && existingTableStyle.oddColumn) tableStyle.oddColumn = existingTableStyle.oddColumn;
+            if (options.evenRow) tableStyle.evenRow = prepareTableStyleObj(options.evenRow, existingTableStyle && existingTableStyle.evenRow);
+            else if (existingTableStyle && existingTableStyle.evenRow) tableStyle.evenRow = existingTableStyle.evenRow;
+            if (options.oddRow) tableStyle.oddRow = prepareTableStyleObj(options.oddRow, existingTableStyle && existingTableStyle.oddRow);
+            else if (existingTableStyle && existingTableStyle.oddRow) tableStyle.oddRow = existingTableStyle.oddRow;
+            if (options.firstColumn) tableStyle.firstColumn = prepareTableStyleObj(options.firstColumn, existingTableStyle && existingTableStyle.firstColumn);
+            else if (existingTableStyle && existingTableStyle.firstColumn) tableStyle.firstColumn = existingTableStyle.firstColumn;
+            if (options.lastColumn) tableStyle.lastColumn = prepareTableStyleObj(options.lastColumn, existingTableStyle && existingTableStyle.lastColumn);
+            else if (existingTableStyle && existingTableStyle.lastColumn) tableStyle.lastColumn = existingTableStyle.lastColumn;
+            if (options.firstRow) tableStyle.firstRow = prepareTableStyleObj(options.firstRow, existingTableStyle && existingTableStyle.firstRow);
+            else if (existingTableStyle && existingTableStyle.firstRow) tableStyle.firstRow = existingTableStyle.firstRow;
+            if (options.lastRow) tableStyle.lastRow = prepareTableStyleObj(options.lastRow, existingTableStyle && existingTableStyle.lastRow);
+            else if (existingTableStyle && existingTableStyle.lastRow) tableStyle.lastRow = existingTableStyle.lastRow;
+            if (options.firstRowFirstCell) tableStyle.firstRowFirstCell = prepareTableStyleObj(options.firstRowFirstCell, existingTableStyle && existingTableStyle.firstRowFirstCell);
+            else if (existingTableStyle && existingTableStyle.firstRowFirstCell) tableStyle.firstRowFirstCell = existingTableStyle.firstRowFirstCell;
+            if (options.firstRowLastCell) tableStyle.firstRowLastCell = prepareTableStyleObj(options.firstRowLastCell, existingTableStyle && existingTableStyle.firstRowLastCell);
+            else if (existingTableStyle && existingTableStyle.firstRowLastCell) tableStyle.firstRowLastCell = existingTableStyle.firstRowLastCell;
+            if (options.lastRowFirstCell) tableStyle.lastRowFirstCell = prepareTableStyleObj(options.lastRowFirstCell, existingTableStyle && existingTableStyle.lastRowFirstCell);
+            else if (existingTableStyle && existingTableStyle.lastRowFirstCell) tableStyle.lastRowFirstCell = existingTableStyle.lastRowFirstCell;
+            if (options.lastRowLastCell) tableStyle.lastRowLastCell = prepareTableStyleObj(options.lastRowLastCell, existingTableStyle && existingTableStyle.lastRowLastCell);
+            else if (existingTableStyle && existingTableStyle.lastRowLastCell) tableStyle.lastRowLastCell = existingTableStyle.lastRowLastCell;
+            if (!existingTableStyle)
+                _styles.tableStyles.push(tableStyle);
+            else {
+                for (var index = 0; index < _styles.tableStyles.length; index++) {
+                    if (_table.tableStyle.name === _styles.tableStyles[index].name) {
+                        _styles.tableStyles[index] = tableStyle;
+                        break;
+                    }
+                }
+            }
             return tableStyle;
         };
 
-        var prepareTableStyleObj = function (options) {
+        var prepareTableStyleObj = function (options, existingTableStyle) {
             var tableStyle = {};
-            tableStyle.font = oxmlXlsxFont.createFont(options);
-            tableStyle.fill = oxmlXlsxFill.createFill(options);
-            tableStyle.border = oxmlXlsxBorder.createBorder(options);
+            tableStyle.font = oxmlXlsxFont.createTableFont(options, (existingTableStyle ? existingTableStyle.font : null));
+            tableStyle.fill = oxmlXlsxFill.createTableFill(options, (existingTableStyle ? existingTableStyle.fill : null));
+            tableStyle.border = oxmlXlsxBorder.createTableBorder(options);
             return tableStyle;
         };
 
@@ -2162,8 +2224,8 @@ define('oxml_xlsx_styles',['utils',
                     addStyles: function (options) {
                         return addStyles(options, _styles);
                     },
-                    addTableStyle: function (options, tableStyleName) {
-                        return addTableStyle(options, tableStyleName, _styles);
+                    addTableStyle: function (options, tableStyleName, _table) {
+                        return addTableStyle(options, tableStyleName, _table, _styles);
                     }
                 };
             }

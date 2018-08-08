@@ -16,3 +16,7 @@ oxml-content-types.js
 oxml-rels.js
 oxml-table.js
 oxml-workbook.js
+.github
+_config.yml
+oxml-sheet.js
+oxml-xlsx.js
