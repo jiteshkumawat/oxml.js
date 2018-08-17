@@ -234,9 +234,9 @@ define(['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
             var sharedFormulaIndex = type === "sharedFormula" ? _sheet.values[rowIndex][columnIndex].si : undefined;
             cellRange.push({
                 style: function (options) {
-                    options.cellIndex = cellIndex;
-                    updateSingleStyle(_sheet, options, rowIndex, columnIndex);
-                    return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
+                    options.cellIndex = this.cellIndex;
+                    updateSingleStyle(_sheet, options, (this.rowIndex - 1), (this.columnIndex.toUpperCase().charCodeAt() - 65));
+                    return getCellAttributes(_sheet, this.cellIndex, (this.rowIndex - 1), (this.columnIndex.toUpperCase().charCodeAt() - 65));
                 },
                 rowIndex: rowIndex + 1,
                 columnIndex: String.fromCharCode(65 + columnIndex),

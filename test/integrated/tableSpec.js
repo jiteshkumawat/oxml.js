@@ -137,7 +137,7 @@ describe('table method', () => {
         expect(table.sort.dataRange).toBe('A2:C3');
     });
 
-    it('defines table with filter value (default)', () => {
+    it('defines table with filter value (default)', (done) => {
         // ACT
         worksheet.grid(1, 1, [
             ['Title1', 'Title2', 'Title3'],
@@ -156,6 +156,18 @@ describe('table method', () => {
         expect(table.filters[0].column).toBe(0);
         expect(table.filters[0].values[0].value).toBe(1);
         expect(table.filters[0].values[0].type).toBe('default');
+
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            // ASSERT
+            expect(zip.files["workbook/tables/table1.xml"]).toBeDefined();
+            zip.file("workbook/tables/table1.xml").async('string').then((data) => {
+                var index = data.indexOf('<autoFilter ref="A1:C3"><filterColumn colId="0"><filters><filter val="1"/></filters></filterColumn></autoFilter>');
+                expect(index).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
     });
 
     it('defines table with filter value (custom)', () => {

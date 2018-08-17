@@ -30,41 +30,27 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             // cell.set('Updated Value');
             // console.log(cell);
             // workbook.download('tmp.xlsx');
-            debugger;
-            worksheet.grid(1,1,[
-                ['Title1', 'Title2', 'Title3'],
-                [1,2,3],
-                [2,5,3]
-            ]);
-            var table = worksheet.table('Table1', 'A1','C3');
-    
+            debugger;            
+
             // ACT
-            table.style({
-                fontSize: 12
-            }).style({
-                firstRow: {
-                    bold: true,
-                    fontColor: 'ffffff',
-                    fill: {
-                        pattern: 'solid',
-                        color: '000000'
-                    }
-                }
-            }).style({
-                evenRow: {
-                    fill: {
-                        pattern: 'solid',
-                        color: 'aaaaaa'
-                    }
-                }
-            }).style({
-                oddRow: {
-                    fill: {
-                        pattern: 'solid',
-                        color: 'eeeeee'
-                    }
-                }
-            }, 'tableStyle1');
-            workbook.download('tmp.xlsx');
+            var a = worksheet.row(2, 1, [1, 2, 3]);
+            a.cells[0].style({
+                bold: true,
+                italic: true
+            });
+            console.log(JSON.stringify(a.cells[0], null, 2));
+
+            // Assert
+            workbook.download('/demo.xlsx').then(function (zip) {
+                expect(zip.files["workbook/style2.xml"]).toBeDefined();
+                zip.file("workbook/sheets/sheet1.xml").async('string').then(function (data) {
+                    console.log(data);
+                    var index1 = data.indexOf('<c r="A2" s="1"><v>1</v></c>');
+                    expect(index1).toBeGreaterThan(-1);
+                    done();
+                });
+            }).catch(function () {
+                done.fail();
+            });
         })();
     });

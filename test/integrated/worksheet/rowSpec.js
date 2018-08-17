@@ -256,4 +256,24 @@ describe('row method', function () {
             done.fail();
         });
     });
+
+    it('style individual cell', function (done) {
+        var a = worksheet.row(2, 1, [1, 2, 3]);
+        a.cells[0].style({
+            bold: true,
+            italic: true
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/sheets/sheet1.xml").async('string').then(function (data) {
+                var index1 = data.indexOf('<c r="A2" s="1"><v>1</v></c>');
+                expect(index1).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
 });
