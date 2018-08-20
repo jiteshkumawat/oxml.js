@@ -246,6 +246,50 @@ describe('border style', function () {
         });
     });
 
+    it('border merged for two directions for specific cells', (done) => {
+        // Act
+        var cell = worksheet.cell(1, 1);
+        var cell2 = worksheet.cell(1,2);
+        cell.style({
+            border: {
+                bottom: {
+                    color: '000000',
+                    style: 'thick'
+                }
+            }
+        });
+        cell2.style({
+            border: {
+                bottom: {
+                    color: '000000',
+                    style: 'thick'
+                }
+            }
+        });
+        cell.style({
+            border: {
+                top: {
+                    color: '000000',
+                    style: 'thick'
+                }
+            }
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/style2.xml").async('string').then(function (data) {
+                var indexBorderCount = data.indexOf('<borders count="3"><border /><border><left/><right/><top/><bottom style="thick"><color rgb="000000"/></bottom><diagonal/></border><border><left/><right/><top style="thick"><color rgb="000000"/></top><bottom style="thick"><color rgb="000000"/></bottom><diagonal/></border></borders>');
+                var indexBorder = data.indexOf('<border><left/><right/><top style="thick"><color rgb="000000"/></top><bottom style="thick"><color rgb="000000"/></bottom><diagonal/></border>');
+                expect(indexBorder).toBeGreaterThan(-1);
+                expect(indexBorderCount).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
     it('border defined with default values for collection of cells', (done) => {
         // Act
         var row = worksheet.row(1, 1, [1, 2, 3]);

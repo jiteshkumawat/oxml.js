@@ -449,6 +449,101 @@ describe('table method', () => {
         });
     });
 
+    it('styling table basic', (done) => {
+        // ARRANGE
+        worksheet.grid(1, 1, [
+            ['Title1', 'Title2', 'Title3'],
+            [1, 2, 3],
+            [2, 5, 3]
+        ]);
+        var table = worksheet.table('Table1', 'A1', 'C3');
+
+        // ACT
+        table.style({
+            firstRow: {
+                border: {
+                    color: '000000',
+                    style: 'thick'
+                }
+            },
+            evenRow: {
+                fill: {
+                    pattern: 'solid',
+                    color: 'aaaaaa'
+                }
+            },
+            oddRow: {
+                fill: {
+                    pattern: 'solid',
+                    color: 'eeeeee'
+                }
+            },
+            evenColumn: {
+                italic: true
+            },
+            oddColumn: {
+                fontColor: '002222'
+            },
+            firstColumn: {
+                bold: true
+            },
+            lastColumn: {
+                bold: true
+            },
+            lastRow: {
+                bold: true
+            },
+            firstRowFirstCell: {
+                fill: {
+                    pattern: 'solid',
+                    color: '00ff00'
+                }
+            },
+            firstRowLastCell: {
+                fill: {
+                    pattern: 'solid',
+                    color: '00ff00'
+                }
+            },
+            lastRowFirstCell: {
+                fill: {
+                    pattern: 'solid',
+                    color: '00ff00'
+                }
+            },
+            lastRowLastCell: {
+                fill: {
+                    pattern: 'solid',
+                    color: '00ff00'
+                }
+            }
+        }, 'tableStyle1').style({
+            fontSize: 12,
+            border: {
+                color: '000000',
+                style: 'thin'
+            }
+        }, 'tableStyle1');
+
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            // ASSERT
+            expect(zip.files["workbook/tables/table1.xml"]).toBeDefined();
+            zip.file("workbook/tables/table1.xml").async('string').then((data) => {
+                var index = data.indexOf('<tableStyleInfo name="tableStyle1" showColumnStripes="1" showRowStripes="1" showLastColumn="1" showFirstColumn="1"/>');
+                expect(index).toBeGreaterThan(-1);
+            });
+            zip.file('workbook/style2.xml').async('string').then(function (data) {
+                var index1 = data.indexOf('<dxfs count="13"><dxf><font><sz val="12"/></font><border><left style="thin"><color rgb="000000"/></left><right style="thin"><color rgb="000000"/></right><top style="thin"><color rgb="000000"/></top><bottom style="thin"><color rgb="000000"/></bottom><diagonal style="thin"><color rgb="000000"/></diagonal></border></dxf><dxf><font><i/></font></dxf><dxf><font><color rgb="002222"/></font></dxf><dxf><font></font><fill><patternFill patternType="solid"><bgColor rgb="aaaaaa"/></patternFill></fill></dxf><dxf><font></font><fill><patternFill patternType="solid"><bgColor rgb="eeeeee"/></patternFill></fill></dxf><dxf><font><b/></font></dxf><dxf><font><b/></font></dxf><dxf><font></font><border><left style="thick"><color rgb="000000"/></left><right style="thick"><color rgb="000000"/></right><top style="thick"><color rgb="000000"/></top><bottom style="thick"><color rgb="000000"/></bottom><diagonal style="thick"><color rgb="000000"/></diagonal></border></dxf><dxf><font><b/></font></dxf><dxf><font></font><fill><patternFill patternType="solid"><bgColor rgb="00ff00"/></patternFill></fill></dxf><dxf><font></font><fill><patternFill patternType="solid"><bgColor rgb="00ff00"/></patternFill></fill></dxf><dxf><font></font><fill><patternFill patternType="solid"><bgColor rgb="00ff00"/></patternFill></fill></dxf><dxf><font></font><fill><patternFill patternType="solid"><bgColor rgb="00ff00"/></patternFill></fill></dxf></dxfs>');
+                var index2 = data.indexOf('<tableStyles count="1"><tableStyle count="13" name="tableStyle1"><tableStyleElement dxfId="0" type="wholeTable"/><tableStyleElement dxfId="1" type="secondColumnStripe"/><tableStyleElement dxfId="2" type="firstColumnStripe"/><tableStyleElement dxfId="3" type="secondRowStripe"/><tableStyleElement dxfId="4" type="firstRowStripe"/><tableStyleElement dxfId="5" type="firstColumn"/><tableStyleElement dxfId="6" type="lastColumn"/><tableStyleElement dxfId="7" type="headerRow"/><tableStyleElement dxfId="8" type="totalRow"/><tableStyleElement dxfId="9" type="firstHeaderCell"/><tableStyleElement dxfId="10" type="lastHeaderCell"/><tableStyleElement dxfId="11" type="firstTotalCell"/><tableStyleElement dxfId="12" type="lastTotalCell"/></tableStyle></tableStyles>');
+                expect(index1).toBeGreaterThan(-1);
+                expect(index2).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
     it('styling table with filter and sort', (done) => {
         // ARRANGE
         worksheet.grid(1, 1, [

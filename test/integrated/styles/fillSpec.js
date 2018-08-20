@@ -167,6 +167,113 @@ describe('fill style', function () {
         });
     });
 
+    it('fill updated of cell', (done) => {
+        // Act
+        worksheet.cell(1, 1).style({
+            fill: {
+                gradient: {
+                    degree: 90,
+                    stops: [{ position: 0, color: "FF92D050" }, { position: 1, color: "FF0070C0" }]
+                }
+            }
+        });
+        worksheet.cell(1, 2).style({
+            fill: {
+                gradient: {
+                    degree: 90,
+                    stops: [{ position: 0, color: "FF92D050" }, { position: 1, color: "FF0070C0" }]
+                }
+            }
+        });
+        worksheet.cell(1, 1).style({
+            fill: {
+                gradient: {
+                    degree: 60,
+                    stops: [{ position: 0, color: "FF92D050" }, { position: 1, color: "FF0070C0" }]
+                }
+            }
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/style2.xml").async('string').then(function (data) {
+                var indexFill1 = data.indexOf('<fill><gradientFill degree="60"><stop position="0"><color rgb="FF92D050"/></stop><stop position="1"><color rgb="FF0070C0"/></stop></gradientFill></fill>');
+                var indexFill2 = data.indexOf('<fill><gradientFill degree="90"><stop position="0"><color rgb="FF92D050"/></stop><stop position="1"><color rgb="FF0070C0"/></stop></gradientFill></fill>');
+                var indexFillCount = data.indexOf('<fills count="4">');
+                expect(indexFill1).toBeGreaterThan(-1);
+                expect(indexFill2).toBeGreaterThan(-1);
+                expect(indexFillCount).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
+    it('fill not updated if used by other cell', (done) => {
+        // Act
+        worksheet.cell(1, 1).style({
+            fill: {
+                gradient: {
+                    degree: 90,
+                    stops: [{ position: 0, color: "FF92D050" }, { position: 1, color: "FF0070C0" }]
+                }
+            }
+        });
+        worksheet.cell(1, 1).style({
+            fill: {
+                gradient: {
+                    degree: 60,
+                    stops: [{ position: 0, color: "FF92D050" }, { position: 1, color: "FF0070C0" }]
+                }
+            }
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/style2.xml").async('string').then(function (data) {
+                var indexFill = data.indexOf('<fill><gradientFill degree="60"><stop position="0"><color rgb="FF92D050"/></stop><stop position="1"><color rgb="FF0070C0"/></stop></gradientFill></fill>');
+                var indexFillCount = data.indexOf('<fills count="3">');
+                expect(indexFill).toBeGreaterThan(-1);
+                expect(indexFillCount).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
+    it('fill not impacted by other style updates on cell', (done) => {
+        // Act
+        worksheet.cell(1, 1).style({
+            fill: {
+                gradient: {
+                    degree: 90,
+                    stops: [{ position: 0, color: "FF92D050" }, { position: 1, color: "FF0070C0" }]
+                }
+            }
+        });
+        worksheet.cell(1, 1).style({
+            bold: true
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/style2.xml").async('string').then(function (data) {
+                var indexFill = data.indexOf('<fill><gradientFill degree="90"><stop position="0"><color rgb="FF92D050"/></stop><stop position="1"><color rgb="FF0070C0"/></stop></gradientFill></fill>');
+                var indexFillCount = data.indexOf('<fills count="3">');
+                expect(indexFill).toBeGreaterThan(-1);
+                expect(indexFillCount).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
     it('fill defined with pattern for collection of cells', (done) => {
         // Act
         var row = worksheet.row(1, 1, [1, 2, 3]);

@@ -54,8 +54,6 @@ define(['utils'], function (utils) {
                     + fill.gradient.stops[stopIndex].color + '"/></stop>';
             }
             fillString += '</gradientFill>';
-        } else {
-            return '<fill/>';
         }
         return fillString + '</fill>';
     };
@@ -192,7 +190,7 @@ define(['utils'], function (utils) {
             // Check if fill can be updated
             newStyleCreated = true;
         }
-        if (cellStyle && cellStyle._fill) {
+        if (cellStyle && cellStyle._fill && fill) {
             var fillCount = getFillCounts(cellStyle._fill, _styles);
             if (fillCount <= 1) {
                 // Update fill

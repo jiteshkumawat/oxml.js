@@ -33,13 +33,18 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             debugger;            
 
             // ACT
-            var a = worksheet.row(2, 1, [1, 2, 3]);
-            a.cells[0].style({
-                bold: true,
-                italic: true
+            worksheet.cell(1, 1).style({
+                fill: {
+                    gradient: {
+                        degree: 90,
+                        stops: [{ position: 0, color: "FF92D050" }, { position: 1, color: "FF0070C0" }]
+                    }
+                }
             });
-            console.log(JSON.stringify(a.cells[0], null, 2));
-
+            worksheet.cell(1, 1).style({
+                bold: true
+            });
+            
             // Assert
             workbook.download('/demo.xlsx').then(function (zip) {
                 expect(zip.files["workbook/style2.xml"]).toBeDefined();

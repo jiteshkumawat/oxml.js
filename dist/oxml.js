@@ -362,13 +362,13 @@ define('oxml_table',[], function () {
 
     var style = function (options, tableStyleName, _sheet, _table) {
         var _styles = _sheet._workBook.createStyles();
-        _styles.addTableStyle(options, tableStyleName, _table);
+        var savedStyle = _styles.addTableStyle(options, tableStyleName, _table);
         _table.tableStyle = {
             name: tableStyleName,
-            showColumnStripes: !!(options.evenColumn || options.oddColumn),
-            showRowStripes: !!(options.evenRow || options.oddRow),
-            showLastColumn: !!options.lastColumn,
-            showFirstColumn: !!options.firstColumn
+            showColumnStripes: !!(savedStyle.evenColumn || savedStyle.oddColumn),
+            showRowStripes: !!(savedStyle.evenRow || savedStyle.oddRow),
+            showLastColumn: !!savedStyle.lastColumn,
+            showFirstColumn: !!savedStyle.firstColumn
         };
     };
 
@@ -1627,8 +1627,6 @@ define('oxml_xlsx_fill',['utils'], function (utils) {
                     + fill.gradient.stops[stopIndex].color + '"/></stop>';
             }
             fillString += '</gradientFill>';
-        } else {
-            return '<fill/>';
         }
         return fillString + '</fill>';
     };
@@ -1765,7 +1763,7 @@ define('oxml_xlsx_fill',['utils'], function (utils) {
             // Check if fill can be updated
             newStyleCreated = true;
         }
-        if (cellStyle && cellStyle._fill) {
+        if (cellStyle && cellStyle._fill && fill) {
             var fillCount = getFillCounts(cellStyle._fill, _styles);
             if (fillCount <= 1) {
                 // Update fill

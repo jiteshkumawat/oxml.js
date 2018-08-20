@@ -161,13 +161,13 @@ define([], function () {
 
     var style = function (options, tableStyleName, _sheet, _table) {
         var _styles = _sheet._workBook.createStyles();
-        _styles.addTableStyle(options, tableStyleName, _table);
+        var savedStyle = _styles.addTableStyle(options, tableStyleName, _table);
         _table.tableStyle = {
             name: tableStyleName,
-            showColumnStripes: !!(options.evenColumn || options.oddColumn),
-            showRowStripes: !!(options.evenRow || options.oddRow),
-            showLastColumn: !!options.lastColumn,
-            showFirstColumn: !!options.firstColumn
+            showColumnStripes: !!(savedStyle.evenColumn || savedStyle.oddColumn),
+            showRowStripes: !!(savedStyle.evenRow || savedStyle.oddRow),
+            showLastColumn: !!savedStyle.lastColumn,
+            showFirstColumn: !!savedStyle.firstColumn
         };
     };
 
