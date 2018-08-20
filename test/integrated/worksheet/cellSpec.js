@@ -410,4 +410,42 @@ describe('cell method', function () {
             done.fail();
         });
     });
+
+    it('style without value - 1', function (done) {
+        worksheet.cell(2, 1, {
+            bold: true,
+            italic: true
+        });
+        
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/sheets/sheet1.xml").async('string').then(function (data) {
+                var index = data.indexOf('<c r="A2" t="inlineStr" s="1"><is><t></t></is></c>');
+                expect(index).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
+    it('style without value - 2', function (done) {
+        worksheet.cell(2, 1, null, {
+            bold: true,
+            italic: true
+        });
+        
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/sheets/sheet1.xml").async('string').then(function (data) {
+                var index = data.indexOf('<c r="A2" t="inlineStr" s="1"><is><t></t></is></c>');
+                expect(index).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
 });

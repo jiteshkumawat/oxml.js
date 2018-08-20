@@ -156,6 +156,21 @@ describe('shared formula values', function () {
         expect(cells.cells[1].sharedFormulaIndex).toBe(0);
     });
 
+    it('workbook can be styled with shared formula', (done) => {
+        // ACT
+        worksheet.sharedFormula('C1', 'C2', { formula: '(A1+B1)' }, {bold: true});
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            // ASSERT
+            expect(zip.files["workbook/sheets/sheet1.xml"]).toBeDefined();
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file('workbook/sheets/sheet1.xml').async('string').then(function (data) {
+                var index = data.indexOf('<c  r="C1" s="1"><f t="shared" ref="C1:C2" si="0">(A1+B1)</f></c></row><row r="2"><c  r="C2" s="1"><f t="shared" si="0"></f></c>');
+                expect(index).toBeGreaterThan(-1);
+                done();
+            });
+        });
+    });
+
     it('workbook with shared formula can be downloaded without cached value', (done) => {
         // ACT
         worksheet.sharedFormula('C1', 'C2', { formula: '(A1+B1)' });

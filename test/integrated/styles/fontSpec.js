@@ -85,6 +85,94 @@ describe('font style', function () {
         });
     });
 
+    it('font updated if only one defined', (done) => {
+        // Act
+        worksheet.cell(1, 1).style({
+            fontColor: '00ff00',
+            fontSize: 14
+        });
+        worksheet.cell(1, 1).style({
+            bold: true,
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/style2.xml").async('string').then(function (data) {
+                var indexFont = data.indexOf('<font><b/><sz val="14"/><color rgb="00ff00"/></font>');
+                var indexFontCount = data.indexOf('<fonts count="2">');
+                expect(indexFont).toBeGreaterThan(-1);
+                expect(indexFontCount).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
+    it('font not updated if used by other cell', (done) => {
+        // Act
+        worksheet.cell(1, 1).style({
+            fontColor: '00ff00',
+            fontSize: 14
+        });
+        worksheet.cell(1, 2).style({
+            fontColor: '00ff00',
+            fontSize: 14
+        });
+        worksheet.cell(1, 1).style({
+            bold: true,
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/style2.xml").async('string').then(function (data) {
+                var indexFont = data.indexOf('<font><b/><sz val="14"/><color rgb="00ff00"/></font>');
+                var indexFontCount = data.indexOf('<fonts count="3">');
+                expect(indexFont).toBeGreaterThan(-1);
+                expect(indexFontCount).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
+    it('font fetched if other style updated', (done) => {
+        // Act
+        worksheet.cell(1, 1).style({
+            fontColor: '00ff00',
+            fontSize: 14
+        });
+        worksheet.cell(1, 2).style({
+            fontColor: '00ff00',
+            fontSize: 14
+        });
+        worksheet.cell(1, 1).style({
+            fill: {
+                gradient: {
+                    degree: 90,
+                    stops: [{ position: 0, color: "FF92D050" }, { position: 1, color: "FF0070C0" }]
+                } 
+            }
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/style2.xml").async('string').then(function (data) {
+                var indexFont = data.indexOf('<font><sz val="14"/><color rgb="00ff00"/></font>');
+                var indexFontCount = data.indexOf('<fonts count="2">');
+                expect(indexFont).toBeGreaterThan(-1);
+                expect(indexFontCount).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
     it('font merged in single cell', (done) => {
         // Act
         var cell = worksheet.cell(1, 1);

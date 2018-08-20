@@ -34,6 +34,51 @@ describe('row method', function () {
         expect(row.cells[2].type).toBe('string');
     });
 
+    it('do not define without row index', () => {
+        // ACT
+        var row = worksheet.row(null,1,['Some','Dummy','Value']);
+
+        // ASSERT
+        expect(row).toBe(undefined);
+    });
+
+    it('do not define without column index', () => {
+        // ACT
+        var row = worksheet.row(1,null,['Some','Dummy','Value']);
+
+        // ASSERT
+        expect(row).toBe(undefined);
+    });
+
+    it('do not define without numeric row index', () => {
+        // ACT
+        var row = worksheet.row("1",1,['Some','Dummy','Value']);
+
+        // ASSERT
+        expect(row).toBe(undefined);
+    });
+
+    it('do not define without column index', () => {
+        // ACT
+        var row = worksheet.row(1,"1",['Some','Dummy','Value']);
+
+        // ASSERT
+        expect(row).toBe(undefined);
+    });
+
+    it('creates new instance of row with single Value', () => {
+        // ACT
+        var row = worksheet.row(1,1,5);
+
+        // ASSERT
+        expect(row.cellIndices).toMatch(['A1']);
+        expect(row.cells[0].rowIndex).toBe(1);
+        expect(row.cells[0].columnIndex).toBe('A');
+        expect(row.cells[0].value).toBe(5);
+        expect(row.cells[0].cellIndex).toBe('A1');
+        expect(row.cells[0].type).toBe('numeric');
+    });
+
     it('updates value and return updated with set method', () => {
         // ACT
         var row = worksheet.row(1,1,[1,2,3]).set(['Some','Dummy','Value']);
@@ -260,6 +305,26 @@ describe('row method', function () {
     it('style individual cell', function (done) {
         var a = worksheet.row(2, 1, [1, 2, 3]);
         a.cells[0].style({
+            bold: true,
+            italic: true
+        });
+
+        // Assert
+        workbook.download(__dirname + '/demo.xlsx').then(function (zip) {
+            expect(zip.files["workbook/style2.xml"]).toBeDefined();
+            zip.file("workbook/sheets/sheet1.xml").async('string').then(function (data) {
+                var index1 = data.indexOf('<c r="A2" s="1"><v>1</v></c>');
+                expect(index1).toBeGreaterThan(-1);
+                done();
+            });
+        }).catch(function () {
+            done.fail();
+        });
+    });
+
+    it('style without values', function (done) {
+        var a = worksheet.row(2, 1, [1]);
+        worksheet.row(2, 1, null, {
             bold: true,
             italic: true
         });

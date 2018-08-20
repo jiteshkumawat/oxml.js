@@ -30,21 +30,14 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             // cell.set('Updated Value');
             // console.log(cell);
             // workbook.download('tmp.xlsx');
-            debugger;            
+            debugger;
 
             // ACT
-            worksheet.cell(1, 1).style({
-                fill: {
-                    gradient: {
-                        degree: 90,
-                        stops: [{ position: 0, color: "FF92D050" }, { position: 1, color: "FF0070C0" }]
-                    }
-                }
-            });
-            worksheet.cell(1, 1).style({
+            worksheet.row(2, 1, [1, 2, 3]);
+            worksheet.row(2, 1, {
                 bold: true
             });
-            
+
             // Assert
             workbook.download('/demo.xlsx').then(function (zip) {
                 expect(zip.files["workbook/style2.xml"]).toBeDefined();

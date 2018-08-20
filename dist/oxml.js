@@ -879,12 +879,15 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
         }
         if (!options && !values) {
             return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
-        } else if (!options && values && !values.length) {
-            values.cellIndices = cellIndices;
-            updateRangeStyle(_sheet, values, cells);
-            if (!isReturn) return;
-            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
-        } else if (values === undefined || values === null) {
+        } 
+        // Deprecated
+        // else if (!options && values && !values.length) {
+        //     values.cellIndices = cellIndices;
+        //     updateRangeStyle(_sheet, values, cells);
+        //     if (!isReturn) return;
+        //     return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
+        // } 
+        else if (values === undefined || values === null) {
             options.cellIndices = cellIndices;
             updateRangeStyle(_sheet, options, cells);
             if (!isReturn) return;
@@ -962,14 +965,14 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
             },
             row: function (rowIndex, columnIndex, values, options) {
                 var totalColumns = _sheet.values[rowIndex - 1] ? _sheet.values[rowIndex - 1].length - columnIndex + 1 : 0;
-                return cells(_sheet, rowIndex, columnIndex, 1, values ? values.length : totalColumns, values ? [values] : null, options, true, true, false);
+                return cells(_sheet, rowIndex, columnIndex, 1, ((values && Array.isArray(values)) ? values.length : (values ? 1 : totalColumns)), values ? [values] : null, options, true, true, false);
             },
             column: function (rowIndex, columnIndex, values, options) {
                 var totalRows = 0;
                 if (!values || !values.length) {
                     totalRows = _sheet.values && _sheet.values.length && _sheet.values.length > rowIndex ? _sheet.values.length - rowIndex + 1 : 0;
                 }
-                return cells(_sheet, rowIndex, columnIndex, values ? values.length : totalRows, 1, values, options, true, false, true);
+                return cells(_sheet, rowIndex, columnIndex, ((values && Array.isArray(values)) ? values.length : (values ? 1 : totalRows)), 1, values, options, true, false, true);
             },
             grid: function (rowIndex, columnIndex, values, options) {
                 var index, totalRows = 0, totalColumns = 0;
