@@ -10,7 +10,10 @@
         "oxml_workbook": 'oxml-workbook',
         "oxml_xlsx": 'oxml-xlsx',
         "oxml_xlsx_styles": 'build/helper/no_styles/oxml-xlsx-styles',
-        "utils": 'utils/utils'
+        "utils": 'utils/utils',
+        "contentFile": 'base/contentFile',
+        "contentString": 'base/contentString',
+        "xmlContentString": 'base/xmlContentString'
     },
     "include": ["build/almond", "fileHandler", "oxml_rels", "oxml_content_types", "oxml_sheet", "oxml_workbook", "oxml_xlsx"],
     "exclude": ["jsZip", "fileSaver"],

@@ -1,4 +1,4 @@
-define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], function (fileHandler, oxmlContentTypes, oxmlRels, oxmlWorkBook) {
+define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], function (FileHandler, OxmlContentTypes, OxmlRels, oxmlWorkBook) {
     'use strict';
 
     var oxml = {};
@@ -23,7 +23,7 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
             /* istanbul ignore next */
             else jsZip = new JSZip();
 
-            var file = fileHandler.createFile(jsZip, fs);
+            var file = new FileHandler().createFile(jsZip, fs);
             _xlsx.contentTypes.attach(file);
             _xlsx._rels.attach(file);
             _xlsx.workBook.attach(file);
@@ -44,7 +44,7 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
 
     var createXLSX = function () {
         var _xlsx = {};
-        _xlsx.contentTypes = oxmlContentTypes.createContentType();
+        _xlsx.contentTypes = OxmlContentTypes.createContentType();
 
         _xlsx.contentTypes.addContentType("Default", "application/vnd.openxmlformats-package.relationships+xml", {
             Extension: "rels"
@@ -56,7 +56,7 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
             PartName: "/workbook/workbook.xml"
         });
 
-        _xlsx._rels = oxmlRels.createRelation('.rels', '_rels');
+        _xlsx._rels = OxmlRels.createRelation('.rels', '_rels');
         _xlsx._rels.addRelation(
             "rId1",
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
@@ -71,7 +71,7 @@ define(['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], func
 
         return {
             _xlsx: _xlsx,
-            sheet: _xlsx.workBook.addSheet,
+            sheet: _xlsx.workBook.addSheet.bind(_xlsx.workBook),
             download: download
         };
     };

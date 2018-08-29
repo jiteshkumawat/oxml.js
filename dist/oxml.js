@@ -25,152 +25,228 @@ define("build/almond", function(){});
 define('fileHandler',[], function () {
     "use strict";
 
-    var createCompressedFile = function (jsZip, fs) {
-
-        var zip = jsZip;
-
-        var compressedFile = {
-            _zip: zip
-        };
-
-        compressedFile.addFile = function (content, fileName, filePath) {
-            var path;
-            if (filePath) {
-                path = zip.folder(filePath);
-            }
-            (path || zip).file(fileName, content);
-        };
-
-        compressedFile.saveFile = function (fileName, callback) {
-            /* istanbul ignore if  */
-            if (typeof window !== "undefined") {
-                return zip.generateAsync({ type: "blob" })
-                    .then(function (content) {
-                        try {
-                            if (window.saveAs) {
-                                return saveAs(content, fileName);
-                            }
-                            var url = window.URL.createObjectURL(content);
-                            var element = document.createElement('a');
-                            element.setAttribute('href', url);
-                            element.setAttribute('download', fileName);
-
-                            element.style.display = 'none';
-                            document.body.appendChild(element);
-                            element.click();
-                            document.body.removeChild(element);
-
-                            if (callback) {
-                                callback(zip);
-                            } else if (typeof Promise !== "undefined") {
-                                return new Promise(function (resolve, reject) {
-                                    resolve(zip);
-                                });
-                            }
-                        } catch (err) {
-                            if (callback) {
-                                callback(null, "Err: Not able to create file object.");
-                            } else if (typeof Promise !== "undefined") {
-                                return new Promise(function (resolve, reject) {
-                                    reject("Err: Not able to create file object.");
-                                });
-                            }
-                        }
-                    });
-            } else {
-                if(callback){
-                    zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
-                    .pipe(fs.createWriteStream(fileName));
-                    callback(zip);
-                    return;
+    var FileHandler = function () { this.className = "FileHandler"; };
+    FileHandler.prototype = function () {
+        var CompressedFile = function (zip, fs) { this.className = "CompressedFile"; this._zip = zip; this._fs = fs; };
+        CompressedFile.prototype = function () {
+            var addFile = function (content, fileName, filePath, options) {
+                var path;
+                if (filePath) {
+                    path = this._zip.folder(filePath);
                 }
-                return new Promise(function (resolve, reject) {
-                    zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
-                    .pipe(fs.createWriteStream(fileName));
-                    resolve(zip);
-                });
+                if (!options) (path || this._zip).file(fileName, content);
+                else (path || this._zip).file(fileName, content, options);
+            };
+
+            var saveFile = function (fileName, callback) {
+                var zip = this._zip;
+                var fs = this._fs;
+                /* istanbul ignore if  */
+                if (typeof window !== "undefined") {
+                    return zip.generateAsync({ type: "blob" })
+                        .then(function (content) {
+                            try {
+                                if (window.saveAs) {
+                                    return saveAs(content, fileName);
+                                }
+                                var url = window.URL.createObjectURL(content);
+                                var element = document.createElement('a');
+                                element.setAttribute('href', url);
+                                element.setAttribute('download', fileName);
+
+                                element.style.display = 'none';
+                                document.body.appendChild(element);
+                                element.click();
+                                document.body.removeChild(element);
+
+                                if (callback) {
+                                    callback(zip);
+                                } else if (typeof Promise !== "undefined") {
+                                    return new Promise(function (resolve, reject) {
+                                        resolve(zip);
+                                    });
+                                }
+                            } catch (err) {
+                                if (callback) {
+                                    callback(null, "Err: Not able to create file object.");
+                                } else if (typeof Promise !== "undefined") {
+                                    return new Promise(function (resolve, reject) {
+                                        reject("Err: Not able to create file object.");
+                                    });
+                                }
+                            }
+                        });
+                } else {
+                    if (callback) {
+                        zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
+                            .pipe(fs.createWriteStream(fileName));
+                        callback(zip);
+                        return;
+                    }
+                    return new Promise(function (resolve, reject) {
+                        zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
+                            .pipe(fs.createWriteStream(fileName));
+                        resolve(zip);
+                    });
+                }
+            };
+
+            return {
+                addFile: addFile,
+                saveFile: saveFile
+            };
+        }();
+
+        return {
+            createFile: function (zip, fs) {
+                return new CompressedFile(zip, fs);
             }
         };
+    }();
 
-        return compressedFile;
-    };
-
-    return {
-        createFile: createCompressedFile
-    };
+    return FileHandler;
 });
-define('oxml_rels',[], function () {
+define('contentFile',[], function () {
+    var ContentFile = function (file) { this.className = "ContentFile"; this._file = file; };
+
+    ContentFile.prototype = function () {
+        var attach = function (zipFile) {
+            var fileContent = this.generateContent(zipFile);
+            zipFile.addFile(fileContent, this.fileName, this.folderName);
+            if (this.attachChild) this.attachChild(zipFile);
+        };
+
+        return { attach: attach };
+    }();
+
+    return ContentFile;
+});
+define('contentString',[], function () {
+    var ContentString = function (template) {
+        if (template) this.template = template;
+    };
+
+    ContentString.prototype = function () {
+        var format = function(){
+            var args = arguments;
+            this.template = this.template.replace(/{(\d+)}/g, function(match, number){
+                return typeof args[number] !== "undefined" ? args[number] : match;
+            });
+            return this.template;
+        };
+        
+        var toString = function(){
+            return this.template;
+        }
+
+        return { format: format, toString: toString };
+    }();
+
+    return ContentString;
+});
+define('xmlContentString',['contentString'], function (ContentString) {
+    var XMLContentString = function (options) {
+        this.className = "XMLContentString";
+        this.rootNode = options.rootNode;
+        this.nameSpaces = options.nameSpaces;
+        this.template = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        var contentTemplate = new ContentString('<{0}{1}{3}>{2}</{0}>'), nameSpaceContent = '';
+        var attributes = "";
+
+        for (var index = 0; index < this.nameSpaces.length; index++) {
+            var nameSpaceTemplate = new ContentString(' xmlns{0}="{1}"');
+            if (typeof this.nameSpaces[index] === "string") {
+                nameSpaceContent += nameSpaceTemplate.format('', this.nameSpaces[index]);
+            } else {
+                nameSpaceContent += nameSpaceTemplate.format(
+                    this.nameSpaces[index].attribute ? (':' + this.nameSpaces[index].attribute) : '',
+                    this.nameSpaces[index].value
+                );
+            }
+        }
+        if (options.attributes) {
+            for (var attr in options.attributes) {
+                var attributesContent = new ContentString(' {0}="{1}"');
+                attributes += attributesContent.format(attr, options.attributes[attr]);
+            }
+        }
+
+        this.template += contentTemplate.format(this.rootNode, nameSpaceContent, "{0}", attributes);
+    };
+    XMLContentString.prototype = Object.create(ContentString.prototype);
+
+    return XMLContentString;
+});
+define('oxml_rels',['contentFile', 'contentString', 'xmlContentString'], function (ContentFile, ContentString, XMLContentString) {
     'use strict';
 
     // Add Relation
-    var addRelation = function (id, type, target, _rels) {
-        _rels.relations.push({
+    var Relation = function (fileName, folderName) {
+        this.className = "Relation";
+        this.fileName = fileName;
+        this.folderName = folderName;
+        this.relations = [];
+    };
+    Relation.prototype = Object.create(ContentFile.prototype);
+
+    Relation.prototype.addRelation = function (id, type, target) {
+        this.relations.push({
             Id: id,
             Type: type,
             Target: target
         });
     };
 
-    var generateContent = function (_rels) {
+    Relation.prototype.generateContent = function () {
         // Create RELS
-        var index, rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
-        for (index = 0; index < _rels.relations.length; index++) {
-            var relation = _rels.relations[index];
-            rels += '<Relationship Id="' + relation.Id + '" Type="' + relation.Type + '" Target="' + relation.Target + '"/>';
+        var template = new XMLContentString({
+            rootNode: 'Relationships',
+            nameSpaces: ['http://schemas.openxmlformats.org/package/2006/relationships']
+        });
+        var index, rels = '';
+        for (index = 0; index < this.relations.length; index++) {
+            var relationTemplate = new ContentString('<Relationship Id="{0}" Type="{1}" Target="{2}"/>');
+            rels += relationTemplate.format(this.relations[index].Id, this.relations[index].Type, this.relations[index].Target);
         }
-        rels += '</Relationships>';
-        return rels;
+        return template.format(rels);
     };
 
-    var attach = function (file, _rels) {
-        var rels = generateContent(_rels);
-        file.addFile(rels, _rels.fileName, _rels.folderName);
+    return {
+        createRelation: function (fileName, folderName) {
+            return new Relation(fileName, folderName);
+        }
     };
-
-    // Create Relation
-    var createRelation = function (fileName, folderName) {
-        var _rels = {
-            relations: [],
-            fileName: fileName,
-            folderName: folderName
-        };
-        _rels.addRelation = function (id, type, target) {
-            addRelation(id, type, target, _rels);
-        };
-        _rels.attach = function (file) {
-            return attach(file, _rels);
-        };
-        return _rels;
-    };
-
-    return { createRelation: createRelation };
 });
-define('oxml_content_types',[], function () {
+define('oxml_content_types',['contentFile', 'contentString', 'xmlContentString'], function (ContentFile, ContentString, XMLContentString) {
     'use strict';
 
-    var generateContent = function (_contentType) {
-        var index, contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">';
-        for (index = 0; index < _contentType.contentTypes.length; index++) {
-            var contentType = _contentType.contentTypes[index];
-            contentTypes += '<' + contentType.name + ' ContentType="' + contentType.contentType + '" ';
-            if (contentType.Extension) {
-                contentTypes += 'Extension="' + contentType.Extension + '" ';
-            }
-            if (contentType.PartName) {
-                contentTypes += 'PartName="' + contentType.PartName + '" ';
-            }
-            contentTypes += '/>\n';
+    var ContentTypes = function () {
+        this.className = "ContentTypes";
+        this._contentType = {
+            contentTypes: []
+        };
+        this.fileName = "[Content_Types].xml";
+    };
+    ContentTypes.prototype = Object.create(ContentFile.prototype);
+    ContentTypes.prototype.generateContent = function () {
+        var template = new XMLContentString({
+            rootNode : 'Types',
+            nameSpaces: ['http://schemas.openxmlformats.org/package/2006/content-types']
+        });
+        var index, contentTypes = '';
+        for (index = 0; index < this._contentType.contentTypes.length; index++) {
+            var contentTypeTemplate = new ContentString('<{0} ContentType="{1}"{2}{3}/>');
+            var contentType = this._contentType.contentTypes[index];
+            contentTypes += contentTypeTemplate.format(
+                contentType.name,
+                contentType.contentType,
+                (contentType.Extension ? (' Extension="' + contentType.Extension + '"') : ''),
+                (contentType.PartName ? (' PartName="' + contentType.PartName + '"') : ''));
         }
-        contentTypes += '</Types>';
-        return contentTypes;
+        return template.format(contentTypes);
     };
 
-    var attach = function (file, _contentType) {
-        var contentTypes = generateContent(_contentType);
-        file.addFile(contentTypes, "[Content_Types].xml");
-    };
-
-    var addContentType = function (name, contentType, attributes, _contentType) {
+    ContentTypes.prototype.addContentType = function (name, contentType, attributes) {
         var content = {
             name: name,
             contentType: contentType
@@ -179,497 +255,504 @@ define('oxml_content_types',[], function () {
         for (var key in attributes) {
             content[key] = attributes[key];
         }
-        _contentType.contentTypes.push(content);
-    };
-
-    var createContentType = function () {
-        var _contentType = {
-            contentTypes: []
-        };
-        _contentType.addContentType = function (name, contentType, attributes) {
-            addContentType(name, contentType, attributes, _contentType);
-        };
-        _contentType.attach = function (file) {
-            return attach(file, _contentType);
-        };
-        return _contentType;
+        this._contentType.contentTypes.push(content);
     };
 
     return {
-        createContentType: createContentType
+        createContentType: function () { return new ContentTypes(); }
     };
 });
-define('oxml_table',[], function () {
-    var generateContent = function (_table) {
-        var tableContent = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><table totalsRowShown="0" ref="' + _table.fromCell +
-            ':' + _table.toCell + '" displayName="' + _table.displayName + '" name="' + _table.displayName +
-            '" id="' + _table.rid + '" xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
-        if (_table.filters) {
-            tableContent += '<autoFilter ref="' + _table.fromCell +
-                ':' + _table.toCell + '">';
-            for (var index = 0; index < _table.filters.length; index++) {
-                tableContent += '<filterColumn colId="' + _table.filters[index].column + '">';
-                if (_table.filters[index].values[0].type === "default") {
-                    tableContent += '<filters>';
-                    for (var index2 = 0; index2 < _table.filters[index].values.length; index2++) {
-                        tableContent += '<filter val="' + _table.filters[index].values[index2].value + '"/>';
-                    }
-                    tableContent += '</filters>';
-                } else if (_table.filters[index].values[0].type === "custom") {
-                    tableContent += '<customFilters and="' + (_table.filters[index].values[0].and ? '1' : '0') + '">';
-                    for (var index2 = 0; index2 < _table.filters[index].values.length; index2++) {
-                        tableContent += '<customFilter operator="' + _table.filters[index].values[index2].operator + '" val="' + _table.filters[index].values[index2].value + '"/>';
-                    }
-                    tableContent += '</customFilters>';
+define('oxml_table',['xmlContentString', 'contentFile'],
+    function (
+        XMLContentString,
+        ContentFile
+    ) {
+        'use strict';
+
+        var Table = function (displayName, fromCell, toCell, columns, relId, options, _sheet) {
+            var rowFrom = parseInt(fromCell.match(/\d+/)[0], 10);
+            var rowTo = parseInt(toCell.match(/\d+/)[0], 10);
+            var columnFrom = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 64;
+            var columnTo = toCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 64;
+            var _table = {
+                rid: relId,
+                displayName: displayName,
+                columns: columns,
+                fromCell: fromCell,
+                toCell: toCell,
+                fromRow: rowFrom,
+                toRow: rowTo,
+                fromColumn: columnFrom,
+                toColumn: columnTo
+            };
+            applyOptions(options, _table, _sheet);
+            this.className = "Table";
+            this.fileName = "table" + relId + ".xml";
+            this.folderName = "workbook/tables";
+            this._table = _table;
+            this.rid = relId;
+            this._sheet = _sheet;
+        };
+        Table.prototype = Object.create(ContentFile.prototype);
+
+        Table.prototype.generateContent = function () {
+            var template = new XMLContentString({
+                rootNode: 'table',
+                nameSpaces: ["http://schemas.openxmlformats.org/spreadsheetml/2006/main"],
+                attributes: {
+                    totalsRowShown: "0",
+                    ref: this._table.fromCell + ":" + this._table.toCell,
+                    displayName: this._table.displayName,
+                    name: this._table.displayName,
+                    id: this._table.rid
                 }
-                tableContent += '</filterColumn>';
+            });
+
+            var tableContent = '';
+            if (this._table.filters) {
+                tableContent += '<autoFilter ref="' + this._table.fromCell +
+                    ':' + this._table.toCell + '">';
+                for (var index = 0; index < this._table.filters.length; index++) {
+                    tableContent += '<filterColumn colId="' + this._table.filters[index].column + '">';
+                    if (this._table.filters[index].values[0].type === "default") {
+                        tableContent += '<filters>';
+                        for (var index2 = 0; index2 < this._table.filters[index].values.length; index2++) {
+                            tableContent += '<filter val="' + this._table.filters[index].values[index2].value + '"/>';
+                        }
+                        tableContent += '</filters>';
+                    } else if (this._table.filters[index].values[0].type === "custom") {
+                        tableContent += '<customFilters and="' + (this._table.filters[index].values[0].and ? '1' : '0') + '">';
+                        for (var index2 = 0; index2 < this._table.filters[index].values.length; index2++) {
+                            tableContent += '<customFilter operator="' + this._table.filters[index].values[index2].operator + '" val="' + this._table.filters[index].values[index2].value + '"/>';
+                        }
+                        tableContent += '</customFilters>';
+                    }
+                    tableContent += '</filterColumn>';
+                }
+                tableContent += '</autoFilter>';
             }
-            tableContent += '</autoFilter>';
-        }
-        if (_table.sort) {
-            tableContent += '<sortState caseSensitive="' + (_table.sort.caseSensitive ? '1' : '0') + '" ref="' + _table.sort.dataRange + '">';
-            tableContent += '<sortCondition' + (_table.sort.direction === "ascending" ? "" : ' descending="1"') + ' ref="' + _table.sort.range + '"/>';
-            tableContent += '</sortState>';
-        }
-        tableContent += '<tableColumns count="' + _table.columns.length + '">';
-        for (var index = 0; index < _table.columns.length; index++)
-            tableContent += '<tableColumn name="' + _table.columns[index] + '" id="' + (index + 1) + '"/>';
-        var tableStyle = '';
-        if (_table.tableStyle)
-            tableStyle = '<tableStyleInfo name="' + _table.tableStyle.name
-                + '" showColumnStripes="' + (_table.tableStyle.showColumnStripes ? '1' : '0')
-                + '" showRowStripes="' + (_table.tableStyle.showRowStripes ? '1' : '0') + '" showLastColumn="'
-                + (_table.tableStyle.showLastColumn ? '1' : '0') + '" showFirstColumn="'
-                + (_table.tableStyle.showFirstColumn ? '1' : '0') + '"/>';
-        tableContent += '</tableColumns>' + tableStyle + '</table>';
-        return tableContent;
-    };
+            if (this._table.sort) {
+                tableContent += '<sortState caseSensitive="' + (this._table.sort.caseSensitive ? '1' : '0') + '" ref="' + this._table.sort.dataRange + '">';
+                tableContent += '<sortCondition' + (this._table.sort.direction === "ascending" ? "" : ' descending="1"') + ' ref="' + this._table.sort.range + '"/>';
+                tableContent += '</sortState>';
+            }
+            tableContent += '<tableColumns count="' + this._table.columns.length + '">';
+            for (var index = 0; index < this._table.columns.length; index++)
+                tableContent += '<tableColumn name="' + this._table.columns[index] + '" id="' + (index + 1) + '"/>';
+            var tableStyle = '';
+            if (this._table.tableStyle)
+                tableStyle = '<tableStyleInfo name="' + this._table.tableStyle.name
+                    + '" showColumnStripes="' + (this._table.tableStyle.showColumnStripes ? '1' : '0')
+                    + '" showRowStripes="' + (this._table.tableStyle.showRowStripes ? '1' : '0') + '" showLastColumn="'
+                    + (this._table.tableStyle.showLastColumn ? '1' : '0') + '" showFirstColumn="'
+                    + (this._table.tableStyle.showFirstColumn ? '1' : '0') + '"/>';
+            tableContent += '</tableColumns>' + tableStyle;
+            return template.format(tableContent);
+        };
 
-    var attach = function (_table, file) {
-        var content = generateContent(_table);
-        file.addFile(content, "table" + _table.rid + ".xml", "workbook/tables");
-    };
+        Table.prototype.tableOptions = function () {
+            return tableOptions(this._table, this._sheet, this.relId);
+        }
 
-    var applyFilter = function (options, _table, _sheet) {
-        if (!_table.filters) _table.filters = [];
-        if (typeof options.filters === "object" && options.filters.length) {
-            for (var index = 0; index < options.filters.length; index++) {
-                if (options.filters[index].column) {
-                    var values;
-                    if (options.filters[index].value) {
-                        values = [];
-                        values.push({
-                            value: options.filters[index].value,
-                            type: options.filters[index].type || "default",
-                            operator: options.filters[index].operator || null,
-                            and: options.filters[index].and !== false
-                        });
-                        hideRows(_sheet, options.filters[index].column - 1, [options.filters[index].value], _table.fromCell, _table.toCell, options.filters[index].operator);
-                    } else if (options.filters[index].values && typeof options.filters[index].values === "object" && options.filters[index].values.length) {
-                        values = [];
-                        for (var index2 = 0; index2 < options.filters[index].values.length; index2++) {
+        var applyFilter = function (options, _table, _sheet) {
+            if (!_table.filters) _table.filters = [];
+            if (typeof options.filters === "object" && options.filters.length) {
+                for (var index = 0; index < options.filters.length; index++) {
+                    if (options.filters[index].column) {
+                        var values;
+                        if (options.filters[index].value) {
+                            values = [];
                             values.push({
-                                value: options.filters[index].values[index2],
+                                value: options.filters[index].value,
                                 type: options.filters[index].type || "default",
                                 operator: options.filters[index].operator || null,
                                 and: options.filters[index].and !== false
                             });
+                            hideRows(_sheet, options.filters[index].column - 1, [options.filters[index].value], _table.fromCell, _table.toCell, options.filters[index].operator);
+                        } else if (options.filters[index].values && typeof options.filters[index].values === "object" && options.filters[index].values.length) {
+                            values = [];
+                            for (var index2 = 0; index2 < options.filters[index].values.length; index2++) {
+                                values.push({
+                                    value: options.filters[index].values[index2],
+                                    type: options.filters[index].type || "default",
+                                    operator: options.filters[index].operator || null,
+                                    and: options.filters[index].and !== false
+                                });
+                            }
+                            hideRows(_sheet, options.filters[index].column - 1, options.filters[index].values, _table.fromCell, _table.toCell, options.filters[index].operator);
                         }
-                        hideRows(_sheet, options.filters[index].column - 1, options.filters[index].values, _table.fromCell, _table.toCell, options.filters[index].operator);
+                        _table.filters.push({
+                            column: options.filters[index].column - 1,
+                            values: values
+                        });
                     }
-                    _table.filters.push({
-                        column: options.filters[index].column - 1,
-                        values: values
-                    });
                 }
             }
-        }
-    };
+        };
 
-    var applySort = function (options, _table) {
-        var sort = {};
-        var columnFrom = _table.fromColumn - 1;
-        var columnTo = _table.toColumn - 1;
-        var rowFrom = _table.fromRow;
-        var rowTo = _table.toRow;
-        if (typeof options.sort === "number") {
-            columnFrom = String.fromCharCode(options.sort + columnFrom + 64);
-            sort.direction = "ascending";
-            sort.caseSensitive = true;
-        } else if (typeof options.sort === "object" && !options.sort.length && options.sort.column) {
-            columnFrom = String.fromCharCode(options.sort.column + columnFrom + 64);
-            sort.direction = options.sort.direction || "ascending";
-            sort.caseSensitive = options.sort.caseSensitive !== undefined ? options.sort.caseSensitive : true;
-        }
-        sort.range = columnFrom + (rowFrom + 1) + ":" + columnFrom + rowTo;
-        sort.dataRange = String.fromCharCode(_table.fromColumn + 64) + (rowFrom + 1) + ":" + String.fromCharCode(columnTo + 65) + rowTo;
-        _table.sort = sort;
-    };
-
-    var applyOptions = function (options, _table, _sheet) {
-        if (options) {
-            if (options.filters) {
-                applyFilter(options, _table, _sheet);
+        var applySort = function (options, _table) {
+            var sort = {};
+            var columnFrom = _table.fromColumn - 1;
+            var columnTo = _table.toColumn - 1;
+            var rowFrom = _table.fromRow;
+            var rowTo = _table.toRow;
+            if (typeof options.sort === "number") {
+                columnFrom = String.fromCharCode(options.sort + columnFrom + 64);
+                sort.direction = "ascending";
+                sort.caseSensitive = true;
+            } else if (typeof options.sort === "object" && !options.sort.length && options.sort.column) {
+                columnFrom = String.fromCharCode(options.sort.column + columnFrom + 64);
+                sort.direction = options.sort.direction || "ascending";
+                sort.caseSensitive = options.sort.caseSensitive !== undefined ? options.sort.caseSensitive : true;
             }
-            if (options.sort) {
-                applySort(options, _table);
-            }
-        }
-    };
+            sort.range = columnFrom + (rowFrom + 1) + ":" + columnFrom + rowTo;
+            sort.dataRange = String.fromCharCode(_table.fromColumn + 64) + (rowFrom + 1) + ":" + String.fromCharCode(columnTo + 65) + rowTo;
+            _table.sort = sort;
+        };
 
-    var hideRows = function (_sheet, column, values, fromCell, toCell, operator) {
-        var rowFrom = parseInt(fromCell.match(/\d+/)[0], 10);
-        var rowTo = parseInt(toCell.match(/\d+/)[0], 10);
-        var columnFrom = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
-        column += columnFrom;
-        for (var index = rowFrom; index < rowTo; index++) {
-            var isHidden = false;
-            if (_sheet.values[index]) {
-                if (operator && (operator === "greaterThan" || operator === "greaterThanOrEqual" || operator === "lessThan" || operator === "lessThanOrEqual")) {
-                    isHidden = true;
-                    for (var index2 = 0; index2 < values.length; index2++) {
-                        switch (operator) {
-                            case "greaterThan":
-                                if (_sheet.values[index][column].value > values[index2])
-                                    isHidden = false;
-                                break;
-                            case "greaterThanOrEqual":
-                                if (_sheet.values[index][column].value >= values[index2])
-                                    isHidden = false;
-                                break;
-                            case "lessThan":
-                                if (_sheet.values[index][column].value >= values[index2])
-                                    isHidden = false;
-                                break;
-                            case "lessThanOrEqual":
-                                if (_sheet.values[index][column].value >= values[index2])
-                                    isHidden = false;
-                                break;
-                        };
-                        if (!isHidden) break;
-                    }
-                } else if (operator === "notEqual") {
-                    isHidden = values.indexOf(_sheet.values[index][column].value) > -1;
-                } else {
-                    isHidden = !(values.indexOf(_sheet.values[index][column].value) > -1);
+        var applyOptions = function (options, _table, _sheet) {
+            if (options) {
+                if (options.filters) {
+                    applyFilter(options, _table, _sheet);
+                }
+                if (options.sort) {
+                    applySort(options, _table);
                 }
             }
-            if (isHidden) {
-                _sheet.values[index].hidden = true;
-            }
-        }
-    };
-
-    var style = function (options, tableStyleName, _sheet, _table) {
-        var _styles = _sheet._workBook.createStyles();
-        var savedStyle = _styles.addTableStyle(options, tableStyleName, _table);
-        _table.tableStyle = {
-            name: tableStyleName,
-            showColumnStripes: !!(savedStyle.evenColumn || savedStyle.oddColumn),
-            showRowStripes: !!(savedStyle.evenRow || savedStyle.oddRow),
-            showLastColumn: !!savedStyle.lastColumn,
-            showFirstColumn: !!savedStyle.firstColumn
         };
-    };
 
-    var tableOptions = function (_table, _sheet, relId) {
-        return {
-            name: _table.displayName,
-            columns: _table.columns,
-            fromCell: _table.fromCell,
-            toCell: _table.toCell,
-            sort: _table.sort,
-            filters: _table.filters,
-            set: function (options) {
-                applyOptions(options, _table, _sheet);
-                return tableOptions(_table, _sheet, relId);
-            },
-            style: function (options, tableStyleName) {
-                if (!tableStyleName) tableStyleName = 'customTableStyle' + relId;
-                style(options, tableStyleName, _sheet, _table);
-                return tableOptions(_table, _sheet, relId);
-            }
-        };
-    };
-
-    var addTable = function (displayName, fromCell, toCell, columns, relId, options, _sheet) {
-        var rowFrom = parseInt(fromCell.match(/\d+/)[0], 10);
-        var rowTo = parseInt(toCell.match(/\d+/)[0], 10);
-        var columnFrom = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 64;
-        var columnTo = toCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 64;
-        var _table = {
-            rid: relId,
-            displayName: displayName,
-            columns: columns,
-            fromCell: fromCell,
-            toCell: toCell,
-            fromRow: rowFrom,
-            toRow: rowTo,
-            fromColumn: columnFrom,
-            toColumn: columnTo
-        };
-        applyOptions(options, _table, _sheet);
-        return {
-            _table: _table,
-            rid: relId,
-            attach: function (file) {
-                attach(_table, file);
-            },
-            tableOptions: function () {
-                return tableOptions(_table, _sheet, relId);
-            }
-        };
-    };
-
-    return { addTable: addTable };
-});
-define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) {
-    'use strict';
-
-    var cellString = function (value, cellIndex, rowIndex, columnIndex) {
-        if (!value) {
-            return '';
-        }
-        var styleString = value.styleIndex ? 's="' + value.styleIndex + '"' : '';
-        if (value.type === 'numeric') {
-            return '<c r="' + cellIndex + '" ' + styleString + '><v>' + value.value + '</v></c>';
-        } else if (value.type === 'sharedString') {
-            return '<c r="' + cellIndex + '" t="s" ' + styleString + '><v>' + value.value + '</v></c>';
-        } else if (value.type === "sharedFormula") {
-            var v = "";
-            if (value.value && typeof value.value === "function") {
-                v = '<v>' + value.value(rowIndex + 1, columnIndex + 1) + '</v>';
-            } else if (value.value !== undefined && value.value !== null) {
-                v = '<v>' + value.value + '</v>';
-            }
-            if (value.formula) {
-                return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" ref="' + value.range + '" si="' + value.si + '">' + value.formula + '</f>' + v + '</c>';
-            }
-            return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" si="' + value.si + '"></f>' + v + '</c>';
-        } else if (value.type === 'string') {
-            return '<c r="' + cellIndex + '" t="inlineStr" ' + styleString + '><is><t>' + value.value + '</t></is></c>';
-        } else if (value.type === 'formula') {
-            var v = "";
-            if (value.value && typeof value.value === "function") {
-                v = '<v>' + value.value(rowIndex + 1, columnIndex + 1) + '</v>';
-            } else if (value.value !== undefined && value.value !== null) {
-                v = '<v>' + value.value + '</v>';
-            }
-            return '<c r="' + cellIndex + '" ' + styleString + '><f>' + value.formula + '</f>' + v + '</c>';
-        }
-    };
-
-    var generateContent = function (_sheet, file) {
-        var rowIndex = 0, sheetValues = '';
-        if (_sheet.values && _sheet.values.length) {
-            for (rowIndex = 0; rowIndex < _sheet.values.length; rowIndex++) {
-                if (_sheet.values[rowIndex] && _sheet.values[rowIndex].length > 0) {
-                    var hidden = _sheet.values[rowIndex].hidden ? ' hidden="1" ' : '';
-                    sheetValues += '<row r="' + (rowIndex + 1) + '"' + hidden + '>';
-
-                    var columnIndex = 0;
-                    for (columnIndex = 0; columnIndex < _sheet.values[rowIndex].length; columnIndex++) {
-                        var columnChar = String.fromCharCode(65 + columnIndex);
-                        var value = _sheet.values[rowIndex][columnIndex];
-                        var cellIndex = columnChar + (rowIndex + 1);
-                        var cellStr = cellString(value, cellIndex, rowIndex, columnIndex);
-                        sheetValues += cellStr;
-                    }
-
-                    sheetValues += '</row>';
-                }
-            }
-        }
-        var tables = '';
-        if (_sheet.tables && _sheet.tables.length) {
-            tables += '<tableParts count="' + _sheet.tables.length + '">';
-            for (var index = 0; index < _sheet.tables.length; index++) {
-                tables += '<tablePart r:id="rId' + _sheet.tables[index].rid + '"/>';
-                if (file) _sheet.tables[index].attach(file);
-            }
-            tables += '</tableParts>';
-        }
-        var sheet = '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData>' +
-            sheetValues + '</sheetData>' + tables + '</worksheet>';
-        return sheet;
-    };
-
-    var attach = function (_sheet, file) {
-        var content = generateContent(_sheet, file);
-        file.addFile(content, "sheet" + _sheet.sheetId + ".xml", "workbook/sheets");
-        if (_sheet._rels) {
-            _sheet._rels.attach(file);
-        }
-    };
-
-    var sanitizeValue = function (value, _sheet) {
-        if (value === undefined || value === null) {
-            return null;
-        }
-        if (typeof value === "object") {
-            // Object type of value
-            if ((value.value === undefined || value.value === null) && !(value.formula && value.type === "formula")) {
-                return null;
-            }
-            if (!value.type) {
-                value = value.value;
-            } else {
-                if (value.type === "sharedString") {
-                    if (typeof value.value === "number") {
-                        return {
-                            type: value.type,
-                            value: value.value
-                        };
+        var hideRows = function (_sheet, column, values, fromCell, toCell, operator) {
+            var rowFrom = parseInt(fromCell.match(/\d+/)[0], 10);
+            var rowTo = parseInt(toCell.match(/\d+/)[0], 10);
+            var columnFrom = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
+            column += columnFrom;
+            for (var index = rowFrom; index < rowTo; index++) {
+                var isHidden = false;
+                if (_sheet.values[index]) {
+                    if (operator && (operator === "greaterThan" || operator === "greaterThanOrEqual" || operator === "lessThan" || operator === "lessThanOrEqual")) {
+                        isHidden = true;
+                        for (var index2 = 0; index2 < values.length; index2++) {
+                            switch (operator) {
+                                case "greaterThan":
+                                    if (_sheet.values[index][column].value > values[index2])
+                                        isHidden = false;
+                                    break;
+                                case "greaterThanOrEqual":
+                                    if (_sheet.values[index][column].value >= values[index2])
+                                        isHidden = false;
+                                    break;
+                                case "lessThan":
+                                    if (_sheet.values[index][column].value >= values[index2])
+                                        isHidden = false;
+                                    break;
+                                case "lessThanOrEqual":
+                                    if (_sheet.values[index][column].value >= values[index2])
+                                        isHidden = false;
+                                    break;
+                            };
+                            if (!isHidden) break;
+                        }
+                    } else if (operator === "notEqual") {
+                        isHidden = values.indexOf(_sheet.values[index][column].value) > -1;
                     } else {
-                        // Add shared string
-                        value.value = _sheet._workBook.createSharedString(value.value, _sheet._workBook);
+                        isHidden = !(values.indexOf(_sheet.values[index][column].value) > -1);
+                    }
+                }
+                if (isHidden) {
+                    _sheet.values[index].hidden = true;
+                }
+            }
+        };
+
+        var style = function (options, tableStyleName, _sheet, _table) {
+            var _styles = _sheet._workBook.createStyles();
+            var savedStyle = _styles.addTableStyle(options, tableStyleName, _table);
+            _table.tableStyle = {
+                name: tableStyleName,
+                showColumnStripes: !!(savedStyle.evenColumn || savedStyle.oddColumn),
+                showRowStripes: !!(savedStyle.evenRow || savedStyle.oddRow),
+                showLastColumn: !!savedStyle.lastColumn,
+                showFirstColumn: !!savedStyle.firstColumn
+            };
+        };
+
+        var tableOptions = function (_table, _sheet, relId) {
+            return {
+                name: _table.displayName,
+                columns: _table.columns,
+                fromCell: _table.fromCell,
+                toCell: _table.toCell,
+                sort: _table.sort,
+                filters: _table.filters,
+                set: function (options) {
+                    applyOptions(options, _table, _sheet);
+                    return tableOptions(_table, _sheet, relId);
+                },
+                style: function (options, tableStyleName) {
+                    if (!tableStyleName) tableStyleName = 'customTableStyle' + relId;
+                    style(options, tableStyleName, _sheet, _table);
+                    return tableOptions(_table, _sheet, relId);
+                }
+            };
+        };
+
+        return {
+            addTable: function (displayName, fromCell, toCell, columns, relId, options, _sheet) {
+                return new Table(displayName, fromCell, toCell, columns, relId, options, _sheet);
+            }
+        };
+    });
+define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
+    function (
+        oxmlTable,
+        OxmlRels,
+        XMLContentString,
+        ContentFile) {
+        'use strict';
+
+        var Sheet = function (sheetName, sheetId, rId, workBook, xlsxContentTypes) {
+            this.className = "Worksheet";
+            this.fileName = "sheet" + sheetId + ".xml";
+            this.folderName = "workbook/sheets";
+            this.xlsxContentTypes = xlsxContentTypes;
+            this._sheet = {
+                sheetName: sheetName,
+                sheetId: sheetId,
+                rId: rId,
+                values: [],
+                _workBook: workBook
+            };
+        };
+        Sheet.prototype = Object.create(ContentFile.prototype);
+
+        var cellString = function (value, cellIndex, rowIndex, columnIndex) {
+            if (!value) {
+                return '';
+            }
+            var styleString = value.styleIndex ? 's="' + value.styleIndex + '"' : '';
+            if (value.type === 'numeric') {
+                return '<c r="' + cellIndex + '" ' + styleString + '><v>' + value.value + '</v></c>';
+            } else if (value.type === 'sharedString') {
+                return '<c r="' + cellIndex + '" t="s" ' + styleString + '><v>' + value.value + '</v></c>';
+            } else if (value.type === "sharedFormula") {
+                var v = "";
+                if (value.value && typeof value.value === "function") {
+                    v = '<v>' + value.value(rowIndex + 1, columnIndex + 1) + '</v>';
+                } else if (value.value !== undefined && value.value !== null) {
+                    v = '<v>' + value.value + '</v>';
+                }
+                if (value.formula) {
+                    return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" ref="' + value.range + '" si="' + value.si + '">' + value.formula + '</f>' + v + '</c>';
+                }
+                return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" si="' + value.si + '"></f>' + v + '</c>';
+            } else if (value.type === 'string') {
+                return '<c r="' + cellIndex + '" t="inlineStr" ' + styleString + '><is><t>' + value.value + '</t></is></c>';
+            } else if (value.type === 'formula') {
+                var v = "";
+                if (value.value && typeof value.value === "function") {
+                    v = '<v>' + value.value(rowIndex + 1, columnIndex + 1) + '</v>';
+                } else if (value.value !== undefined && value.value !== null) {
+                    v = '<v>' + value.value + '</v>';
+                }
+                return '<c r="' + cellIndex + '" ' + styleString + '><f>' + value.formula + '</f>' + v + '</c>';
+            }
+        };
+        
+        var getNextRelation = function (_sheet) {
+            var lastSheetRel = {};
+            if (_sheet._rels.relations.length) {
+                lastSheetRel = _sheet._rels.relations[_sheet._rels.relations.length - 1];
+            }
+            var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
+            return nextSheetRelId;
+        };
+
+        Sheet.prototype.generateContent = function (file) {
+            var rowIndex = 0, sheetValues = '<sheetData>';
+            if (this._sheet.values && this._sheet.values.length) {
+                for (rowIndex = 0; rowIndex < this._sheet.values.length; rowIndex++) {
+                    if (this._sheet.values[rowIndex] && this._sheet.values[rowIndex].length > 0) {
+                        var hidden = this._sheet.values[rowIndex].hidden ? ' hidden="1" ' : '';
+                        sheetValues += '<row r="' + (rowIndex + 1) + '"' + hidden + '>';
+
+                        var columnIndex = 0;
+                        for (columnIndex = 0; columnIndex < this._sheet.values[rowIndex].length; columnIndex++) {
+                            var columnChar = String.fromCharCode(65 + columnIndex);
+                            var value = this._sheet.values[rowIndex][columnIndex];
+                            var cellIndex = columnChar + (rowIndex + 1);
+                            var cellStr = cellString(value, cellIndex, rowIndex, columnIndex);
+                            sheetValues += cellStr;
+                        }
+
+                        sheetValues += '</row>';
+                    }
+                }
+            }
+            sheetValues += '</sheetData>';
+            var tables = '';
+            if (this._sheet.tables && this._sheet.tables.length) {
+                tables += '<tableParts count="' + this._sheet.tables.length + '">';
+                for (var index = 0; index < this._sheet.tables.length; index++) {
+                    tables += '<tablePart r:id="rId' + this._sheet.tables[index].rid + '"/>';
+                    if (file) this._sheet.tables[index].attach(file);
+                }
+                tables += '</tableParts>';
+            }
+            var sheetTemplate = new XMLContentString({
+                rootNode: 'worksheet',
+                nameSpaces: [
+                    "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+                    {
+                        value: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                        attribute: "r"
+                    }
+                ]
+            });
+            return sheetTemplate.format(sheetValues + tables);
+        };
+
+        Sheet.prototype.attachChild = function (file) {
+            if (this._sheet._rels) {
+                this._sheet._rels.attach(file);
+            }
+        };
+
+        var sanitizeValue = function (value, _sheet) {
+            if (value === undefined || value === null) {
+                return null;
+            }
+            if (typeof value === "object") {
+                // Object type of value
+                if ((value.value === undefined || value.value === null) && !(value.formula && value.type === "formula")) {
+                    return null;
+                }
+                if (!value.type) {
+                    value = value.value;
+                } else {
+                    if (value.type === "sharedString") {
+                        if (typeof value.value === "number") {
+                            return {
+                                type: value.type,
+                                value: value.value
+                            };
+                        } else {
+                            // Add shared string
+                            value.value = _sheet._workBook.createSharedString(value.value, _sheet._workBook);
+                            return {
+                                type: value.type,
+                                value: value.value
+                            };
+                        }
+                    } else if (value.type === "formula") {
+                        return {
+                            type: value.type,
+                            formula: value.formula,
+                            value: value.value
+                        };
+                    } else if (value.type === "numeric" || value.type === "string") {
                         return {
                             type: value.type,
                             value: value.value
                         };
                     }
-                } else if (value.type === "formula") {
-                    return {
-                        type: value.type,
-                        formula: value.formula,
-                        value: value.value
-                    };
-                } else if (value.type === "numeric" || value.type === "string") {
-                    return {
-                        type: value.type,
-                        value: value.value
-                    };
+                    return null;
                 }
-                return null;
             }
-        }
 
-        if (typeof value === "number") {
-            return {
-                type: "numeric",
-                value: value
-            };
-        } else if (typeof value === "string") {
-            return {
-                type: "string",
-                value: value
-            };
-        }
-        return null;
-    };
+            if (typeof value === "number") {
+                return {
+                    type: "numeric",
+                    value: value
+                };
+            } else if (typeof value === "string") {
+                return {
+                    type: "string",
+                    value: value
+                };
+            }
+            return null;
+        };
 
-    var updateValuesInMatrix = function (values, _sheet, rowIndex, columnIndex, options, cellIndices) {
-        var index, styleIndex;
-        if (options) {
-            options.cellIndices = cellIndices;
-            var _styles = _sheet._workBook.createStyles();
-            styleIndex = _styles.addStyles(options);
-        }
-        for (index = 0; index < values.length; index++) {
-            if (values[index] !== undefined || values[index] !== null) {
-                var sheetRowIndex = index + rowIndex - 1;
-                if (!_sheet.values[sheetRowIndex]) {
-                    _sheet.values[sheetRowIndex] = [];
-                }
-                if (typeof values[index] === "object" && values[index].length >= 0) {
-                    var index2;
-                    for (index2 = 0; index2 < values[index].length; index2++) {
-                        var value = sanitizeValue(values[index][index2], _sheet);
+        var updateValuesInMatrix = function (values, _sheet, rowIndex, columnIndex, options, cellIndices) {
+            var index, styleIndex;
+            if (options) {
+                options.cellIndices = cellIndices;
+                var _styles = _sheet._workBook.createStyles();
+                styleIndex = _styles.addStyles(options);
+            }
+            for (index = 0; index < values.length; index++) {
+                if (values[index] !== undefined || values[index] !== null) {
+                    var sheetRowIndex = index + rowIndex - 1;
+                    if (!_sheet.values[sheetRowIndex]) {
+                        _sheet.values[sheetRowIndex] = [];
+                    }
+                    if (typeof values[index] === "object" && values[index].length >= 0) {
+                        var index2;
+                        for (index2 = 0; index2 < values[index].length; index2++) {
+                            var value = sanitizeValue(values[index][index2], _sheet);
+                            if (value) {
+                                if (styleIndex) {
+                                    value.styleIndex = styleIndex.index;
+                                }
+                                if (styleIndex || !_sheet.values[sheetRowIndex][index2 + columnIndex - 1])
+                                    _sheet.values[sheetRowIndex][index2 + columnIndex - 1] = value;
+                                else {
+                                    _sheet.values[sheetRowIndex][index2 + columnIndex - 1].value = value.value;
+                                    _sheet.values[sheetRowIndex][index2 + columnIndex - 1].type = value.type;
+                                }
+                            }
+                        }
+                    } else {
+                        var value = sanitizeValue(values[index], _sheet);
                         if (value) {
                             if (styleIndex) {
                                 value.styleIndex = styleIndex.index;
                             }
-                            if (styleIndex || !_sheet.values[sheetRowIndex][index2 + columnIndex - 1])
-                                _sheet.values[sheetRowIndex][index2 + columnIndex - 1] = value;
+                            if (styleIndex || !_sheet.values[sheetRowIndex][columnIndex - 1])
+                                _sheet.values[sheetRowIndex][columnIndex - 1] = value;
                             else {
-                                _sheet.values[sheetRowIndex][index2 + columnIndex - 1].value = value.value;
-                                _sheet.values[sheetRowIndex][index2 + columnIndex - 1].type = value.type;
+                                _sheet.values[sheetRowIndex][columnIndex - 1].value = value.value;
+                                _sheet.values[sheetRowIndex][columnIndex - 1].type = value.type;
                             }
-                        }
-                    }
-                } else {
-                    var value = sanitizeValue(values[index], _sheet);
-                    if (value) {
-                        if (styleIndex) {
-                            value.styleIndex = styleIndex.index;
-                        }
-                        if (styleIndex || !_sheet.values[sheetRowIndex][columnIndex - 1])
-                            _sheet.values[sheetRowIndex][columnIndex - 1] = value;
-                        else {
-                            _sheet.values[sheetRowIndex][columnIndex - 1].value = value.value;
-                            _sheet.values[sheetRowIndex][columnIndex - 1].type = value.type;
                         }
                     }
                 }
             }
-        }
-    };
-
-    var updateValueInCell = function (value, _sheet, rowIndex, columnIndex, options) {
-        var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
-        var sheetRowIndex = rowIndex - 1;
-        if (value !== undefined && value !== null) {
-            if (!_sheet.values[sheetRowIndex]) {
-                _sheet.values[sheetRowIndex] = [];
-            }
-            value = sanitizeValue(value, _sheet);
-            if (options) {
-                options.cellIndex = cellIndex;
-                var _styles = _sheet._workBook.createStyles();
-                value.styleIndex = _styles.addStyles(options).index;
-            }
-            if (value && !value.styleIndex && _sheet.values[sheetRowIndex][columnIndex - 1])
-                value.styleIndex = _sheet.values[sheetRowIndex][columnIndex - 1].styleIndex;
-            _sheet.values[sheetRowIndex][columnIndex - 1] = value;
-        }
-        return getCellAttributes(_sheet, cellIndex, sheetRowIndex, columnIndex - 1);
-    };
-
-    var getCellAttributes = function (_sheet, cellIndex, rowIndex, columnIndex) {
-        return {
-            style: function (options) {
-                options.cellIndex = cellIndex;
-                updateSingleStyle(_sheet, options, rowIndex, columnIndex);
-                return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
-            },
-            value: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null,
-            type: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null,
-            cellIndex: cellIndex,
-            rowIndex: rowIndex + 1,
-            columnIndex: String.fromCharCode(65 + columnIndex),
-            formula: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined,
-            set: function (value, options) {
-                cell(_sheet, rowIndex + 1, columnIndex + 1, value, options);
-                this.value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
-                this.formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
-                this.type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
-                return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
-            }
         };
-    };
 
-    var getCellRangeAttributes = function (_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns, isRow, isColumn) {
-        var cellRange = [], index;
-        for (index = 0; index < _cells.length; index++) {
-            var rowIndex = _cells[index].rowIndex, columnIndex = _cells[index].columnIndex;
-            var value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
-            var formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
-            var type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
-            var cellIndex = String.fromCharCode(65 + columnIndex) + (rowIndex + 1);
-            var sharedFormulaIndex = type === "sharedFormula" ? _sheet.values[rowIndex][columnIndex].si : undefined;
-            cellRange.push({
+        var updateValueInCell = function (value, _sheet, rowIndex, columnIndex, options) {
+            var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+            var sheetRowIndex = rowIndex - 1;
+            if (value !== undefined && value !== null) {
+                if (!_sheet.values[sheetRowIndex]) {
+                    _sheet.values[sheetRowIndex] = [];
+                }
+                value = sanitizeValue(value, _sheet);
+                if (options) {
+                    options.cellIndex = cellIndex;
+                    var _styles = _sheet._workBook.createStyles();
+                    value.styleIndex = _styles.addStyles(options).index;
+                }
+                if (value && !value.styleIndex && _sheet.values[sheetRowIndex][columnIndex - 1])
+                    value.styleIndex = _sheet.values[sheetRowIndex][columnIndex - 1].styleIndex;
+                _sheet.values[sheetRowIndex][columnIndex - 1] = value;
+            }
+            return getCellAttributes(_sheet, cellIndex, sheetRowIndex, columnIndex - 1);
+        };
+
+        var getCellAttributes = function (_sheet, cellIndex, rowIndex, columnIndex) {
+            return {
                 style: function (options) {
-                    options.cellIndex = this.cellIndex;
-                    updateSingleStyle(_sheet, options, (this.rowIndex - 1), (this.columnIndex.toUpperCase().charCodeAt() - 65));
-                    return getCellAttributes(_sheet, this.cellIndex, (this.rowIndex - 1), (this.columnIndex.toUpperCase().charCodeAt() - 65));
+                    options.cellIndex = cellIndex;
+                    updateSingleStyle(_sheet, options, rowIndex, columnIndex);
+                    return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
                 },
+                value: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null,
+                type: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null,
+                cellIndex: cellIndex,
                 rowIndex: rowIndex + 1,
                 columnIndex: String.fromCharCode(65 + columnIndex),
-                value: value,
-                formula: formula,
-                cellIndex: cellIndex,
-                sharedFormulaIndex: sharedFormulaIndex,
-                type: type,
+                formula: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined,
                 set: function (value, options) {
                     cell(_sheet, rowIndex + 1, columnIndex + 1, value, options);
                     this.value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
@@ -677,331 +760,356 @@ define('oxml_sheet',['oxml_table', 'oxml_rels'], function (oxmlTable, oxmlRels) 
                     this.type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
                     return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
                 }
-            });
-        }
-        return {
-            style: function (options) {
-                options.cellIndices = cellIndices;
-                updateRangeStyle(_sheet, options, _cells);
-                return getCellRangeAttributes(_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns);
-            },
-            cellIndices: cellIndices,
-            cells: cellRange,
-            set: function (values, options) {
-                var tVal = [];
-                if (!values || !values.length || !totalColumns || !totalRows)
-                    return getCellRangeAttributes(_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns);
-                if (isRow || isColumn) {
-                    for (var index = 0; index < this.cells.length && index < values.length; index++) {
-                        tVal.push(values[index]);
-                    }
-                }
-                if (isRow) {
-                    values = [tVal];
-                } else if (isColumn) {
-                    values = tVal;
-                } else {
-                    var tVal = [];
-                    for (var index = 0; index < values.length && index < totalRows; index++) {
-                        if (values[index]) {
-                            var tVal2 = [];
-                            if (values[index].length > totalColumns) {
-                                for (var index2 = 0; index2 < values[index].length && index2 < totalColumns; index2++) {
-                                    tVal2.push(values[index][index2]);
-                                }
-                                values[index] = tVal2;
-                            }
-                            tVal.push(values[index]);
-                        } else tVal.push([]);
-                    }
-                    values = tVal;
-                }
-                cells(_sheet, cRowIndex, cColumnIndex, totalRows, totalColumns, values, options, false, isRow, isColumn);
-                var cellsAttributes = getCellRangeAttributes(_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns);
-                this.cells = cellsAttributes.cells;
-                return cellsAttributes;
-            }
-        };
-    };
-
-    var updateSingleStyle = function (_sheet, options, rowIndex, columnIndex) {
-        var _styles = _sheet._workBook.createStyles();
-        var styleIndex = _styles.addStyles(options).index;
-        if (!_sheet.values[rowIndex]) {
-            _sheet.values[rowIndex] = [];
-        }
-        if (!_sheet.values[rowIndex][columnIndex]) {
-            _sheet.values[rowIndex][columnIndex] = {
-                value: '',
-                type: 'string'
             };
-        }
-        _sheet.values[rowIndex][columnIndex].styleIndex = styleIndex;
-    };
-
-    var updateRangeStyle = function (_sheet, options, cells) {
-        var _styles = _sheet._workBook.createStyles();
-        var styleIndex = _styles.addStyles(options).index;
-        for (var cellIndex = 0; cellIndex < cells.length; cellIndex++) {
-            if (!_sheet.values[cells[cellIndex].rowIndex]) {
-                _sheet.values[cells[cellIndex].rowIndex] = [];
-            }
-            if (!_sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex]) {
-                _sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex] = {
-                    type: "string",
-                    value: ""
-                };
-            }
-            _sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex].styleIndex = styleIndex;
-        }
-    };
-
-    var updateSharedFormula = function (_sheet, formula, fromCell, toCell, options) {
-        var nextId, cellIndices = [], cells = [];
-
-        if (!fromCell || !formula || !toCell) {
-            return;
-        }
-
-        var val;
-        if (typeof formula === "object" && !formula.length) {
-            if (!formula.formula) return;
-            val = formula.value;
-            formula = formula.formula;
-        }
-
-        var fromCellChar = fromCell.match(/\D+/)[0];
-        var fromCellNum = fromCell.match(/\d+/)[0];
-
-        if (!_sheet._sharedFormula) {
-            _sheet._sharedFormula = [];
-            nextId = 0;
-        } else {
-            var lastSharedFormula = _sheet._sharedFormula[_sheet._sharedFormula.length - 1];
-            nextId = lastSharedFormula.si + 1;
-        }
-
-        _sheet._sharedFormula.push({
-            si: nextId,
-            fromCell: fromCell,
-            toCell: toCell,
-            formula: formula
-        });
-
-        // Update from Cell
-        var columIndex = fromCellChar.toUpperCase().charCodeAt() - 65;
-        var rowIndex = parseInt(fromCellNum, 10);
-        if (!_sheet.values[rowIndex - 1]) {
-            _sheet.values[rowIndex - 1] = [];
-        }
-        _sheet.values[rowIndex - 1][columIndex] = {
-            type: "sharedFormula",
-            si: nextId,
-            formula: formula,
-            range: fromCell + ":" + toCell,
-            value: val
         };
-        cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
-        cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
 
-        var toCellChar, toCellNum;
-        if (toCell) {
-            toCellChar = toCell.match(/\D+/)[0];
-            toCellNum = toCell.match(/\d+/)[0];
-        }
-
-        // Update all cell in row
-        if (toCellNum === fromCellNum) {
-            var toColumnIndex = toCellChar.toUpperCase().charCodeAt() - 65;
-            for (columIndex++; columIndex <= toColumnIndex; columIndex++) {
-                _sheet.values[rowIndex - 1][columIndex] = {
-                    type: "sharedFormula",
-                    si: nextId,
-                    value: val
-                };
-                cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
-                cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
-            }
-        } else if (toCellChar === fromCellChar) {
-            var torowIndex = parseInt(toCellNum, 10);
-            for (rowIndex++; rowIndex <= torowIndex; rowIndex++) {
-                if (!_sheet.values[rowIndex - 1]) {
-                    _sheet.values[rowIndex - 1] = [];
-                }
-                cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
-                cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
-
-                _sheet.values[rowIndex - 1][columIndex] = {
-                    type: "sharedFormula",
-                    si: nextId,
-                    value: val
-                };
-            }
-        }
-        if (options) {
-            options.cellIndices = cellIndices;
-            var styleIndex, _styles = _sheet._workBook.createStyles();
-            styleIndex = _styles.addStyles(options);
-            for (var cellIndex = 0; cellIndex < cells.length; cellIndex++) {
-                _sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex].styleIndex = styleIndex.index;
-            }
-        }
-        return getCellRangeAttributes(_sheet, cellIndices, cells);
-    };
-
-    var cell = function (_sheet, rowIndex, columnIndex, value, options) {
-        if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number")
-            return;
-        if (!options && (value === undefined || value === null)) {
-            var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
-            return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
-        } else if (!options && typeof value === "object" && !value.type && (value.value === undefined || value.value === null)) {
-            return cellStyle(_sheet, rowIndex, columnIndex, value);
-        } else if (value === undefined || value === null) {
-            return cellStyle(_sheet, rowIndex, columnIndex, options);
-        } else {
-            return updateValueInCell(value, _sheet, rowIndex, columnIndex, options);
-        }
-    };
-
-    var cells = function (_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, isReturn, isRow, isColumn) {
-        if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number" || typeof totalRows !== "number" || typeof totalColumns !== "number")
-            return;
-        var cells = [], cellIndices = [], tmpRows = totalRows;
-        for (var index = rowIndex - 1; tmpRows > 0; index++ , tmpRows--) {
-            var tmpColumns = totalColumns;
-            if (!_sheet.values[index])
-                _sheet.values[index] = [];
-            for (var index2 = columnIndex - 1; tmpColumns > 0; index2++ , tmpColumns--) {
-                cellIndices.push(String.fromCharCode(65 + index2) + (index + 1));
-                cells.push({ rowIndex: index, columnIndex: index2 });
-            }
-        }
-        if (!options && !values) {
-            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
-        } 
-        // Deprecated
-        // else if (!options && values && !values.length) {
-        //     values.cellIndices = cellIndices;
-        //     updateRangeStyle(_sheet, values, cells);
-        //     if (!isReturn) return;
-        //     return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
-        // } 
-        else if (values === undefined || values === null) {
-            options.cellIndices = cellIndices;
-            updateRangeStyle(_sheet, options, cells);
-            if (!isReturn) return;
-            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
-        } else {
-            updateValuesInMatrix(values, _sheet, rowIndex, columnIndex, options, cellIndices, cells, totalRows, totalColumns);
-            if (!isReturn) return;
-            return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
-        }
-    };
-
-    var cellStyle = function (_sheet, rowIndex, columnIndex, options) {
-        var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
-        options.cellIndex = cellIndex;
-        updateSingleStyle(_sheet, options, rowIndex - 1, columnIndex - 1);
-        return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
-    };
-
-    var addTable = function (_sheet, xlsxContentTypes, tableName, fromCell, toCell, options) {
-        var titles = [];
-        var fromColumIndex = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
-        var fromRowIndex = parseInt(fromCell.match(/\d+/)[0], 10);
-        var toColumnIndex = toCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
-        var titleRow = _sheet.values[fromRowIndex - 1];
-        if (!titleRow) return;
-        for (var index = fromColumIndex; index <= toColumnIndex; index++) {
-            titles.push(titleRow[index] && titleRow[index].value ? titleRow[index].value : '');
-        }
-
-        if (!_sheet._rels) {
-            _sheet._rels = oxmlRels.createRelation("sheet" + _sheet.sheetId + ".xml.rels", "workbook/sheets/_rels");
-        }
-        var relId = getNextRelation(_sheet);
-        _sheet._rels.addRelation("rId" + relId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
-            "../tables/table" + relId + ".xml");
-
-        xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml", {
-            PartName: "/workbook/tables/table" + relId + ".xml"
-        });
-
-        if (!_sheet.tables) _sheet.tables = [];
-        var table = oxmlTable.addTable(tableName, fromCell, toCell, titles, relId, options, _sheet);
-        _sheet.tables.push(table);
-        return table;
-    };
-
-    var getNextRelation = function (_sheet) {
-        var lastSheetRel = {};
-        if (_sheet._rels.relations.length) {
-            lastSheetRel = _sheet._rels.relations[_sheet._rels.relations.length - 1];
-        }
-        var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
-        return nextSheetRelId;
-    };
-
-    var createSheet = function (sheetName, sheetId, rId, workBook, xlsxContentTypes) {
-        var _sheet = {
-            sheetName: sheetName,
-            sheetId: sheetId,
-            rId: rId,
-            values: [],
-            _workBook: workBook
-        };
-        return {
-            _sheet: _sheet,
-            attach: function (file) {
-                attach(_sheet, file);
-            },
-            sharedFormula: function (fromCell, toCell, formula, options) {
-                return updateSharedFormula(_sheet, formula, fromCell, toCell, options);
-            },
-            cell: function (rowIndex, columnIndex, value, options) {
-                return cell(_sheet, rowIndex, columnIndex, value, options);
-            },
-            row: function (rowIndex, columnIndex, values, options) {
-                var totalColumns = _sheet.values[rowIndex - 1] ? _sheet.values[rowIndex - 1].length - columnIndex + 1 : 0;
-                return cells(_sheet, rowIndex, columnIndex, 1, ((values && Array.isArray(values)) ? values.length : (values ? 1 : totalColumns)), values ? [values] : null, options, true, true, false);
-            },
-            column: function (rowIndex, columnIndex, values, options) {
-                var totalRows = 0;
-                if (!values || !values.length) {
-                    totalRows = _sheet.values && _sheet.values.length && _sheet.values.length > rowIndex ? _sheet.values.length - rowIndex + 1 : 0;
-                }
-                return cells(_sheet, rowIndex, columnIndex, ((values && Array.isArray(values)) ? values.length : (values ? 1 : totalRows)), 1, values, options, true, false, true);
-            },
-            grid: function (rowIndex, columnIndex, values, options) {
-                var index, totalRows = 0, totalColumns = 0;
-                if (values && values.length) {
-                    totalRows = values.length;
-                    for (index = 0; index < values.length; index++) {
-                        if (values[index] && values[index].length)
-                            totalColumns = totalColumns < values[index].length ? values[index].length : totalColumns;
+        var getCellRangeAttributes = function (_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns, isRow, isColumn) {
+            var cellRange = [], index;
+            for (index = 0; index < _cells.length; index++) {
+                var rowIndex = _cells[index].rowIndex, columnIndex = _cells[index].columnIndex;
+                var value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
+                var formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
+                var type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
+                var cellIndex = String.fromCharCode(65 + columnIndex) + (rowIndex + 1);
+                var sharedFormulaIndex = type === "sharedFormula" ? _sheet.values[rowIndex][columnIndex].si : undefined;
+                cellRange.push({
+                    style: function (options) {
+                        options.cellIndex = this.cellIndex;
+                        updateSingleStyle(_sheet, options, (this.rowIndex - 1), (this.columnIndex.toUpperCase().charCodeAt() - 65));
+                        return getCellAttributes(_sheet, this.cellIndex, (this.rowIndex - 1), (this.columnIndex.toUpperCase().charCodeAt() - 65));
+                    },
+                    rowIndex: rowIndex + 1,
+                    columnIndex: String.fromCharCode(65 + columnIndex),
+                    value: value,
+                    formula: formula,
+                    cellIndex: cellIndex,
+                    sharedFormulaIndex: sharedFormulaIndex,
+                    type: type,
+                    set: function (value, options) {
+                        cell(_sheet, rowIndex + 1, columnIndex + 1, value, options);
+                        this.value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
+                        this.formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
+                        this.type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
+                        return getCellAttributes(_sheet, cellIndex, rowIndex, columnIndex);
                     }
-                } else if (_sheet.values && _sheet.values.length) {
-                    totalRows = _sheet.values.length - rowIndex + 1;
-                    for (var index = 0; index < _sheet.values.length; index++) {
-                        if (_sheet.values[index] && _sheet.values[index].length) {
-                            totalColumns = totalColumns < _sheet.values[index].length - columnIndex + 1 ? _sheet.values[index].length - columnIndex + 1 : totalColumns;
+                });
+            }
+            return {
+                style: function (options) {
+                    options.cellIndices = cellIndices;
+                    updateRangeStyle(_sheet, options, _cells);
+                    return getCellRangeAttributes(_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns);
+                },
+                cellIndices: cellIndices,
+                cells: cellRange,
+                set: function (values, options) {
+                    var tVal = [];
+                    if (!values || !values.length || !totalColumns || !totalRows)
+                        return getCellRangeAttributes(_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns);
+                    if (isRow || isColumn) {
+                        for (var index = 0; index < this.cells.length && index < values.length; index++) {
+                            tVal.push(values[index]);
                         }
                     }
+                    if (isRow) {
+                        values = [tVal];
+                    } else if (isColumn) {
+                        values = tVal;
+                    } else {
+                        var tVal = [];
+                        for (var index = 0; index < values.length && index < totalRows; index++) {
+                            if (values[index]) {
+                                var tVal2 = [];
+                                if (values[index].length > totalColumns) {
+                                    for (var index2 = 0; index2 < values[index].length && index2 < totalColumns; index2++) {
+                                        tVal2.push(values[index][index2]);
+                                    }
+                                    values[index] = tVal2;
+                                }
+                                tVal.push(values[index]);
+                            } else tVal.push([]);
+                        }
+                        values = tVal;
+                    }
+                    cells(_sheet, cRowIndex, cColumnIndex, totalRows, totalColumns, values, options, false, isRow, isColumn);
+                    var cellsAttributes = getCellRangeAttributes(_sheet, cellIndices, _cells, cRowIndex, cColumnIndex, totalRows, totalColumns);
+                    this.cells = cellsAttributes.cells;
+                    return cellsAttributes;
                 }
+            };
+        };
 
-                return cells(_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, true, false);
-            },
-            table: function (tableName, fromCell, toCell, options) {
-                var _table = addTable(_sheet, xlsxContentTypes, tableName, fromCell, toCell, options);
-                return (_table ? _table.tableOptions() : undefined);
+        var updateSingleStyle = function (_sheet, options, rowIndex, columnIndex) {
+            var _styles = _sheet._workBook.createStyles();
+            var styleIndex = _styles.addStyles(options).index;
+            if (!_sheet.values[rowIndex]) {
+                _sheet.values[rowIndex] = [];
+            }
+            if (!_sheet.values[rowIndex][columnIndex]) {
+                _sheet.values[rowIndex][columnIndex] = {
+                    value: '',
+                    type: 'string'
+                };
+            }
+            _sheet.values[rowIndex][columnIndex].styleIndex = styleIndex;
+        };
+
+        var updateRangeStyle = function (_sheet, options, cells) {
+            var _styles = _sheet._workBook.createStyles();
+            var styleIndex = _styles.addStyles(options).index;
+            for (var cellIndex = 0; cellIndex < cells.length; cellIndex++) {
+                if (!_sheet.values[cells[cellIndex].rowIndex]) {
+                    _sheet.values[cells[cellIndex].rowIndex] = [];
+                }
+                if (!_sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex]) {
+                    _sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex] = {
+                        type: "string",
+                        value: ""
+                    };
+                }
+                _sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex].styleIndex = styleIndex;
             }
         };
-    };
 
-    return { createSheet: createSheet };
-});
+        Sheet.prototype.sharedFormula = function (fromCell, toCell, formula, options) {
+            var nextId, cellIndices = [], cells = [];
+
+            if (!fromCell || !formula || !toCell) {
+                return;
+            }
+
+            var val;
+            if (typeof formula === "object" && !formula.length) {
+                if (!formula.formula) return;
+                val = formula.value;
+                formula = formula.formula;
+            }
+
+            var fromCellChar = fromCell.match(/\D+/)[0];
+            var fromCellNum = fromCell.match(/\d+/)[0];
+
+            if (!this._sheet._sharedFormula) {
+                this._sheet._sharedFormula = [];
+                nextId = 0;
+            } else {
+                var lastSharedFormula = this._sheet._sharedFormula[this._sheet._sharedFormula.length - 1];
+                nextId = lastSharedFormula.si + 1;
+            }
+
+            this._sheet._sharedFormula.push({
+                si: nextId,
+                fromCell: fromCell,
+                toCell: toCell,
+                formula: formula
+            });
+
+            // Update from Cell
+            var columIndex = fromCellChar.toUpperCase().charCodeAt() - 65;
+            var rowIndex = parseInt(fromCellNum, 10);
+            if (!this._sheet.values[rowIndex - 1]) {
+                this._sheet.values[rowIndex - 1] = [];
+            }
+            this._sheet.values[rowIndex - 1][columIndex] = {
+                type: "sharedFormula",
+                si: nextId,
+                formula: formula,
+                range: fromCell + ":" + toCell,
+                value: val
+            };
+            cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+            cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
+
+            var toCellChar, toCellNum;
+            if (toCell) {
+                toCellChar = toCell.match(/\D+/)[0];
+                toCellNum = toCell.match(/\d+/)[0];
+            }
+
+            // Update all cell in row
+            if (toCellNum === fromCellNum) {
+                var toColumnIndex = toCellChar.toUpperCase().charCodeAt() - 65;
+                for (columIndex++; columIndex <= toColumnIndex; columIndex++) {
+                    this._sheet.values[rowIndex - 1][columIndex] = {
+                        type: "sharedFormula",
+                        si: nextId,
+                        value: val
+                    };
+                    cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+                    cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
+                }
+            } else if (toCellChar === fromCellChar) {
+                var torowIndex = parseInt(toCellNum, 10);
+                for (rowIndex++; rowIndex <= torowIndex; rowIndex++) {
+                    if (!this._sheet.values[rowIndex - 1]) {
+                        this._sheet.values[rowIndex - 1] = [];
+                    }
+                    cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+                    cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
+
+                    this._sheet.values[rowIndex - 1][columIndex] = {
+                        type: "sharedFormula",
+                        si: nextId,
+                        value: val
+                    };
+                }
+            }
+            if (options) {
+                options.cellIndices = cellIndices;
+                var styleIndex, _styles = this._sheet._workBook.createStyles();
+                styleIndex = _styles.addStyles(options);
+                for (var cellIndex = 0; cellIndex < cells.length; cellIndex++) {
+                    this._sheet.values[cells[cellIndex].rowIndex][cells[cellIndex].columnIndex].styleIndex = styleIndex.index;
+                }
+            }
+            return getCellRangeAttributes(this._sheet, cellIndices, cells);
+        };
+
+        var cell = function (_sheet, rowIndex, columnIndex, value, options) {
+            if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number")
+                return;
+            if (!options && (value === undefined || value === null)) {
+                var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+                return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
+            } else if (!options && typeof value === "object" && !value.type && (value.value === undefined || value.value === null)) {
+                return cellStyle(_sheet, rowIndex, columnIndex, value);
+            } else if (value === undefined || value === null) {
+                return cellStyle(_sheet, rowIndex, columnIndex, options);
+            } else {
+                return updateValueInCell(value, _sheet, rowIndex, columnIndex, options);
+            }
+        };
+
+        Sheet.prototype.cell = function (rowIndex, columnIndex, value, options) {
+            return cell(this._sheet, rowIndex, columnIndex, value, options);
+        };
+
+        Sheet.prototype.row = function (rowIndex, columnIndex, values, options) {
+            var totalColumns = this._sheet.values[rowIndex - 1] ? this._sheet.values[rowIndex - 1].length - columnIndex + 1 : 0;
+            return cells(this._sheet, rowIndex, columnIndex, 1, ((values && Array.isArray(values)) ? values.length : (values ? 1 : totalColumns)), values ? [values] : null, options, true, true, false);
+        };
+
+        Sheet.prototype.column = function (rowIndex, columnIndex, values, options) {
+            var totalRows = 0;
+            if (!values || !values.length) {
+                totalRows = this._sheet.values && this._sheet.values.length && this._sheet.values.length > rowIndex ? this._sheet.values.length - rowIndex + 1 : 0;
+            }
+            return cells(this._sheet, rowIndex, columnIndex, ((values && Array.isArray(values)) ? values.length : (values ? 1 : totalRows)), 1, values, options, true, false, true);
+        };
+
+        Sheet.prototype.grid = function (rowIndex, columnIndex, values, options) {
+            var index, totalRows = 0, totalColumns = 0;
+            if (values && values.length) {
+                totalRows = values.length;
+                for (index = 0; index < values.length; index++) {
+                    if (values[index] && values[index].length)
+                        totalColumns = totalColumns < values[index].length ? values[index].length : totalColumns;
+                }
+            } else if (this._sheet.values && this._sheet.values.length) {
+                totalRows = this._sheet.values.length - rowIndex + 1;
+                for (var index = 0; index < this._sheet.values.length; index++) {
+                    if (this._sheet.values[index] && this._sheet.values[index].length) {
+                        totalColumns = totalColumns < this._sheet.values[index].length - columnIndex + 1 ? this._sheet.values[index].length - columnIndex + 1 : totalColumns;
+                    }
+                }
+            }
+
+            return cells(this._sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, true, false);
+        };
+
+        Sheet.prototype.table = function (tableName, fromCell, toCell, options) {
+            var _table = addTable(this._sheet, this.xlsxContentTypes, tableName, fromCell, toCell, options);
+            return (_table ? _table.tableOptions() : undefined);
+        };
+
+        var cells = function (_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, isReturn, isRow, isColumn) {
+            if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number" || typeof totalRows !== "number" || typeof totalColumns !== "number")
+                return;
+            var cells = [], cellIndices = [], tmpRows = totalRows;
+            for (var index = rowIndex - 1; tmpRows > 0; index++ , tmpRows--) {
+                var tmpColumns = totalColumns;
+                if (!_sheet.values[index])
+                    _sheet.values[index] = [];
+                for (var index2 = columnIndex - 1; tmpColumns > 0; index2++ , tmpColumns--) {
+                    cellIndices.push(String.fromCharCode(65 + index2) + (index + 1));
+                    cells.push({ rowIndex: index, columnIndex: index2 });
+                }
+            }
+            if (!options && !values) {
+                return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
+            }
+            // ---Deprecated---
+            // else if (!options && values && !values.length) {
+            //     values.cellIndices = cellIndices;
+            //     updateRangeStyle(_sheet, values, cells);
+            //     if (!isReturn) return;
+            //     return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
+            // } 
+            else if (values === undefined || values === null) {
+                options.cellIndices = cellIndices;
+                updateRangeStyle(_sheet, options, cells);
+                if (!isReturn) return;
+                return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
+            } else {
+                updateValuesInMatrix(values, _sheet, rowIndex, columnIndex, options, cellIndices, cells, totalRows, totalColumns);
+                if (!isReturn) return;
+                return getCellRangeAttributes(_sheet, cellIndices, cells, rowIndex, columnIndex, totalRows, totalColumns, isRow, isColumn);
+            }
+        };
+
+        var cellStyle = function (_sheet, rowIndex, columnIndex, options) {
+            var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+            options.cellIndex = cellIndex;
+            updateSingleStyle(_sheet, options, rowIndex - 1, columnIndex - 1);
+            return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
+        };
+
+        var addTable = function (_sheet, xlsxContentTypes, tableName, fromCell, toCell, options) {
+            var titles = [];
+            var fromColumIndex = fromCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
+            var fromRowIndex = parseInt(fromCell.match(/\d+/)[0], 10);
+            var toColumnIndex = toCell.match(/\D+/)[0].toUpperCase().charCodeAt() - 65;
+            var titleRow = _sheet.values[fromRowIndex - 1];
+            if (!titleRow) return;
+            for (var index = fromColumIndex; index <= toColumnIndex; index++) {
+                titles.push(titleRow[index] && titleRow[index].value ? titleRow[index].value : '');
+            }
+            var relId = addFile("table", xlsxContentTypes, _sheet);
+
+            if (!_sheet.tables) _sheet.tables = [];
+            var table = oxmlTable.addTable(tableName, fromCell, toCell, titles, relId, options, _sheet);
+            _sheet.tables.push(table);
+            return table;
+        };
+
+        var addFile = function (fileType, xlsxContentTypes, _sheet) {
+            if (!_sheet._rels) _sheet._rels = OxmlRels.createRelation("sheet" + _sheet.sheetId + ".xml.rels", "workbook/sheets/_rels");
+            var relId = getNextRelation(_sheet), type, target, contentType, partName;
+
+            switch (fileType) {
+                case "table":
+                    type = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table";
+                    target = "../tables/table" + relId + ".xml";
+                    contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml";
+                    partName = "/workbook/tables/table" + relId + ".xml";
+                    break;
+                case "drawing":
+                    type = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing";
+                    target = "../drawings/drawing" + relId + ".xml";
+                    contentType = "application/vnd.openxmlformats-officedocument.drawing+xml";
+                    partName = "/workbook/drawings/drawing" + relId + ".xml";
+                    break;
+            }
+            _sheet._rels.addRelation("rId" + relId, type, target);
+            xlsxContentTypes.addContentType("Override", contentType, { PartName: partName });
+            return relId;
+        };
+
+        return {
+            createSheet: function (sheetName, sheetId, rId, workBook, xlsxContentTypes) {
+                return new Sheet(sheetName, sheetId, rId, workBook, xlsxContentTypes);
+            }
+        };
+    });
 define('utils',[], function () {
     sortObject = function (obj) {
         if (typeof obj !== 'object' || obj.length)
@@ -1813,46 +1921,98 @@ define('oxml_xlsx_styles',['utils',
     'oxml_xlsx_font',
     'oxml_xlsx_num_format',
     'oxml_xlsx_border',
-    'oxml_xlsx_fill'],
+    'oxml_xlsx_fill',
+    'xmlContentString',
+    'contentString',
+    'contentFile'],
     function (utils,
         oxmlXlsxFont,
         oxmlXlsxNumFormat,
         oxmlXlsxBorder,
-        oxmlXlsxFill) {
-        var generateContent = function (_styles) {
+        oxmlXlsxFill,
+        XMLContentString,
+        ContentString,
+        ContentFile) {
+
+        "use strict";
+        var Styles = function (_workbook, _rel, _contentType) {
+            var sheetId = createStyleParts(_workbook, _rel, _contentType);
+            var _styles = {
+                sheetId: sheetId,
+                fileName: "style" + sheetId + ".xml",
+                styles: [],
+                _fonts: {},
+                _borders: {},
+                _fills: {},
+                _fontsCount: 1,
+                _bordersCount: 1,
+                _fillsCount: 2
+            };
+            var font = {
+                bold: false,
+                italic: false,
+                underline: false,
+                size: false,
+                color: false,
+                strike: false,
+                family: false,
+                name: false,
+                scheme: false
+            };
+            _styles._fonts[utils.stringify(font)] = 0;
+            _styles._borders[false] = 0;
+            _styles._fills[false] = 0;
+            var fillGray125 = {
+                pattern: 'gray125',
+                fgColor: false,
+                bgColor: false
+            };
+            _styles._fills[utils.stringify(fillGray125)] = 1;
+            this.className = "Style";
+            this.fileName = _styles.fileName;
+            this.folderName = "workbook";
+            this._styles = _styles;
+        };
+        Styles.prototype = Object.create(ContentFile.prototype);
+
+        Styles.prototype.generateContent = function () {
             // Create Styles
-            var stylesString = '<?xml version="1.0" encoding="utf-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+            var template = new XMLContentString({
+                rootNode: "styleSheet",
+                nameSpaces: ["http://schemas.openxmlformats.org/spreadsheetml/2006/main"]
+            });
+            var stylesString = '';
             var index = 0;
-            stylesString += oxmlXlsxNumFormat.generateContent(_styles);
-            stylesString += oxmlXlsxFont.generateContent(_styles);
-            stylesString += oxmlXlsxFill.generateContent(_styles);
-            stylesString += oxmlXlsxBorder.generateContent(_styles);
+            stylesString += oxmlXlsxNumFormat.generateContent(this._styles);
+            stylesString += oxmlXlsxFont.generateContent(this._styles);
+            stylesString += oxmlXlsxFill.generateContent(this._styles);
+            stylesString += oxmlXlsxBorder.generateContent(this._styles);
             stylesString += '<cellStyleXfs count="1"><xf /></cellStyleXfs>';
 
             stylesString += '<cellXfs count="'
-                + (parseInt(_styles.styles.length, 10) + 1) + '"><xf />';
-            for (index = 0; index < _styles.styles.length; index++) {
-                var numFormatString = _styles.styles[index]._numFormat
+                + (parseInt(this._styles.styles.length, 10) + 1) + '"><xf />';
+            for (index = 0; index < this._styles.styles.length; index++) {
+                var numFormatString = this._styles.styles[index]._numFormat
                     ? ' numFmtId="'
-                    + _styles.styles[index]._numFormat + '" ' : '';
-                var borderString = _styles.styles[index]._border
-                    ? ' borderId="' + _styles.styles[index]._border + '" ' : '';
-                var fillString = _styles.styles[index]._fill
-                    ? ' fillId="' + _styles.styles[index]._fill + '" ' : '';
-                stylesString += '<xf fontId="' + _styles.styles[index]._font
+                    + this._styles.styles[index]._numFormat + '" ' : '';
+                var borderString = this._styles.styles[index]._border
+                    ? ' borderId="' + this._styles.styles[index]._border + '" ' : '';
+                var fillString = this._styles.styles[index]._fill
+                    ? ' fillId="' + this._styles.styles[index]._fill + '" ' : '';
+                stylesString += '<xf fontId="' + this._styles.styles[index]._font
                     + '" ' + numFormatString
                     + borderString + fillString + ' />';
             }
             var tableStyles = '';
-            if (_styles.tableStyles && _styles.tableStyles.length) tableStyles = generateTableContent(_styles);
-            stylesString += '</cellXfs>' + tableStyles + '</styleSheet>';
-            return stylesString;
+            if (this._styles.tableStyles && this._styles.tableStyles.length) tableStyles = generateTableContent(this._styles);
+            stylesString += '</cellXfs>' + tableStyles;
+            return template.format(stylesString);
         };
 
         var generateTableContent = function (_styles) {
-            var dxfsCount = 0, tableStyles = '', tableStylesCount = 0, tableStyleCount;
+            var dxfsCount = 0, tableStyles = '', tableStylesCount = 0, tableStyleCount, dxfString = '';
             for (var index = 0; index < _styles.tableStyles.length; index++) {
-                var dxfString = '', individualTalbeStyle;
+                var individualTalbeStyle;
                 dxfsCount++;
                 tableStylesCount++;
                 tableStyleCount = 1;
@@ -1938,7 +2098,7 @@ define('oxml_xlsx_styles',['utils',
         };
 
         var generateDxfContent = function (style) {
-            dxfString = '<dxf>';
+            var dxfString = '<dxf>';
             if (style.font) {
                 dxfString += oxmlXlsxFont.generateSingleContent(style.font);
             }
@@ -1950,11 +2110,6 @@ define('oxml_xlsx_styles',['utils',
             }
             dxfString += '</dxf>';
             return dxfString;
-        };
-
-        var attach = function (file, _styles) {
-            var styles = generateContent(_styles);
-            file.addFile(styles, _styles.fileName, "workbook");
         };
 
         var createStyleParts = function (_workBook, _rel, _contentType) {
@@ -1999,20 +2154,20 @@ define('oxml_xlsx_styles',['utils',
             return null;
         };
 
-        var addStyles = function (options, _styles) {
+        Styles.prototype.addStyles = function (options) {
             if (options.cellIndex || options.cellIndices) {
                 var newStyleCreated = false, cellStyle,
                     saveFont, saveNumFormat, saveBorder, saveFill;
                 if (options.cellIndex) {
-                    cellStyle = searchStyleForCell(_styles, options.cellIndex);
+                    cellStyle = searchStyleForCell(this._styles, options.cellIndex);
                     saveFont = oxmlXlsxFont
-                        .getFontForCell(_styles, options, cellStyle);
+                        .getFontForCell(this._styles, options, cellStyle);
                     saveNumFormat = oxmlXlsxNumFormat
-                        .getNumFormatForCell(_styles, options, cellStyle);
+                        .getNumFormatForCell(this._styles, options, cellStyle);
                     saveBorder = oxmlXlsxBorder
-                        .getBorderForCell(_styles, options, cellStyle);
+                        .getBorderForCell(this._styles, options, cellStyle);
                     saveFill = oxmlXlsxFill
-                        .getFillForCell(_styles, options, cellStyle);
+                        .getFillForCell(this._styles, options, cellStyle);
                     newStyleCreated = newStyleCreated
                         || saveFont.newStyleCreated
                         || saveBorder.newStyleCreated
@@ -2036,7 +2191,7 @@ define('oxml_xlsx_styles',['utils',
                     }
 
                     if (!newStyleCreated) {
-                        cellStyle = searchSimilarStyle(_styles, {
+                        cellStyle = searchSimilarStyle(this._styles, {
                             _font: saveFont.fontIndex,
                             _numFormat: saveNumFormat.numFormatIndex,
                             _border: saveBorder.borderIndex,
@@ -2057,21 +2212,21 @@ define('oxml_xlsx_styles',['utils',
                     };
 
                     cellStyle.cellIndices[options.cellIndex] = 0;
-                    cellStyle.index = "" + (parseInt(_styles.styles.length, 10) + 1);
-                    _styles.styles.push(cellStyle);
+                    cellStyle.index = "" + (parseInt(this._styles.styles.length, 10) + 1);
+                    this._styles.styles.push(cellStyle);
                     return cellStyle;
                 }
 
                 if (options.cellIndices) {
                     var index;
-                    saveFont = oxmlXlsxFont.getFontForCells(_styles, options);
-                    saveNumFormat = oxmlXlsxNumFormat.getNumFormatForCells(_styles, options);
-                    saveBorder = oxmlXlsxBorder.getBorderForCells(_styles, options);
-                    saveFill = oxmlXlsxFill.getFillForCells(_styles, options);
+                    saveFont = oxmlXlsxFont.getFontForCells(this._styles, options);
+                    saveNumFormat = oxmlXlsxNumFormat.getNumFormatForCells(this._styles, options);
+                    saveBorder = oxmlXlsxBorder.getBorderForCells(this._styles, options);
+                    saveFill = oxmlXlsxFill.getFillForCells(this._styles, options);
                     newStyleCreated = newStyleCreated || saveFont.newStyleCreated
                         || saveNumFormat.newStyleCreated || saveBorder.newStyleCreated || saveFill.newStyleCreated;
                     if (!newStyleCreated) {
-                        cellStyle = searchSimilarStyle(_styles, {
+                        cellStyle = searchSimilarStyle(this._styles, {
                             _font: saveFont.fontIndex,
                             _numFormat: saveNumFormat.numFormatIndex,
                             _border: saveBorder.borderIndex,
@@ -2081,7 +2236,7 @@ define('oxml_xlsx_styles',['utils',
                         if (cellStyle) {
                             for (index = 0; index < options.cellIndices.length; index++) {
                                 var cellIndex = options.cellIndices[index];
-                                var savedCellStyle = searchStyleForCell(_styles, cellIndex);
+                                var savedCellStyle = searchStyleForCell(this._styles, cellIndex);
                                 if (savedCellStyle) delete savedCellStyle.cellIndices[cellIndex];
                                 cellStyle.cellIndices[cellIndex] = Object.keys(cellStyle.cellIndices).length;
                             }
@@ -2100,34 +2255,34 @@ define('oxml_xlsx_styles',['utils',
 
                     for (index = 0; index < options.cellIndices.length; index++) {
                         var cellIndex = options.cellIndices[index];
-                        var savedCellStyle = searchStyleForCell(_styles, cellIndex);
+                        var savedCellStyle = searchStyleForCell(this._styles, cellIndex);
                         if (savedCellStyle) {
                             delete savedCellStyle.cellIndices[cellIndex];
                         }
                         cellStyle.cellIndices[cellIndex] = Object.keys(cellStyle.cellIndices).length;
                         if (savedCellStyle && !Object.keys(savedCellStyle.cellIndices).length) {
-                            for (key in cellStyle) {
+                            for (var key in cellStyle) {
                                 savedCellStyle[key] = cellStyle[key];
                             }
                             return savedCellStyle;
                         }
                     }
-                    cellStyle.index = "" + (parseInt(_styles.styles.length, 10) + 1);
-                    _styles.styles.push(cellStyle);
+                    cellStyle.index = "" + (parseInt(this._styles.styles.length, 10) + 1);
+                    this._styles.styles.push(cellStyle);
                     return cellStyle;
                 }
             }
         };
 
-        var addTableStyle = function (options, tableStyleName, _table, _styles) {
-            if (!_styles.tableStyles) _styles.tableStyles = [];
+        Styles.prototype.addTableStyle = function (options, tableStyleName, _table) {
+            if (!this._styles.tableStyles) this._styles.tableStyles = [];
 
             // Find existing table style
             var existingTableStyle;
             if (_table && _table.tableStyle) {
-                for (var index = 0; index < _styles.tableStyles.length; index++) {
-                    if (_table.tableStyle.name === _styles.tableStyles[index].name) {
-                        existingTableStyle = _styles.tableStyles[index];
+                for (var index = 0; index < this._styles.tableStyles.length; index++) {
+                    if (_table.tableStyle.name === this._styles.tableStyles[index].name) {
+                        existingTableStyle = this._styles.tableStyles[index];
                         break;
                     }
                 }
@@ -2160,11 +2315,11 @@ define('oxml_xlsx_styles',['utils',
             if (options.lastRowLastCell) tableStyle.lastRowLastCell = prepareTableStyleObj(options.lastRowLastCell, existingTableStyle && existingTableStyle.lastRowLastCell);
             else if (existingTableStyle && existingTableStyle.lastRowLastCell) tableStyle.lastRowLastCell = existingTableStyle.lastRowLastCell;
             if (!existingTableStyle)
-                _styles.tableStyles.push(tableStyle);
+                this._styles.tableStyles.push(tableStyle);
             else {
-                for (var index = 0; index < _styles.tableStyles.length; index++) {
-                    if (_table.tableStyle.name === _styles.tableStyles[index].name) {
-                        _styles.tableStyles[index] = tableStyle;
+                for (var index = 0; index < this._styles.tableStyles.length; index++) {
+                    if (_table.tableStyle.name === this._styles.tableStyles[index].name) {
+                        this._styles.tableStyles[index] = tableStyle;
                         break;
                     }
                 }
@@ -2182,193 +2337,146 @@ define('oxml_xlsx_styles',['utils',
 
         return {
             createStyle: function (_workbook, _rel, _contentType) {
-                var sheetId = createStyleParts(_workbook, _rel, _contentType);
-                var _styles = {
-                    sheetId: sheetId,
-                    fileName: "style" + sheetId + ".xml",
-                    styles: [],
-                    _fonts: {},
-                    _borders: {},
-                    _fills: {},
-                    _fontsCount: 1,
-                    _bordersCount: 1,
-                    _fillsCount: 2
-                };
-                var font = {
-                    bold: false,
-                    italic: false,
-                    underline: false,
-                    size: false,
-                    color: false,
-                    strike: false,
-                    family: false,
-                    name: false,
-                    scheme: false
-                };
-                _styles._fonts[utils.stringify(font)] = 0;
-                _styles._borders[false] = 0;
-                _styles._fills[false] = 0;
-                var fillGray125 = {
-                    pattern: 'gray125',
-                    fgColor: false,
-                    bgColor: false
-                };
-                _styles._fills[utils.stringify(fillGray125)] = 1;
-                return {
-                    _styles: _styles,
-                    generateContent: function () {
-                        return generateContent(_styles);
-                    },
-                    attach: function (file) {
-                        attach(file, _styles);
-                    },
-                    addStyles: function (options) {
-                        return addStyles(options, _styles);
-                    },
-                    addTableStyle: function (options, tableStyleName, _table) {
-                        return addTableStyle(options, tableStyleName, _table, _styles);
-                    }
-                };
+                return new Styles(_workbook, _rel, _contentType);
             }
         };
     });
-define('oxml_workbook',['oxml_content_types', 'oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles'], function (oxmlContentTypes, oxmlRels, oxmlSheet, oxmlXlsxStyles) {
-    'use strict';
+define('oxml_workbook',['oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles', 'xmlContentString', 'contentString', 'contentFile'],
+    function (
+        OxmlRels,
+        oxmlSheet,
+        oxmlXlsxStyles,
+        XMLContentString,
+        ContentString,
+        ContentFile) {
+        'use strict';
 
-    var getLastSheet = function (_workBook) {
-        if (_workBook._rels.relations.length) {
-            return _workBook._rels.relations[_workBook._rels.relations.length - 1];
-        }
-        return {};
-    };
+        var Workbook = function (xlsxContentTypes, xlsxRels) {
+            this.className = "Workbook";
+            this.fileName = "workbook.xml";
+            this.folderName = "workbook";
+            this._workBook = {
+                sheets: [],
+                xlsxContentTypes: xlsxContentTypes,
+                xlsxRels: xlsxRels,
+                _rels: OxmlRels.createRelation('workbook.xml.rels', "workbook/_rels")
+            };
+        };
+        Workbook.prototype = Object.create(ContentFile.prototype);
 
-    var generateContent = function (_workBook, file) {
-        // Create Workbood
-        var index, workBook = '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>';
-        for (index = 0; index < _workBook.sheets.length; index++) {
-            workBook += '<sheet name="' + _workBook.sheets[index]._sheet.sheetName + '" sheetId="' + _workBook.sheets[index]._sheet.sheetId +
-                '" r:id="' + _workBook.sheets[index]._sheet.rId + '" />';
-            if (file) {
-                _workBook.sheets[index].attach(file);
+        var generateSharedStrings = function (_workBook) {
+            if (_workBook._sharedStrings && Object.keys(_workBook._sharedStrings).length) {
+                var template = new XMLContentString({
+                    rootNode: "sst",
+                    nameSpaces: ["http://schemas.openxmlformats.org/spreadsheetml/2006/main"]
+                });
+                var sharedStrings = '';
+                for (var key in _workBook._sharedStrings) {
+                    sharedStrings += '<si><t>' + key + '</t></si>';
+                }
+                return template.format(sharedStrings);
             }
-        }
-        workBook += '</sheets></workbook>';
-        return workBook;
-    };
+            return '';
+        };
 
-    var generateSharedStrings = function (_workBook) {
-        if (_workBook._sharedStrings && Object.keys(_workBook._sharedStrings).length) {
-            var sharedStrings = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
-            for (var key in _workBook._sharedStrings) {
-                sharedStrings += '<si><t>' + key + '</t></si>';
+        Workbook.prototype.generateContent = function (file) {
+            // Create Workbood
+            var template = new XMLContentString({
+                rootNode: 'workbook',
+                nameSpaces: [
+                    'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
+                    {value: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', attribute: 'r'}]
+            });
+            var index, workSheets = '<sheets>';
+            for (index = 0; index < this._workBook.sheets.length; index++) {
+                var worksheetTemplate = new ContentString('<sheet name="{0}" sheetId="{1}" r:id="{2}"/>');
+                workSheets += worksheetTemplate.format(this._workBook.sheets[index]._sheet.sheetName, this._workBook.sheets[index]._sheet.sheetId, this._workBook.sheets[index]._sheet.rId);
+                if (file) {
+                    this._workBook.sheets[index].attach(file);
+                }
             }
-            sharedStrings += '</sst>';
-            return sharedStrings;
-        }
-        return '';
-    };
+            workSheets += '</sheets>';
+            return template.format(workSheets);
+        };
 
-    var addSheet = function (_workBook, sheetName, xlsxContentTypes) {
-        var lastSheetRel = getLastSheet(_workBook);
-        var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
-        sheetName = sheetName || "sheet" + nextSheetRelId;
-        _workBook._rels.addRelation(
-            "rId" + nextSheetRelId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
-            "sheets/sheet" + nextSheetRelId + ".xml");
-        // Update Sheets
-        var sheet = oxmlSheet.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId, _workBook, xlsxContentTypes);
-        _workBook.sheets.push(sheet);
-        // Add Content Type
-        _workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml", {
-            PartName: "/workbook/sheets/sheet" + nextSheetRelId + ".xml"
-        });
+        Workbook.prototype.getLastSheet = function () {
+            if (this._workBook._rels.relations.length) {
+                return this._workBook._rels.relations[this._workBook._rels.relations.length - 1];
+            }
+            return {};
+        };
 
-        return sheet;
-    };
-
-    var attach = function (file, _workBook) {
-        // Add REL
-        _workBook._rels.attach(file);
-        var workBook = generateContent(_workBook, file);
-        file.addFile(workBook, "workbook.xml", "workbook");
-        var sharedStrings = generateSharedStrings(_workBook);
-        if (sharedStrings) {
-            file.addFile(sharedStrings, "sharedstrings.xml", "workbook");
-        }
-        if (_workBook._styles) {
-            _workBook._styles.attach(file);
-        }
-    };
-
-    var createSharedString = function (str, _workBook) {
-        if (!str) {
-            return;
-        }
-        if (!_workBook._sharedStrings) {
-            _workBook._sharedStrings = {};
-
-            // Add Content Types
-            _workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml", {
-                PartName: "/workbook/sharedstrings.xml"
+        Workbook.prototype.addSheet = function (sheetName) {
+            var lastSheetRel = this.getLastSheet();
+            var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
+            sheetName = sheetName || "sheet" + nextSheetRelId;
+            this._workBook._rels.addRelation(
+                "rId" + nextSheetRelId,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
+                "sheets/sheet" + nextSheetRelId + ".xml");
+            // Update Sheets
+            var sheet = oxmlSheet.createSheet(sheetName, nextSheetRelId, "rId" + nextSheetRelId, this, this._workBook.xlsxContentTypes);
+            this._workBook.sheets.push(sheet);
+            // Add Content Type
+            this._workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml", {
+                PartName: "/workbook/sheets/sheet" + nextSheetRelId + ".xml"
             });
 
-            // Add REL
-            var lastSheetRel = getLastSheet(_workBook);
-            var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
-            _workBook._rels.addRelation("rId" + nextSheetRelId,
-                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
-                "sharedstrings.xml");
+            return sheet;
+        };
+
+        Workbook.prototype.attachChild = function (file) {
+            this._workBook._rels.attach(file);
+            var sharedStrings = generateSharedStrings(this._workBook);
+            if (sharedStrings) {
+                file.addFile(sharedStrings, "sharedstrings.xml", "workbook");
+            }
+            if (this._workBook._styles) {
+                this._workBook._styles.attach(file);
+            }
         }
 
-        if (isNaN(_workBook._sharedStrings[str])) {
-            _workBook._sharedStrings[str] = Object.keys(_workBook._sharedStrings).length || 0;
+        Workbook.prototype.createSharedString = function (str) {
+            if (!str) {
+                return;
+            }
+            if (!this._workBook._sharedStrings) {
+                this._workBook._sharedStrings = {};
+
+                // Add Content Types
+                this._workBook.xlsxContentTypes.addContentType("Override", "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml", {
+                    PartName: "/workbook/sharedstrings.xml"
+                });
+
+                // Add REL
+                var lastSheetRel = this.getLastSheet();
+                var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
+                this._workBook._rels.addRelation("rId" + nextSheetRelId,
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
+                    "sharedstrings.xml");
+            }
+
+            if (isNaN(this._workBook._sharedStrings[str])) {
+                this._workBook._sharedStrings[str] = Object.keys(this._workBook._sharedStrings).length || 0;
+            }
+
+            return this._workBook._sharedStrings[str];
+        };
+
+        Workbook.prototype.getSharedString = function (str) { return this._workBook._sharedStrings[str]; };
+
+        Workbook.prototype.createStyles = function () {
+            if (!this._workBook._styles) this._workBook._styles = oxmlXlsxStyles.createStyle(this, this._workBook._rels, this._workBook.xlsxContentTypes);
+            return this._workBook._styles;
         }
 
-        return _workBook._sharedStrings[str];
-    };
-
-    var getSharedString = function (str, _workBook) {
-        return _workBook._sharedStrings[str];
-    };
-
-    var createWorkbook = function (xlsxContentTypes, xlsxRels) {
-        var _workBook = {
-            sheets: [],
-            xlsxContentTypes: xlsxContentTypes,
-            xlsxRels: xlsxRels
+        return {
+            createWorkbook: function (xlsxContentTypes, xlsxRels) {
+                return new Workbook(xlsxContentTypes, xlsxRels);
+            }
         };
-        _workBook._rels = oxmlRels.createRelation('workbook.xml.rels', "workbook/_rels");
-
-        _workBook.addSheet = function (sheetName) {
-            return addSheet(_workBook, sheetName, xlsxContentTypes);
-        };
-        _workBook.generateContent = function () {
-            return generateContent(_workBook);
-        };
-        _workBook.attach = function (file) {
-            attach(file, _workBook);
-        };
-        _workBook.createSharedString = function (str) {
-            return createSharedString(str, _workBook);
-        };
-        _workBook.getSharedString = function (str) {
-            return getSharedString(str, _workBook);
-        };
-        _workBook.createStyles = function () {
-            if (!_workBook._styles)
-                _workBook._styles = oxmlXlsxStyles.createStyle(_workBook, _workBook._rels, xlsxContentTypes);
-            return _workBook._styles;
-        };
-        _workBook.getLastSheet = function () {
-            return getLastSheet(_workBook);
-        };
-        return _workBook;
-    };
-
-    return { createWorkbook: createWorkbook };
-});
-define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], function (fileHandler, oxmlContentTypes, oxmlRels, oxmlWorkBook) {
+    });
+define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_workbook'], function (FileHandler, OxmlContentTypes, OxmlRels, oxmlWorkBook) {
     'use strict';
 
     var oxml = {};
@@ -2393,7 +2501,7 @@ define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_work
             /* istanbul ignore next */
             else jsZip = new JSZip();
 
-            var file = fileHandler.createFile(jsZip, fs);
+            var file = new FileHandler().createFile(jsZip, fs);
             _xlsx.contentTypes.attach(file);
             _xlsx._rels.attach(file);
             _xlsx.workBook.attach(file);
@@ -2414,7 +2522,7 @@ define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_work
 
     var createXLSX = function () {
         var _xlsx = {};
-        _xlsx.contentTypes = oxmlContentTypes.createContentType();
+        _xlsx.contentTypes = OxmlContentTypes.createContentType();
 
         _xlsx.contentTypes.addContentType("Default", "application/vnd.openxmlformats-package.relationships+xml", {
             Extension: "rels"
@@ -2426,7 +2534,7 @@ define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_work
             PartName: "/workbook/workbook.xml"
         });
 
-        _xlsx._rels = oxmlRels.createRelation('.rels', '_rels');
+        _xlsx._rels = OxmlRels.createRelation('.rels', '_rels');
         _xlsx._rels.addRelation(
             "rId1",
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
@@ -2441,7 +2549,7 @@ define('oxml_xlsx',['fileHandler', 'oxml_content_types', 'oxml_rels', 'oxml_work
 
         return {
             _xlsx: _xlsx,
-            sheet: _xlsx.workBook.addSheet,
+            sheet: _xlsx.workBook.addSheet.bind(_xlsx.workBook),
             download: download
         };
     };

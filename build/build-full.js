@@ -15,7 +15,10 @@
         "oxml_xlsx_border": 'styles/oxml-xlsx-border',
         "oxml_xlsx_num_format": 'styles/oxml-xlsx-num-format',
         "oxml_table": "oxml-table",
-        "utils": 'utils/utils'
+        "utils": 'utils/utils',
+        "contentFile": 'base/contentFile',
+        "contentString": 'base/contentString',
+        "xmlContentString": 'base/xmlContentString'
     },
     "include": ["build/almond", "fileHandler", "oxml_rels", "oxml_content_types", "oxml_sheet", "oxml_workbook", "oxml_xlsx", "oxml_table"],
     "exclude": ["jsZip", "fileSaver"],

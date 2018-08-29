@@ -2,46 +2,96 @@ define(['utils',
     'oxml_xlsx_font',
     'oxml_xlsx_num_format',
     'oxml_xlsx_border',
-    'oxml_xlsx_fill'],
+    'oxml_xlsx_fill',
+    'xmlContentString',
+    'contentFile'],
     function (utils,
         oxmlXlsxFont,
         oxmlXlsxNumFormat,
         oxmlXlsxBorder,
-        oxmlXlsxFill) {
-        var generateContent = function (_styles) {
+        oxmlXlsxFill,
+        XMLContentString,
+        ContentFile) {
+
+        "use strict";
+        var Styles = function (_workbook, _rel, _contentType) {
+            var sheetId = createStyleParts(_workbook, _rel, _contentType);
+            var _styles = {
+                sheetId: sheetId,
+                fileName: "style" + sheetId + ".xml",
+                styles: [],
+                _fonts: {},
+                _borders: {},
+                _fills: {},
+                _fontsCount: 1,
+                _bordersCount: 1,
+                _fillsCount: 2
+            };
+            var font = {
+                bold: false,
+                italic: false,
+                underline: false,
+                size: false,
+                color: false,
+                strike: false,
+                family: false,
+                name: false,
+                scheme: false
+            };
+            _styles._fonts[utils.stringify(font)] = 0;
+            _styles._borders[false] = 0;
+            _styles._fills[false] = 0;
+            var fillGray125 = {
+                pattern: 'gray125',
+                fgColor: false,
+                bgColor: false
+            };
+            _styles._fills[utils.stringify(fillGray125)] = 1;
+            this.className = "Style";
+            this.fileName = _styles.fileName;
+            this.folderName = "workbook";
+            this._styles = _styles;
+        };
+        Styles.prototype = Object.create(ContentFile.prototype);
+
+        Styles.prototype.generateContent = function () {
             // Create Styles
-            var stylesString = '<?xml version="1.0" encoding="utf-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+            var template = new XMLContentString({
+                rootNode: "styleSheet",
+                nameSpaces: ["http://schemas.openxmlformats.org/spreadsheetml/2006/main"]
+            });
+            var stylesString = '';
             var index = 0;
-            stylesString += oxmlXlsxNumFormat.generateContent(_styles);
-            stylesString += oxmlXlsxFont.generateContent(_styles);
-            stylesString += oxmlXlsxFill.generateContent(_styles);
-            stylesString += oxmlXlsxBorder.generateContent(_styles);
+            stylesString += oxmlXlsxNumFormat.generateContent(this._styles);
+            stylesString += oxmlXlsxFont.generateContent(this._styles);
+            stylesString += oxmlXlsxFill.generateContent(this._styles);
+            stylesString += oxmlXlsxBorder.generateContent(this._styles);
             stylesString += '<cellStyleXfs count="1"><xf /></cellStyleXfs>';
 
             stylesString += '<cellXfs count="'
-                + (parseInt(_styles.styles.length, 10) + 1) + '"><xf />';
-            for (index = 0; index < _styles.styles.length; index++) {
-                var numFormatString = _styles.styles[index]._numFormat
+                + (parseInt(this._styles.styles.length, 10) + 1) + '"><xf />';
+            for (index = 0; index < this._styles.styles.length; index++) {
+                var numFormatString = this._styles.styles[index]._numFormat
                     ? ' numFmtId="'
-                    + _styles.styles[index]._numFormat + '" ' : '';
-                var borderString = _styles.styles[index]._border
-                    ? ' borderId="' + _styles.styles[index]._border + '" ' : '';
-                var fillString = _styles.styles[index]._fill
-                    ? ' fillId="' + _styles.styles[index]._fill + '" ' : '';
-                stylesString += '<xf fontId="' + _styles.styles[index]._font
+                    + this._styles.styles[index]._numFormat + '" ' : '';
+                var borderString = this._styles.styles[index]._border
+                    ? ' borderId="' + this._styles.styles[index]._border + '" ' : '';
+                var fillString = this._styles.styles[index]._fill
+                    ? ' fillId="' + this._styles.styles[index]._fill + '" ' : '';
+                stylesString += '<xf fontId="' + this._styles.styles[index]._font
                     + '" ' + numFormatString
                     + borderString + fillString + ' />';
             }
             var tableStyles = '';
-            if (_styles.tableStyles && _styles.tableStyles.length) tableStyles = generateTableContent(_styles);
-            stylesString += '</cellXfs>' + tableStyles + '</styleSheet>';
-            return stylesString;
+            if (this._styles.tableStyles && this._styles.tableStyles.length) tableStyles = generateTableContent(this._styles);
+            stylesString += '</cellXfs>' + tableStyles;
+            return template.format(stylesString);
         };
 
         var generateTableContent = function (_styles) {
-            var dxfsCount = 0, tableStyles = '', tableStylesCount = 0, tableStyleCount;
+            var dxfsCount = 0, tableStyles = '', tableStylesCount = 0, tableStyleCount, dxfString = '';
             for (var index = 0; index < _styles.tableStyles.length; index++) {
-                var dxfString = '', individualTalbeStyle;
+                var individualTalbeStyle;
                 dxfsCount++;
                 tableStylesCount++;
                 tableStyleCount = 1;
@@ -127,7 +177,7 @@ define(['utils',
         };
 
         var generateDxfContent = function (style) {
-            dxfString = '<dxf>';
+            var dxfString = '<dxf>';
             if (style.font) {
                 dxfString += oxmlXlsxFont.generateSingleContent(style.font);
             }
@@ -139,11 +189,6 @@ define(['utils',
             }
             dxfString += '</dxf>';
             return dxfString;
-        };
-
-        var attach = function (file, _styles) {
-            var styles = generateContent(_styles);
-            file.addFile(styles, _styles.fileName, "workbook");
         };
 
         var createStyleParts = function (_workBook, _rel, _contentType) {
@@ -188,20 +233,20 @@ define(['utils',
             return null;
         };
 
-        var addStyles = function (options, _styles) {
+        Styles.prototype.addStyles = function (options) {
             if (options.cellIndex || options.cellIndices) {
                 var newStyleCreated = false, cellStyle,
                     saveFont, saveNumFormat, saveBorder, saveFill;
                 if (options.cellIndex) {
-                    cellStyle = searchStyleForCell(_styles, options.cellIndex);
+                    cellStyle = searchStyleForCell(this._styles, options.cellIndex);
                     saveFont = oxmlXlsxFont
-                        .getFontForCell(_styles, options, cellStyle);
+                        .getFontForCell(this._styles, options, cellStyle);
                     saveNumFormat = oxmlXlsxNumFormat
-                        .getNumFormatForCell(_styles, options, cellStyle);
+                        .getNumFormatForCell(this._styles, options, cellStyle);
                     saveBorder = oxmlXlsxBorder
-                        .getBorderForCell(_styles, options, cellStyle);
+                        .getBorderForCell(this._styles, options, cellStyle);
                     saveFill = oxmlXlsxFill
-                        .getFillForCell(_styles, options, cellStyle);
+                        .getFillForCell(this._styles, options, cellStyle);
                     newStyleCreated = newStyleCreated
                         || saveFont.newStyleCreated
                         || saveBorder.newStyleCreated
@@ -225,7 +270,7 @@ define(['utils',
                     }
 
                     if (!newStyleCreated) {
-                        cellStyle = searchSimilarStyle(_styles, {
+                        cellStyle = searchSimilarStyle(this._styles, {
                             _font: saveFont.fontIndex,
                             _numFormat: saveNumFormat.numFormatIndex,
                             _border: saveBorder.borderIndex,
@@ -246,21 +291,21 @@ define(['utils',
                     };
 
                     cellStyle.cellIndices[options.cellIndex] = 0;
-                    cellStyle.index = "" + (parseInt(_styles.styles.length, 10) + 1);
-                    _styles.styles.push(cellStyle);
+                    cellStyle.index = "" + (parseInt(this._styles.styles.length, 10) + 1);
+                    this._styles.styles.push(cellStyle);
                     return cellStyle;
                 }
 
                 if (options.cellIndices) {
                     var index;
-                    saveFont = oxmlXlsxFont.getFontForCells(_styles, options);
-                    saveNumFormat = oxmlXlsxNumFormat.getNumFormatForCells(_styles, options);
-                    saveBorder = oxmlXlsxBorder.getBorderForCells(_styles, options);
-                    saveFill = oxmlXlsxFill.getFillForCells(_styles, options);
+                    saveFont = oxmlXlsxFont.getFontForCells(this._styles, options);
+                    saveNumFormat = oxmlXlsxNumFormat.getNumFormatForCells(this._styles, options);
+                    saveBorder = oxmlXlsxBorder.getBorderForCells(this._styles, options);
+                    saveFill = oxmlXlsxFill.getFillForCells(this._styles, options);
                     newStyleCreated = newStyleCreated || saveFont.newStyleCreated
                         || saveNumFormat.newStyleCreated || saveBorder.newStyleCreated || saveFill.newStyleCreated;
                     if (!newStyleCreated) {
-                        cellStyle = searchSimilarStyle(_styles, {
+                        cellStyle = searchSimilarStyle(this._styles, {
                             _font: saveFont.fontIndex,
                             _numFormat: saveNumFormat.numFormatIndex,
                             _border: saveBorder.borderIndex,
@@ -270,7 +315,7 @@ define(['utils',
                         if (cellStyle) {
                             for (index = 0; index < options.cellIndices.length; index++) {
                                 var cellIndex = options.cellIndices[index];
-                                var savedCellStyle = searchStyleForCell(_styles, cellIndex);
+                                var savedCellStyle = searchStyleForCell(this._styles, cellIndex);
                                 if (savedCellStyle) delete savedCellStyle.cellIndices[cellIndex];
                                 cellStyle.cellIndices[cellIndex] = Object.keys(cellStyle.cellIndices).length;
                             }
@@ -289,34 +334,34 @@ define(['utils',
 
                     for (index = 0; index < options.cellIndices.length; index++) {
                         var cellIndex = options.cellIndices[index];
-                        var savedCellStyle = searchStyleForCell(_styles, cellIndex);
+                        var savedCellStyle = searchStyleForCell(this._styles, cellIndex);
                         if (savedCellStyle) {
                             delete savedCellStyle.cellIndices[cellIndex];
                         }
                         cellStyle.cellIndices[cellIndex] = Object.keys(cellStyle.cellIndices).length;
                         if (savedCellStyle && !Object.keys(savedCellStyle.cellIndices).length) {
-                            for (key in cellStyle) {
+                            for (var key in cellStyle) {
                                 savedCellStyle[key] = cellStyle[key];
                             }
                             return savedCellStyle;
                         }
                     }
-                    cellStyle.index = "" + (parseInt(_styles.styles.length, 10) + 1);
-                    _styles.styles.push(cellStyle);
+                    cellStyle.index = "" + (parseInt(this._styles.styles.length, 10) + 1);
+                    this._styles.styles.push(cellStyle);
                     return cellStyle;
                 }
             }
         };
 
-        var addTableStyle = function (options, tableStyleName, _table, _styles) {
-            if (!_styles.tableStyles) _styles.tableStyles = [];
+        Styles.prototype.addTableStyle = function (options, tableStyleName, _table) {
+            if (!this._styles.tableStyles) this._styles.tableStyles = [];
 
             // Find existing table style
             var existingTableStyle;
             if (_table && _table.tableStyle) {
-                for (var index = 0; index < _styles.tableStyles.length; index++) {
-                    if (_table.tableStyle.name === _styles.tableStyles[index].name) {
-                        existingTableStyle = _styles.tableStyles[index];
+                for (var index = 0; index < this._styles.tableStyles.length; index++) {
+                    if (_table.tableStyle.name === this._styles.tableStyles[index].name) {
+                        existingTableStyle = this._styles.tableStyles[index];
                         break;
                     }
                 }
@@ -349,11 +394,11 @@ define(['utils',
             if (options.lastRowLastCell) tableStyle.lastRowLastCell = prepareTableStyleObj(options.lastRowLastCell, existingTableStyle && existingTableStyle.lastRowLastCell);
             else if (existingTableStyle && existingTableStyle.lastRowLastCell) tableStyle.lastRowLastCell = existingTableStyle.lastRowLastCell;
             if (!existingTableStyle)
-                _styles.tableStyles.push(tableStyle);
+                this._styles.tableStyles.push(tableStyle);
             else {
-                for (var index = 0; index < _styles.tableStyles.length; index++) {
-                    if (_table.tableStyle.name === _styles.tableStyles[index].name) {
-                        _styles.tableStyles[index] = tableStyle;
+                for (var index = 0; index < this._styles.tableStyles.length; index++) {
+                    if (_table.tableStyle.name === this._styles.tableStyles[index].name) {
+                        this._styles.tableStyles[index] = tableStyle;
                         break;
                     }
                 }
@@ -371,53 +416,7 @@ define(['utils',
 
         return {
             createStyle: function (_workbook, _rel, _contentType) {
-                var sheetId = createStyleParts(_workbook, _rel, _contentType);
-                var _styles = {
-                    sheetId: sheetId,
-                    fileName: "style" + sheetId + ".xml",
-                    styles: [],
-                    _fonts: {},
-                    _borders: {},
-                    _fills: {},
-                    _fontsCount: 1,
-                    _bordersCount: 1,
-                    _fillsCount: 2
-                };
-                var font = {
-                    bold: false,
-                    italic: false,
-                    underline: false,
-                    size: false,
-                    color: false,
-                    strike: false,
-                    family: false,
-                    name: false,
-                    scheme: false
-                };
-                _styles._fonts[utils.stringify(font)] = 0;
-                _styles._borders[false] = 0;
-                _styles._fills[false] = 0;
-                var fillGray125 = {
-                    pattern: 'gray125',
-                    fgColor: false,
-                    bgColor: false
-                };
-                _styles._fills[utils.stringify(fillGray125)] = 1;
-                return {
-                    _styles: _styles,
-                    generateContent: function () {
-                        return generateContent(_styles);
-                    },
-                    attach: function (file) {
-                        attach(file, _styles);
-                    },
-                    addStyles: function (options) {
-                        return addStyles(options, _styles);
-                    },
-                    addTableStyle: function (options, tableStyleName, _table) {
-                        return addTableStyle(options, tableStyleName, _table, _styles);
-                    }
-                };
+                return new Styles(_workbook, _rel, _contentType);
             }
         };
     });

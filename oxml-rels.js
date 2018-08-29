@@ -1,46 +1,40 @@
-define([], function () {
+define(['contentFile', 'contentString', 'xmlContentString'], function (ContentFile, ContentString, XMLContentString) {
     'use strict';
 
     // Add Relation
-    var addRelation = function (id, type, target, _rels) {
-        _rels.relations.push({
+    var Relation = function (fileName, folderName) {
+        this.className = "Relation";
+        this.fileName = fileName;
+        this.folderName = folderName;
+        this.relations = [];
+    };
+    Relation.prototype = Object.create(ContentFile.prototype);
+
+    Relation.prototype.addRelation = function (id, type, target) {
+        this.relations.push({
             Id: id,
             Type: type,
             Target: target
         });
     };
 
-    var generateContent = function (_rels) {
+    Relation.prototype.generateContent = function () {
         // Create RELS
-        var index, rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
-        for (index = 0; index < _rels.relations.length; index++) {
-            var relation = _rels.relations[index];
-            rels += '<Relationship Id="' + relation.Id + '" Type="' + relation.Type + '" Target="' + relation.Target + '"/>';
+        var template = new XMLContentString({
+            rootNode: 'Relationships',
+            nameSpaces: ['http://schemas.openxmlformats.org/package/2006/relationships']
+        });
+        var index, rels = '';
+        for (index = 0; index < this.relations.length; index++) {
+            var relationTemplate = new ContentString('<Relationship Id="{0}" Type="{1}" Target="{2}"/>');
+            rels += relationTemplate.format(this.relations[index].Id, this.relations[index].Type, this.relations[index].Target);
         }
-        rels += '</Relationships>';
-        return rels;
+        return template.format(rels);
     };
 
-    var attach = function (file, _rels) {
-        var rels = generateContent(_rels);
-        file.addFile(rels, _rels.fileName, _rels.folderName);
+    return {
+        createRelation: function (fileName, folderName) {
+            return new Relation(fileName, folderName);
+        }
     };
-
-    // Create Relation
-    var createRelation = function (fileName, folderName) {
-        var _rels = {
-            relations: [],
-            fileName: fileName,
-            folderName: folderName
-        };
-        _rels.addRelation = function (id, type, target) {
-            addRelation(id, type, target, _rels);
-        };
-        _rels.attach = function (file) {
-            return attach(file, _rels);
-        };
-        return _rels;
-    };
-
-    return { createRelation: createRelation };
 });

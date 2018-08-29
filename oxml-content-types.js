@@ -1,29 +1,33 @@
-define([], function () {
+define(['contentFile', 'contentString', 'xmlContentString'], function (ContentFile, ContentString, XMLContentString) {
     'use strict';
 
-    var generateContent = function (_contentType) {
-        var index, contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">';
-        for (index = 0; index < _contentType.contentTypes.length; index++) {
-            var contentType = _contentType.contentTypes[index];
-            contentTypes += '<' + contentType.name + ' ContentType="' + contentType.contentType + '" ';
-            if (contentType.Extension) {
-                contentTypes += 'Extension="' + contentType.Extension + '" ';
-            }
-            if (contentType.PartName) {
-                contentTypes += 'PartName="' + contentType.PartName + '" ';
-            }
-            contentTypes += '/>\n';
+    var ContentTypes = function () {
+        this.className = "ContentTypes";
+        this._contentType = {
+            contentTypes: []
+        };
+        this.fileName = "[Content_Types].xml";
+    };
+    ContentTypes.prototype = Object.create(ContentFile.prototype);
+    ContentTypes.prototype.generateContent = function () {
+        var template = new XMLContentString({
+            rootNode : 'Types',
+            nameSpaces: ['http://schemas.openxmlformats.org/package/2006/content-types']
+        });
+        var index, contentTypes = '';
+        for (index = 0; index < this._contentType.contentTypes.length; index++) {
+            var contentTypeTemplate = new ContentString('<{0} ContentType="{1}"{2}{3}/>');
+            var contentType = this._contentType.contentTypes[index];
+            contentTypes += contentTypeTemplate.format(
+                contentType.name,
+                contentType.contentType,
+                (contentType.Extension ? (' Extension="' + contentType.Extension + '"') : ''),
+                (contentType.PartName ? (' PartName="' + contentType.PartName + '"') : ''));
         }
-        contentTypes += '</Types>';
-        return contentTypes;
+        return template.format(contentTypes);
     };
 
-    var attach = function (file, _contentType) {
-        var contentTypes = generateContent(_contentType);
-        file.addFile(contentTypes, "[Content_Types].xml");
-    };
-
-    var addContentType = function (name, contentType, attributes, _contentType) {
+    ContentTypes.prototype.addContentType = function (name, contentType, attributes) {
         var content = {
             name: name,
             contentType: contentType
@@ -32,23 +36,10 @@ define([], function () {
         for (var key in attributes) {
             content[key] = attributes[key];
         }
-        _contentType.contentTypes.push(content);
-    };
-
-    var createContentType = function () {
-        var _contentType = {
-            contentTypes: []
-        };
-        _contentType.addContentType = function (name, contentType, attributes) {
-            addContentType(name, contentType, attributes, _contentType);
-        };
-        _contentType.attach = function (file) {
-            return attach(file, _contentType);
-        };
-        return _contentType;
+        this._contentType.contentTypes.push(content);
     };
 
     return {
-        createContentType: createContentType
+        createContentType: function () { return new ContentTypes(); }
     };
 });
