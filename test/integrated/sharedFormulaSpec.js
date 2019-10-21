@@ -16,7 +16,9 @@ describe('shared formula values', function () {
         var cells = worksheet.sharedFormula('C1', 'C3', '(A1+B1)');
 
         // ASSERT
-        expect(cells.cellIndices).toMatch(['C1', 'C2', 'C3']);
+        expect(cells.cellIndices[0]).toBe('C1');
+        expect(cells.cellIndices[1]).toBe('C2');
+        expect(cells.cellIndices[2]).toBe('C3');
         expect(cells.cells[0].formula).toBe('(A1+B1)');
         expect(cells.cells[0].rowIndex).toBe(1);
         expect(cells.cells[0].columnIndex).toBe('C');
@@ -42,7 +44,9 @@ describe('shared formula values', function () {
         var cells = worksheet.sharedFormula('A3', 'C3', '(A1+A2)');
 
         // ASSERT
-        expect(cells.cellIndices).toMatch(['A3', 'B3', 'C3']);
+        expect(cells.cellIndices[0]).toBe('A3');
+        expect(cells.cellIndices[1]).toBe('B3');
+        expect(cells.cellIndices[2]).toBe('C3');
         expect(cells.cells[0].formula).toBe('(A1+A2)');
         expect(cells.cells[0].rowIndex).toBe(3);
         expect(cells.cells[0].columnIndex).toBe('A');
@@ -87,7 +91,8 @@ describe('shared formula values', function () {
 
         // ASSERT
         expect(cells).toBeDefined();
-        expect(cells.cellIndices).toMatch(['C1', 'C2']);
+        expect(cells.cellIndices[0]).toBe('C1');
+        expect(cells.cellIndices[1]).toBe('C2');
         expect(cells.cells[0].formula).toBe('(A1+B1)');
         expect(cells.cells[0].rowIndex).toBe(1);
         expect(cells.cells[0].columnIndex).toBe('C');
@@ -116,7 +121,8 @@ describe('shared formula values', function () {
 
         // ASSERT
         expect(cells).toBeDefined();
-        expect(cells.cellIndices).toMatch(['C1', 'C2']);
+        expect(cells.cellIndices[0]).toBe('C1');
+        expect(cells.cellIndices[1]).toBe('C2');
         expect(cells.cells[0].formula).toBe('(A1+B1)');
         expect(cells.cells[0].rowIndex).toBe(1);
         expect(cells.cells[0].columnIndex).toBe('C');
@@ -139,7 +145,8 @@ describe('shared formula values', function () {
 
         // ASSERT
         expect(cells).toBeDefined();
-        expect(cells.cellIndices).toMatch(['C1', 'C2']);
+        expect(cells.cellIndices[0]).toBe('C1');
+        expect(cells.cellIndices[1]).toBe('C2');
         expect(cells.cells[0].formula).toBe('(A1+B1)');
         expect(cells.cells[0].rowIndex).toBe(1);
         expect(cells.cells[0].columnIndex).toBe('C');
@@ -220,7 +227,8 @@ describe('shared formula values', function () {
 
         // ASSERT
         expect(cellsC).toBeDefined();
-        expect(cellsC.cellIndices).toMatch(['C1', 'C2']);
+        expect(cellsC.cellIndices[0]).toBe('C1');
+        expect(cellsC.cellIndices[1]).toBe('C2');
         expect(cellsC.cells[0].formula).toBe('(A1+B1)');
         expect(cellsC.cells[0].rowIndex).toBe(1);
         expect(cellsC.cells[0].columnIndex).toBe('C');
@@ -235,7 +243,8 @@ describe('shared formula values', function () {
         expect(cellsC.cells[1].sharedFormulaIndex).toBe(0);
 
         expect(cellsR).toBeDefined();
-        expect(cellsR.cellIndices).toMatch(['A3', 'B3']);
+        expect(cellsR.cellIndices[0]).toBe('A3');
+        expect(cellsR.cellIndices[1]).toBe('B3');
         expect(cellsR.cells[0].formula).toBe('(A2-A1)');
         expect(cellsR.cells[0].rowIndex).toBe(3);
         expect(cellsR.cells[0].columnIndex).toBe('A');

@@ -16,7 +16,9 @@ describe('column method', function () {
         var column = worksheet.column(1, 1, ['Some', 'Dummy', 'Value']);
 
         // ASSERT
-        expect(column.cellIndices).toMatch(['A1', 'A2', 'A3']);
+        expect(column.cellIndices[0]).toBe('A1');
+        expect(column.cellIndices[1]).toBe('A2');
+        expect(column.cellIndices[2]).toBe('A3');
         expect(column.cells[0].rowIndex).toBe(1);
         expect(column.cells[0].columnIndex).toBe('A');
         expect(column.cells[0].value).toBe('Some');
@@ -39,7 +41,9 @@ describe('column method', function () {
         var column = worksheet.column(1, 1, [1, 2, 3]).set(['Some', 'Dummy', 'Value']);
 
         // ASSERT
-        expect(column.cellIndices).toMatch(['A1', 'A2', 'A3']);
+        expect(column.cellIndices[0]).toBe('A1');
+        expect(column.cellIndices[1]).toBe('A2');
+        expect(column.cellIndices[2]).toBe('A3');
         expect(column.cells[0].rowIndex).toBe(1);
         expect(column.cells[0].columnIndex).toBe('A');
         expect(column.cells[0].value).toBe('Some');
@@ -63,7 +67,9 @@ describe('column method', function () {
         column.set(['Some', 'Dummy', 'Value']);
 
         // ASSERT
-        expect(column.cellIndices).toMatch(['A1', 'A2', 'A3']);
+        expect(column.cellIndices[0]).toBe('A1');
+        expect(column.cellIndices[1]).toBe('A2');
+        expect(column.cellIndices[2]).toBe('A3');
         expect(column.cells[0].rowIndex).toBe(1);
         expect(column.cells[0].columnIndex).toBe('A');
         expect(column.cells[0].value).toBe('Some');
@@ -87,7 +93,9 @@ describe('column method', function () {
         column.set(['Some']);
 
         // ASSERT
-        expect(column.cellIndices).toMatch(['A1', 'A2', 'A3']);
+        expect(column.cellIndices[0]).toBe('A1');
+        expect(column.cellIndices[1]).toBe('A2');
+        expect(column.cellIndices[2]).toBe('A3');
         expect(column.cells[0].rowIndex).toBe(1);
         expect(column.cells[0].columnIndex).toBe('A');
         expect(column.cells[0].value).toBe('Some');
@@ -111,7 +119,9 @@ describe('column method', function () {
         column.set(['Some', 'Dummy', 'Text', 'Updated']);
 
         // ASSERT
-        expect(column.cellIndices).toMatch(['A1', 'A2', 'A3']);
+        expect(column.cellIndices[0]).toBe('A1');
+        expect(column.cellIndices[1]).toBe('A2');
+        expect(column.cellIndices[2]).toBe('A3');
         expect(column.cells[0].rowIndex).toBe(1);
         expect(column.cells[0].columnIndex).toBe('A');
         expect(column.cells[0].value).toBe('Some');
@@ -137,7 +147,8 @@ describe('column method', function () {
         column = worksheet.column(2, 1);
 
         // ASSERT
-        expect(column.cellIndices).toMatch(['A2', 'A3']);
+        expect(column.cellIndices[0]).toBe('A2');
+        expect(column.cellIndices[1]).toBe('A3');
         expect(column.cells[0].rowIndex).toBe(2);
         expect(column.cells[0].columnIndex).toBe('A');
         expect(column.cells[0].value).toBe('Dummy');
@@ -158,7 +169,9 @@ describe('column method', function () {
         column.set([]);
 
         // ASSERT
-        expect(column.cellIndices).toMatch(['A1', 'A2', 'A3']);
+        expect(column.cellIndices[0]).toBe('A1');
+        expect(column.cellIndices[1]).toBe('A2');
+        expect(column.cellIndices[2]).toBe('A3');
         expect(column.cells[0].rowIndex).toBe(1);
         expect(column.cells[0].columnIndex).toBe('A');
         expect(column.cells[0].value).toBe('Some');
@@ -184,7 +197,9 @@ describe('column method', function () {
         column.cells[0].set('Updated');
 
         // ASSERT
-        expect(column.cellIndices).toMatch(['A1', 'A2', 'A3']);
+        expect(column.cellIndices[0]).toBe('A1');
+        expect(column.cellIndices[1]).toBe('A2');
+        expect(column.cellIndices[2]).toBe('A3');
         expect(column.cells[0].rowIndex).toBe(1);
         expect(column.cells[0].columnIndex).toBe('A');
         expect(column.cells[0].value).toBe('Updated');

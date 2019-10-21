@@ -53,7 +53,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
                 return '<c r="' + cellIndex + '" ' + styleString + '><f>' + value.formula + '</f>' + v + '</c>';
             }
         };
-        
+
         var getNextRelation = function (_sheet) {
             var lastSheetRel = {};
             if (_sheet._rels.relations.length) {
@@ -61,6 +61,21 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
             }
             var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
             return nextSheetRelId;
+        };
+
+        var getColumnString = function (columnIndex) {
+            var columnString = "", mod;
+            while (columnIndex > 0) {
+                mod = columnIndex % 26;
+                var div = (columnIndex - mod) / 26;
+                if (mod === 0) {
+                    mod = 26;
+                }
+                columnIndex = div;
+                columnString = String.fromCharCode(64 + mod) + columnString;
+            }
+
+            return columnString;
         };
 
         Sheet.prototype.generateContent = function (file) {
@@ -73,7 +88,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
 
                         var columnIndex = 0;
                         for (columnIndex = 0; columnIndex < this._sheet.values[rowIndex].length; columnIndex++) {
-                            var columnChar = String.fromCharCode(65 + columnIndex);
+                            var columnChar = getColumnString(columnIndex);
                             var value = this._sheet.values[rowIndex][columnIndex];
                             var cellIndex = columnChar + (rowIndex + 1);
                             var cellStr = cellString(value, cellIndex, rowIndex, columnIndex);
@@ -217,7 +232,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
         };
 
         var updateValueInCell = function (value, _sheet, rowIndex, columnIndex, options) {
-            var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+            var cellIndex = getColumnString(columnIndex - 1) + rowIndex;
             var sheetRowIndex = rowIndex - 1;
             if (value !== undefined && value !== null) {
                 if (!_sheet.values[sheetRowIndex]) {
@@ -247,7 +262,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
                 type: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null,
                 cellIndex: cellIndex,
                 rowIndex: rowIndex + 1,
-                columnIndex: String.fromCharCode(65 + columnIndex),
+                columnIndex: getColumnString(columnIndex),
                 formula: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined,
                 set: function (value, options) {
                     cell(_sheet, rowIndex + 1, columnIndex + 1, value, options);
@@ -266,7 +281,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
                 var value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
                 var formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
                 var type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
-                var cellIndex = String.fromCharCode(65 + columnIndex) + (rowIndex + 1);
+                var cellIndex = getColumnString(columnIndex) + (rowIndex + 1);
                 var sharedFormulaIndex = type === "sharedFormula" ? _sheet.values[rowIndex][columnIndex].si : undefined;
                 cellRange.push({
                     style: function (options) {
@@ -275,7 +290,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
                         return getCellAttributes(_sheet, this.cellIndex, (this.rowIndex - 1), (this.columnIndex.toUpperCase().charCodeAt() - 65));
                     },
                     rowIndex: rowIndex + 1,
-                    columnIndex: String.fromCharCode(65 + columnIndex),
+                    columnIndex: getColumnString(columnIndex),
                     value: value,
                     formula: formula,
                     cellIndex: cellIndex,
@@ -412,7 +427,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
                 range: fromCell + ":" + toCell,
                 value: val
             };
-            cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+            cellIndices.push(getColumnString(columnIndex) + rowIndex);
             cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
 
             var toCellChar, toCellNum;
@@ -430,7 +445,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
                         si: nextId,
                         value: val
                     };
-                    cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+                    cellIndices.push(getColumnString(columnIndex) + rowIndex);
                     cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
                 }
             } else if (toCellChar === fromCellChar) {
@@ -439,7 +454,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
                     if (!this._sheet.values[rowIndex - 1]) {
                         this._sheet.values[rowIndex - 1] = [];
                     }
-                    cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+                    cellIndices.push(getColumnString(columnIndex) + rowIndex);
                     cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
 
                     this._sheet.values[rowIndex - 1][columIndex] = {
@@ -464,7 +479,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
             if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number")
                 return;
             if (!options && (value === undefined || value === null)) {
-                var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+                var cellIndex = getColumnString(columnIndex - 1) + rowIndex;
                 return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
             } else if (!options && typeof value === "object" && !value.type && (value.value === undefined || value.value === null)) {
                 return cellStyle(_sheet, rowIndex, columnIndex, value);
@@ -526,7 +541,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
                 if (!_sheet.values[index])
                     _sheet.values[index] = [];
                 for (var index2 = columnIndex - 1; tmpColumns > 0; index2++ , tmpColumns--) {
-                    cellIndices.push(String.fromCharCode(65 + index2) + (index + 1));
+                    cellIndices.push(getColumnString(index2 + 1) + (index + 1));
                     cells.push({ rowIndex: index, columnIndex: index2 });
                 }
             }
@@ -553,7 +568,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
         };
 
         var cellStyle = function (_sheet, rowIndex, columnIndex, options) {
-            var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+            var cellIndex = getColumnString(columnIndex - 1) + rowIndex;
             options.cellIndex = cellIndex;
             updateSingleStyle(_sheet, options, rowIndex - 1, columnIndex - 1);
             return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);

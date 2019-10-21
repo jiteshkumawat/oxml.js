@@ -20,7 +20,15 @@ describe('grid method', function () {
         ]);
 
         // ASSERT
-        expect(grid.cellIndices).toMatch(['A1', 'B1', 'C1', 'A2', 'B2', 'C2', 'A3', 'B3', 'C3']);
+        expect(grid.cellIndices[0]).toBe('A1');
+        expect(grid.cellIndices[1]).toBe('B1');
+        expect(grid.cellIndices[2]).toBe('C1');
+        expect(grid.cellIndices[3]).toBe('A2');
+        expect(grid.cellIndices[4]).toBe('B2');
+        expect(grid.cellIndices[5]).toBe('C2');
+        expect(grid.cellIndices[6]).toBe('A3');
+        expect(grid.cellIndices[7]).toBe('B3');
+        expect(grid.cellIndices[8]).toBe('C3');
         expect(grid.cells[0].rowIndex).toBe(1);
         expect(grid.cells[0].columnIndex).toBe('A');
         expect(grid.cells[0].value).toBe('Col1');
@@ -83,7 +91,15 @@ describe('grid method', function () {
         ]);
 
         // ASSERT
-        expect(grid.cellIndices).toMatch(['A1', 'B1', 'C1', 'A2', 'B2', 'C2', 'A3', 'B3', 'C3']);
+        expect(grid.cellIndices[0]).toBe('A1');
+        expect(grid.cellIndices[1]).toBe('B1');
+        expect(grid.cellIndices[2]).toBe('C1');
+        expect(grid.cellIndices[3]).toBe('A2');
+        expect(grid.cellIndices[4]).toBe('B2');
+        expect(grid.cellIndices[5]).toBe('C2');
+        expect(grid.cellIndices[6]).toBe('A3');
+        expect(grid.cellIndices[7]).toBe('B3');
+        expect(grid.cellIndices[8]).toBe('C3');
         expect(grid.cells[0].rowIndex).toBe(1);
         expect(grid.cells[0].columnIndex).toBe('A');
         expect(grid.cells[0].value).toBe('Col1');
@@ -147,7 +163,15 @@ describe('grid method', function () {
         ]);
 
         // ASSERT
-        expect(grid.cellIndices).toMatch(['A1', 'B1', 'C1', 'A2', 'B2', 'C2', 'A3', 'B3', 'C3']);
+        expect(grid.cellIndices[0]).toBe('A1');
+        expect(grid.cellIndices[1]).toBe('B1');
+        expect(grid.cellIndices[2]).toBe('C1');
+        expect(grid.cellIndices[3]).toBe('A2');
+        expect(grid.cellIndices[4]).toBe('B2');
+        expect(grid.cellIndices[5]).toBe('C2');
+        expect(grid.cellIndices[6]).toBe('A3');
+        expect(grid.cellIndices[7]).toBe('B3');
+        expect(grid.cellIndices[8]).toBe('C3');
         expect(grid.cells[0].rowIndex).toBe(1);
         expect(grid.cells[0].columnIndex).toBe('A');
         expect(grid.cells[0].value).toBe('Col1');
@@ -210,7 +234,15 @@ describe('grid method', function () {
         ]);
 
         // ASSERT
-        expect(grid.cellIndices).toMatch(['A1', 'B1', 'C1', 'A2', 'B2', 'C2', 'A3', 'B3', 'C3']);
+        expect(grid.cellIndices[0]).toBe('A1');
+        expect(grid.cellIndices[1]).toBe('B1');
+        expect(grid.cellIndices[2]).toBe('C1');
+        expect(grid.cellIndices[3]).toBe('A2');
+        expect(grid.cellIndices[4]).toBe('B2');
+        expect(grid.cellIndices[5]).toBe('C2');
+        expect(grid.cellIndices[6]).toBe('A3');
+        expect(grid.cellIndices[7]).toBe('B3');
+        expect(grid.cellIndices[8]).toBe('C3');
         expect(grid.cells[0].rowIndex).toBe(1);
         expect(grid.cells[0].columnIndex).toBe('A');
         expect(grid.cells[0].value).toBe('Col1');
@@ -275,7 +307,15 @@ describe('grid method', function () {
         ]);
 
         // ASSERT
-        expect(grid.cellIndices).toMatch(['A1', 'B1', 'C1', 'A2', 'B2', 'C2', 'A3', 'B3', 'C3']);
+        expect(grid.cellIndices[0]).toBe('A1');
+        expect(grid.cellIndices[1]).toBe('B1');
+        expect(grid.cellIndices[2]).toBe('C1');
+        expect(grid.cellIndices[3]).toBe('A2');
+        expect(grid.cellIndices[4]).toBe('B2');
+        expect(grid.cellIndices[5]).toBe('C2');
+        expect(grid.cellIndices[6]).toBe('A3');
+        expect(grid.cellIndices[7]).toBe('B3');
+        expect(grid.cellIndices[8]).toBe('C3');
         expect(grid.cells[0].rowIndex).toBe(1);
         expect(grid.cells[0].columnIndex).toBe('A');
         expect(grid.cells[0].value).toBe('Col1');
@@ -338,7 +378,10 @@ describe('grid method', function () {
         var grid = worksheet.grid(2, 2);
 
         // ASSERT
-        expect(grid.cellIndices).toMatch(['B2', 'C2', 'B3', 'C3']);
+        expect(grid.cellIndices[0]).toBe('B2');
+        expect(grid.cellIndices[1]).toBe('C2');
+        expect(grid.cellIndices[2]).toBe('B3');
+        expect(grid.cellIndices[3]).toBe('C3');
         expect(grid.cells[0].rowIndex).toBe(2);
         expect(grid.cells[0].columnIndex).toBe('B');
         expect(grid.cells[0].value).toBe(2);

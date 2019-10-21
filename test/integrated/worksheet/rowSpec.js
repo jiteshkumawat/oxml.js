@@ -16,7 +16,9 @@ describe('row method', function () {
         var row = worksheet.row(1,1,['Some','Dummy','Value']);
 
         // ASSERT
-        expect(row.cellIndices).toMatch(['A1', 'B1', 'C1']);
+        expect(row.cellIndices[0]).toBe('A1');
+        expect(row.cellIndices[1]).toBe('B1');
+        expect(row.cellIndices[2]).toBe('C1');
         expect(row.cells[0].rowIndex).toBe(1);
         expect(row.cells[0].columnIndex).toBe('A');
         expect(row.cells[0].value).toBe('Some');
@@ -71,7 +73,7 @@ describe('row method', function () {
         var row = worksheet.row(1,1,5);
 
         // ASSERT
-        expect(row.cellIndices).toMatch(['A1']);
+        expect(row.cellIndices[0]).toBe('A1');
         expect(row.cells[0].rowIndex).toBe(1);
         expect(row.cells[0].columnIndex).toBe('A');
         expect(row.cells[0].value).toBe(5);
@@ -84,7 +86,9 @@ describe('row method', function () {
         var row = worksheet.row(1,1,[1,2,3]).set(['Some','Dummy','Value']);
 
         // ASSERT
-        expect(row.cellIndices).toMatch(['A1', 'B1', 'C1']);
+        expect(row.cellIndices[0]).toBe('A1');
+        expect(row.cellIndices[1]).toBe('B1');
+        expect(row.cellIndices[2]).toBe('C1');
         expect(row.cells[0].rowIndex).toBe(1);
         expect(row.cells[0].columnIndex).toBe('A');
         expect(row.cells[0].value).toBe('Some');
@@ -108,7 +112,9 @@ describe('row method', function () {
         row.set(['Some','Dummy','Value']);
 
         // ASSERT
-        expect(row.cellIndices).toMatch(['A1', 'B1', 'C1']);
+        expect(row.cellIndices[0]).toBe('A1');
+        expect(row.cellIndices[1]).toBe('B1');
+        expect(row.cellIndices[2]).toBe('C1');
         expect(row.cells[0].rowIndex).toBe(1);
         expect(row.cells[0].columnIndex).toBe('A');
         expect(row.cells[0].value).toBe('Some');
@@ -132,7 +138,9 @@ describe('row method', function () {
         row.set(['Some']);
 
         // ASSERT
-        expect(row.cellIndices).toMatch(['A1', 'B1', 'C1']);
+        expect(row.cellIndices[0]).toBe('A1');
+        expect(row.cellIndices[1]).toBe('B1');
+        expect(row.cellIndices[2]).toBe('C1');
         expect(row.cells[0].rowIndex).toBe(1);
         expect(row.cells[0].columnIndex).toBe('A');
         expect(row.cells[0].value).toBe('Some');
@@ -156,7 +164,9 @@ describe('row method', function () {
         row.set(['Some', 'Dummy', 'Text', 'Updated']);
 
         // ASSERT
-        expect(row.cellIndices).toMatch(['A1', 'B1', 'C1']);
+        expect(row.cellIndices[0]).toBe('A1');
+        expect(row.cellIndices[1]).toBe('B1');
+        expect(row.cellIndices[2]).toBe('C1');
         expect(row.cells[0].rowIndex).toBe(1);
         expect(row.cells[0].columnIndex).toBe('A');
         expect(row.cells[0].value).toBe('Some');
@@ -182,7 +192,8 @@ describe('row method', function () {
         var row = worksheet.row(1,2);
 
         // ASSERT
-        expect(row.cellIndices).toMatch(['B1', 'C1']);
+        expect(row.cellIndices[0]).toBe('B1');
+        expect(row.cellIndices[1]).toBe('C1');
         expect(row.cells[0].rowIndex).toBe(1);
         expect(row.cells[0].columnIndex).toBe('B');
         expect(row.cells[0].value).toBe('Dummy');
@@ -203,7 +214,9 @@ describe('row method', function () {
         row.set([]);
 
         // ASSERT
-        expect(row.cellIndices).toMatch(['A1','B1', 'C1']);
+        expect(row.cellIndices[0]).toBe('A1');
+        expect(row.cellIndices[1]).toBe('B1');
+        expect(row.cellIndices[2]).toBe('C1');
         expect(row.cells[0].rowIndex).toBe(1);
         expect(row.cells[0].columnIndex).toBe('A');
         expect(row.cells[0].value).toBe('Some');
@@ -228,7 +241,9 @@ describe('row method', function () {
         row.cells[0].set('Updated');
 
         // ASSERT
-        expect(row.cellIndices).toMatch(['A1','B1', 'C1']);
+        expect(row.cellIndices[0]).toMatch('A1');
+        expect(row.cellIndices[1]).toMatch('B1');
+        expect(row.cellIndices[2]).toMatch('C1');
         expect(row.cells[0].rowIndex).toBe(1);
         expect(row.cells[0].columnIndex).toBe('A');
         expect(row.cells[0].value).toBe('Updated');

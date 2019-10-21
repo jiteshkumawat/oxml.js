@@ -33,7 +33,9 @@ describe('table method', () => {
         expect(table.name).toBe('Table1');
         expect(table.fromCell).toBe('A1');
         expect(table.toCell).toBe('C3');
-        expect(table.columns).toMatch(['Title1', 'Title2', 'Title3']);
+        expect(table.columns[0]).toBe('Title1');
+        expect(table.columns[1]).toBe('Title2');
+        expect(table.columns[2]).toBe('Title3');
     });
 
     it('defines blank column for row values not defined', () => {
@@ -50,7 +52,7 @@ describe('table method', () => {
         expect(table.name).toBe('Table1');
         expect(table.fromCell).toBe('A1');
         expect(table.toCell).toBe('C3');
-        expect(table.columns).toMatch(['Title1', 'Title2', '']);
+        expect(table.columns[2]).toBe("");
     });
 
     it('defines table with sorting (numeric value)', () => {
