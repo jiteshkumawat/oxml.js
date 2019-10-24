@@ -7,6 +7,15 @@ This is a small javascript library, which can let you download / export data in 
 
 Open XML documents are just a ziped collection of XML files, thus only library required for oxml.js to work is JSZip, for compressing data in zip format and downloading.
 
+## :fire: New Updates
+* Alignment of cells: User can now style vertical align and horizontal align by passing vAlignment and hAlignment attributes in style method. Possible values for vAlignment are top, center, bottom, and that of hAlignment are left, center, and bottom.
+
+Sample code:
+            worksheet.row(2, 1, "center aligned content", {
+                hAlignment: "center",
+                vAlignment: "center"
+            });
+
 ## Dependencies
 
 * [JSZIP](https://stuk.github.io/jszip/)
