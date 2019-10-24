@@ -35,31 +35,25 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             // workbook.download('tmp.xlsx');
             debugger;
 
-            // ACT
-            worksheet.grid(1, 1, [
-                ['Title1', 'Title2', 'Title3'],
-                [1, 2, 3],
-                [2, 5, 3]
-            ]);
-            var table = worksheet.table('Table1', 'A1', 'C3');
+            var a = worksheet.row(2, 1, ["test"]);
+            worksheet.row(2, 1, null, {
+                bold: true,
+                italic: true,
+                hAlignment: "center",
+                vAlignment: "center"
+            });
     
-            // ACT
-            table.style({
-                firstRow: {
-                    bold: true
-                }
-            }).style({
-                firstRow: {
-                    fontColor: 'ffffff',
-                }
-            }, 'tableStyle1').style({
-                firstRow: {
-                    fill: {
-                        pattern: 'solid',
-                        color: '000000'
-                    }
-                }
-            }, 'tableStyle1');
+            // Assert
+            workbook.download('/demo.xlsx').then(function (zip) {
+                expect(zip.files["workbook/style2.xml"]).toBeDefined();
+                zip.file("workbook/sheets/sheet1.xml").async('string').then(function (data) {
+                    var index1 = data.indexOf('<c r="A2" s="1"><v>1</v></c>');
+                    expect(index1).toBeGreaterThan(-1);
+                    done();
+                });
+            }).catch(function () {
+                done.fail();
+            });
     
             workbook.download('demo.xlsx').then(function (zip) {
                 // ASSERT

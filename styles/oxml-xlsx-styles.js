@@ -78,9 +78,14 @@ define(['utils',
                     ? ' borderId="' + this._styles.styles[index]._border + '" ' : '';
                 var fillString = this._styles.styles[index]._fill
                     ? ' fillId="' + this._styles.styles[index]._fill + '" ' : '';
+                var alignmentString = this._styles.styles[index]._hAlignment || this._styles.styles[index]._vAlignment
+                    ? '><alignment' +
+                    (this._styles.styles[index]._vAlignment ? ' vertical="' + this._styles.styles[index]._vAlignment + '"' : '') +
+                    (this._styles.styles[index]._hAlignment ? ' horizontal="' + this._styles.styles[index]._hAlignment + '"' : '') + '/>' : '';
                 stylesString += '<xf fontId="' + this._styles.styles[index]._font
                     + '" ' + numFormatString
-                    + borderString + fillString + ' />';
+                    + borderString + fillString + 
+                    (alignmentString ? alignmentString + '</xf>' : ' />');
             }
             var tableStyles = '';
             if (this._styles.tableStyles && this._styles.tableStyles.length) tableStyles = generateTableContent(this._styles);
@@ -233,7 +238,40 @@ define(['utils',
             return null;
         };
 
+        var defineAllignment = function (options) {
+            if (options.hAlignment) {
+                switch (options.hAlignment.toLowerCase()) {
+                    case "left":
+                        options.hAlignment = "left";
+                        break;
+                    case "center":
+                        options.hAlignment = "center";
+                        break;
+                    case "right":
+                        options.hAlignment = "right";
+                        break;
+                    default:
+                        options.hAlignment = undefined;
+                }
+            }
+            if (options.vAlignment) {
+                switch (options.vAlignment.toLowerCase()) {
+                    case "top":
+                        options.vAlignment = "top";
+                        break;
+                    case "center":
+                        options.vAlignment = "center";
+                        break;
+                    default:
+                        options.vAlignment = undefined;
+                }
+            }
+
+            return options;
+        };
+
         Styles.prototype.addStyles = function (options) {
+            options = defineAllignment(options);
             if (options.cellIndex || options.cellIndices) {
                 var newStyleCreated = false, cellStyle,
                     saveFont, saveNumFormat, saveBorder, saveFill;
@@ -250,7 +288,9 @@ define(['utils',
                     newStyleCreated = newStyleCreated
                         || saveFont.newStyleCreated
                         || saveBorder.newStyleCreated
-                        || saveFill.newStyleCreated;
+                        || saveFill.newStyleCreated
+                        || options.hAlignment
+                        || options.vAlignment;
                     if (cellStyle) {
                         if (cellStyle._font === saveFont.fontIndex
                             && cellStyle._numFormat === saveNumFormat.numFormatIndex
@@ -264,6 +304,8 @@ define(['utils',
                             cellStyle._numFormat = saveNumFormat.numFormatIndex;
                             cellStyle._border = saveBorder.borderIndex;
                             cellStyle._fill = saveFill.fillIndex;
+                            cellStyle._hAlignment = options.hAlignment;
+                            cellStyle._vAlignment = options.vAlignment;
                             return cellStyle;
                         }
                         delete cellStyle.cellIndices[options.cellIndex];
@@ -274,7 +316,9 @@ define(['utils',
                             _font: saveFont.fontIndex,
                             _numFormat: saveNumFormat.numFormatIndex,
                             _border: saveBorder.borderIndex,
-                            _fill: saveFill.fillIndex
+                            _fill: saveFill.fillIndex,
+                            _hAlignment: options.hAlignment,
+                            _vAlignment: options.vAlignment
                         });
                         if (cellStyle) {
                             cellStyle.cellIndices[options.cellIndex] = Object.keys(cellStyle.cellIndices).length;
@@ -287,6 +331,8 @@ define(['utils',
                         _numFormat: saveNumFormat.numFormatIndex || false,
                         _border: saveBorder.borderIndex,
                         _fill: saveFill.fillIndex,
+                        _hAlignment: options.hAlignment,
+                        _vAlignment: options.vAlignment,
                         cellIndices: {}
                     };
 
@@ -303,13 +349,15 @@ define(['utils',
                     saveBorder = oxmlXlsxBorder.getBorderForCells(this._styles, options);
                     saveFill = oxmlXlsxFill.getFillForCells(this._styles, options);
                     newStyleCreated = newStyleCreated || saveFont.newStyleCreated
-                        || saveNumFormat.newStyleCreated || saveBorder.newStyleCreated || saveFill.newStyleCreated;
+                        || saveNumFormat.newStyleCreated || saveBorder.newStyleCreated || saveFill.newStyleCreated || options.hAlignment || options.vAlignment;
                     if (!newStyleCreated) {
                         cellStyle = searchSimilarStyle(this._styles, {
                             _font: saveFont.fontIndex,
                             _numFormat: saveNumFormat.numFormatIndex,
                             _border: saveBorder.borderIndex,
-                            _fill: saveFill.fillIndex
+                            _fill: saveFill.fillIndex,
+                            _hAlignment: options.hAlignment,
+                            _vAlignment: options.vAlignment
                         });
 
                         if (cellStyle) {
@@ -329,6 +377,8 @@ define(['utils',
                         _numFormat: saveNumFormat.numFormatIndex,
                         _border: saveBorder.borderIndex,
                         _fill: saveFill.fillIndex,
+                        _hAlignment: options.hAlignment,
+                        _vAlignment: options.vAlignment,
                         cellIndices: {}
                     };
 

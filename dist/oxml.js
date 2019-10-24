@@ -557,7 +557,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                 return '<c r="' + cellIndex + '" ' + styleString + '><f>' + value.formula + '</f>' + v + '</c>';
             }
         };
-        
+
         var getNextRelation = function (_sheet) {
             var lastSheetRel = {};
             if (_sheet._rels.relations.length) {
@@ -565,6 +565,21 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
             }
             var nextSheetRelId = parseInt((lastSheetRel.Id || "rId0").replace("rId", ""), 10) + 1;
             return nextSheetRelId;
+        };
+
+        var getColumnString = function (columnIndex) {
+            var columnString = "", mod;
+            while (columnIndex > 0) {
+                mod = columnIndex % 26;
+                var div = (columnIndex - mod) / 26;
+                if (mod === 0) {
+                    mod = 26;
+                }
+                columnIndex = div;
+                columnString = String.fromCharCode(64 + mod) + columnString;
+            }
+
+            return columnString;
         };
 
         Sheet.prototype.generateContent = function (file) {
@@ -577,7 +592,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
 
                         var columnIndex = 0;
                         for (columnIndex = 0; columnIndex < this._sheet.values[rowIndex].length; columnIndex++) {
-                            var columnChar = String.fromCharCode(65 + columnIndex);
+                            var columnChar = getColumnString(columnIndex + 1);
                             var value = this._sheet.values[rowIndex][columnIndex];
                             var cellIndex = columnChar + (rowIndex + 1);
                             var cellStr = cellString(value, cellIndex, rowIndex, columnIndex);
@@ -721,7 +736,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
         };
 
         var updateValueInCell = function (value, _sheet, rowIndex, columnIndex, options) {
-            var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+            var cellIndex = getColumnString(columnIndex) + rowIndex;
             var sheetRowIndex = rowIndex - 1;
             if (value !== undefined && value !== null) {
                 if (!_sheet.values[sheetRowIndex]) {
@@ -751,7 +766,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                 type: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null,
                 cellIndex: cellIndex,
                 rowIndex: rowIndex + 1,
-                columnIndex: String.fromCharCode(65 + columnIndex),
+                columnIndex: getColumnString(columnIndex + 1),
                 formula: _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined,
                 set: function (value, options) {
                     cell(_sheet, rowIndex + 1, columnIndex + 1, value, options);
@@ -770,7 +785,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                 var value = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].value : null;
                 var formula = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].formula : undefined;
                 var type = _sheet.values[rowIndex] && _sheet.values[rowIndex][columnIndex] ? _sheet.values[rowIndex][columnIndex].type : null;
-                var cellIndex = String.fromCharCode(65 + columnIndex) + (rowIndex + 1);
+                var cellIndex = getColumnString(columnIndex + 1) + (rowIndex + 1);
                 var sharedFormulaIndex = type === "sharedFormula" ? _sheet.values[rowIndex][columnIndex].si : undefined;
                 cellRange.push({
                     style: function (options) {
@@ -779,7 +794,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                         return getCellAttributes(_sheet, this.cellIndex, (this.rowIndex - 1), (this.columnIndex.toUpperCase().charCodeAt() - 65));
                     },
                     rowIndex: rowIndex + 1,
-                    columnIndex: String.fromCharCode(65 + columnIndex),
+                    columnIndex: getColumnString(columnIndex + 1),
                     value: value,
                     formula: formula,
                     cellIndex: cellIndex,
@@ -916,7 +931,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                 range: fromCell + ":" + toCell,
                 value: val
             };
-            cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+            cellIndices.push(getColumnString(columIndex + 1) + rowIndex);
             cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
 
             var toCellChar, toCellNum;
@@ -934,7 +949,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                         si: nextId,
                         value: val
                     };
-                    cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+                    cellIndices.push(getColumnString(columIndex + 1) + rowIndex);
                     cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
                 }
             } else if (toCellChar === fromCellChar) {
@@ -943,7 +958,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                     if (!this._sheet.values[rowIndex - 1]) {
                         this._sheet.values[rowIndex - 1] = [];
                     }
-                    cellIndices.push(String.fromCharCode(65 + columIndex) + rowIndex);
+                    cellIndices.push(getColumnString(columIndex + 1) + rowIndex);
                     cells.push({ rowIndex: rowIndex - 1, columnIndex: columIndex });
 
                     this._sheet.values[rowIndex - 1][columIndex] = {
@@ -968,7 +983,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
             if (!rowIndex || !columnIndex || typeof rowIndex !== "number" || typeof columnIndex !== "number")
                 return;
             if (!options && (value === undefined || value === null)) {
-                var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+                var cellIndex = getColumnString(columnIndex) + rowIndex;
                 return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
             } else if (!options && typeof value === "object" && !value.type && (value.value === undefined || value.value === null)) {
                 return cellStyle(_sheet, rowIndex, columnIndex, value);
@@ -1030,7 +1045,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                 if (!_sheet.values[index])
                     _sheet.values[index] = [];
                 for (var index2 = columnIndex - 1; tmpColumns > 0; index2++ , tmpColumns--) {
-                    cellIndices.push(String.fromCharCode(65 + index2) + (index + 1));
+                    cellIndices.push(getColumnString(index2 + 1) + (index + 1));
                     cells.push({ rowIndex: index, columnIndex: index2 });
                 }
             }
@@ -1057,7 +1072,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
         };
 
         var cellStyle = function (_sheet, rowIndex, columnIndex, options) {
-            var cellIndex = String.fromCharCode(65 + columnIndex - 1) + rowIndex;
+            var cellIndex = getColumnString(columnIndex - 1) + rowIndex;
             options.cellIndex = cellIndex;
             updateSingleStyle(_sheet, options, rowIndex - 1, columnIndex - 1);
             return getCellAttributes(_sheet, cellIndex, rowIndex - 1, columnIndex - 1);
@@ -1923,7 +1938,6 @@ define('oxml_xlsx_styles',['utils',
     'oxml_xlsx_border',
     'oxml_xlsx_fill',
     'xmlContentString',
-    'contentString',
     'contentFile'],
     function (utils,
         oxmlXlsxFont,
@@ -1931,7 +1945,6 @@ define('oxml_xlsx_styles',['utils',
         oxmlXlsxBorder,
         oxmlXlsxFill,
         XMLContentString,
-        ContentString,
         ContentFile) {
 
         "use strict";
@@ -1999,9 +2012,14 @@ define('oxml_xlsx_styles',['utils',
                     ? ' borderId="' + this._styles.styles[index]._border + '" ' : '';
                 var fillString = this._styles.styles[index]._fill
                     ? ' fillId="' + this._styles.styles[index]._fill + '" ' : '';
+                var alignmentString = this._styles.styles[index]._hAlignment || this._styles.styles[index]._vAlignment
+                    ? '><alignment' +
+                    (this._styles.styles[index]._vAlignment ? ' vertical="' + this._styles.styles[index]._vAlignment + '"' : '') +
+                    (this._styles.styles[index]._hAlignment ? ' horizontal="' + this._styles.styles[index]._hAlignment + '"' : '') + '/>' : '';
                 stylesString += '<xf fontId="' + this._styles.styles[index]._font
                     + '" ' + numFormatString
-                    + borderString + fillString + ' />';
+                    + borderString + fillString + 
+                    (alignmentString ? alignmentString + '</xf>' : ' />');
             }
             var tableStyles = '';
             if (this._styles.tableStyles && this._styles.tableStyles.length) tableStyles = generateTableContent(this._styles);
@@ -2154,7 +2172,40 @@ define('oxml_xlsx_styles',['utils',
             return null;
         };
 
+        var defineAllignment = function (options) {
+            if (options.hAlignment) {
+                switch (options.hAlignment.toLowerCase()) {
+                    case "left":
+                        options.hAlignment = "left";
+                        break;
+                    case "center":
+                        options.hAlignment = "center";
+                        break;
+                    case "right":
+                        options.hAlignment = "right";
+                        break;
+                    default:
+                        options.hAlignment = undefined;
+                }
+            }
+            if (options.vAlignment) {
+                switch (options.vAlignment.toLowerCase()) {
+                    case "top":
+                        options.vAlignment = "top";
+                        break;
+                    case "center":
+                        options.vAlignment = "center";
+                        break;
+                    default:
+                        options.vAlignment = undefined;
+                }
+            }
+
+            return options;
+        };
+
         Styles.prototype.addStyles = function (options) {
+            options = defineAllignment(options);
             if (options.cellIndex || options.cellIndices) {
                 var newStyleCreated = false, cellStyle,
                     saveFont, saveNumFormat, saveBorder, saveFill;
@@ -2171,7 +2222,9 @@ define('oxml_xlsx_styles',['utils',
                     newStyleCreated = newStyleCreated
                         || saveFont.newStyleCreated
                         || saveBorder.newStyleCreated
-                        || saveFill.newStyleCreated;
+                        || saveFill.newStyleCreated
+                        || options.hAlignment
+                        || options.vAlignment;
                     if (cellStyle) {
                         if (cellStyle._font === saveFont.fontIndex
                             && cellStyle._numFormat === saveNumFormat.numFormatIndex
@@ -2185,6 +2238,8 @@ define('oxml_xlsx_styles',['utils',
                             cellStyle._numFormat = saveNumFormat.numFormatIndex;
                             cellStyle._border = saveBorder.borderIndex;
                             cellStyle._fill = saveFill.fillIndex;
+                            cellStyle._hAlignment = options.hAlignment;
+                            cellStyle._vAlignment = options.vAlignment;
                             return cellStyle;
                         }
                         delete cellStyle.cellIndices[options.cellIndex];
@@ -2195,7 +2250,9 @@ define('oxml_xlsx_styles',['utils',
                             _font: saveFont.fontIndex,
                             _numFormat: saveNumFormat.numFormatIndex,
                             _border: saveBorder.borderIndex,
-                            _fill: saveFill.fillIndex
+                            _fill: saveFill.fillIndex,
+                            _hAlignment: options.hAlignment,
+                            _vAlignment: options.vAlignment
                         });
                         if (cellStyle) {
                             cellStyle.cellIndices[options.cellIndex] = Object.keys(cellStyle.cellIndices).length;
@@ -2208,6 +2265,8 @@ define('oxml_xlsx_styles',['utils',
                         _numFormat: saveNumFormat.numFormatIndex || false,
                         _border: saveBorder.borderIndex,
                         _fill: saveFill.fillIndex,
+                        _hAlignment: options.hAlignment,
+                        _vAlignment: options.vAlignment,
                         cellIndices: {}
                     };
 
@@ -2224,13 +2283,15 @@ define('oxml_xlsx_styles',['utils',
                     saveBorder = oxmlXlsxBorder.getBorderForCells(this._styles, options);
                     saveFill = oxmlXlsxFill.getFillForCells(this._styles, options);
                     newStyleCreated = newStyleCreated || saveFont.newStyleCreated
-                        || saveNumFormat.newStyleCreated || saveBorder.newStyleCreated || saveFill.newStyleCreated;
+                        || saveNumFormat.newStyleCreated || saveBorder.newStyleCreated || saveFill.newStyleCreated || options.hAlignment || options.vAlignment;
                     if (!newStyleCreated) {
                         cellStyle = searchSimilarStyle(this._styles, {
                             _font: saveFont.fontIndex,
                             _numFormat: saveNumFormat.numFormatIndex,
                             _border: saveBorder.borderIndex,
-                            _fill: saveFill.fillIndex
+                            _fill: saveFill.fillIndex,
+                            _hAlignment: options.hAlignment,
+                            _vAlignment: options.vAlignment
                         });
 
                         if (cellStyle) {
@@ -2250,6 +2311,8 @@ define('oxml_xlsx_styles',['utils',
                         _numFormat: saveNumFormat.numFormatIndex,
                         _border: saveBorder.borderIndex,
                         _fill: saveFill.fillIndex,
+                        _hAlignment: options.hAlignment,
+                        _vAlignment: options.vAlignment,
                         cellIndices: {}
                     };
 
