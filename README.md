@@ -16,6 +16,11 @@ Sample code:
                 vAlignment: "center"
             });
 
+* Merge cells: User can now merge cells using merge method of worksheet. Parameter passed to merge method is string representation of range of cells.
+
+Sample code:
+            worksheet.merge("A1:C2");
+
 ## Dependencies
 
 * [JSZIP](https://stuk.github.io/jszip/)
