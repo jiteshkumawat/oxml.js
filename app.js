@@ -35,14 +35,15 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             // workbook.download('tmp.xlsx');
             debugger;
 
-            var a = worksheet.row(2, 1, ["test"]);
-            worksheet.row(2, 1, null, {
+            var a = worksheet.row(1, 1, ["test"]);
+            worksheet.merge("A1:B2");
+            worksheet.row(1, 1, null, {
                 bold: true,
                 italic: true,
                 hAlignment: "center",
                 vAlignment: "center"
             });
-    
+
             // Assert
             workbook.download('/demo.xlsx').then(function (zip) {
                 expect(zip.files["workbook/style2.xml"]).toBeDefined();
@@ -54,7 +55,7 @@ requirejs(['fileSaver', 'oxml-xlsx'],
             }).catch(function () {
                 done.fail();
             });
-    
+
             workbook.download('demo.xlsx').then(function (zip) {
                 // ASSERT
                 expect(zip.files["workbook/tables/table1.xml"]).toBeDefined();

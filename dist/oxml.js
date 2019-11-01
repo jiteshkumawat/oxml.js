@@ -604,6 +604,16 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                 }
             }
             sheetValues += '</sheetData>';
+
+            var merge = '';
+            if (this._sheet._mergeCells && this._sheet._mergeCells.length) {
+                merge += '<mergeCells count="' + this._sheet._mergeCells.length + '">';
+                for (var i = 0; i < this._sheet._mergeCells.length; i++) {
+                    merge += '<mergeCell ref="' + this._sheet._mergeCells[0] + '"/>';
+                }
+                merge += '</mergeCells>';
+            }
+
             var tables = '';
             if (this._sheet.tables && this._sheet.tables.length) {
                 tables += '<tableParts count="' + this._sheet.tables.length + '">';
@@ -623,7 +633,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                     }
                 ]
             });
-            return sheetTemplate.format(sheetValues + tables);
+            return sheetTemplate.format(sheetValues + merge + tables);
         };
 
         Sheet.prototype.attachChild = function (file) {
@@ -1034,6 +1044,17 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
         Sheet.prototype.table = function (tableName, fromCell, toCell, options) {
             var _table = addTable(this._sheet, this.xlsxContentTypes, tableName, fromCell, toCell, options);
             return (_table ? _table.tableOptions() : undefined);
+        };
+
+        Sheet.prototype.merge = function (cellRange) {
+            if (!cellRange || typeof cellRange !== "string") {
+                return this;
+            }
+            if (!this._sheet._mergeCells) {
+                this._sheet._mergeCells = [];
+            }
+            this._sheet._mergeCells.push(cellRange);
+            return this;
         };
 
         var cells = function (_sheet, rowIndex, columnIndex, totalRows, totalColumns, values, options, isReturn, isRow, isColumn) {
