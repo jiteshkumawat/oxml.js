@@ -571,10 +571,10 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
             var columnString = "", mod;
             while (columnIndex > 0) {
                 mod = columnIndex % 26;
-                var div = (columnIndex - mod) / 26;
                 if (mod === 0) {
                     mod = 26;
                 }
+                var div = (columnIndex - mod) / 26;
                 columnIndex = div;
                 columnString = String.fromCharCode(64 + mod) + columnString;
             }
