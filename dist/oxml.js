@@ -43,7 +43,7 @@ define('fileHandler',[], function () {
                 var fs = this._fs;
                 /* istanbul ignore if  */
                 if (typeof window !== "undefined") {
-                    return zip.generateAsync({ type: "blob" })
+                    return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
                         .then(function (content) {
                             try {
                                 if (window.saveAs) {

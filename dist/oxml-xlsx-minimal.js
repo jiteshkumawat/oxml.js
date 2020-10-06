@@ -29,7 +29,7 @@ define('fileHandler',[], function () {
         };
 
         compressedFile.saveFile = function (fileName, callback) {
-            return zip.generateAsync({ type: "blob" })
+            return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
                 .then(function (content) {
                     try {
                         if (window.saveAs) {
