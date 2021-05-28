@@ -546,7 +546,7 @@ define('oxml_sheet',['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile
                 }
                 return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" si="' + value.si + '"></f>' + v + '</c>';
             } else if (value.type === 'string') {
-                return '<c r="' + cellIndex + '" t="inlineStr" ' + styleString + '><is><t>' + value.value + '</t></is></c>';
+                return '<c r="' + cellIndex + '" t="inlineStr" ' + styleString + '><is><t>' + value.value.replace(/&/g, '&amp;') + '</t></is></c>';
             } else if (value.type === 'formula') {
                 var v = "";
                 if (value.value && typeof value.value === "function") {
@@ -2456,7 +2456,7 @@ define('oxml_workbook',['oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles', 'xmlConte
                 });
                 var sharedStrings = '';
                 for (var key in _workBook._sharedStrings) {
-                    sharedStrings += '<si><t>' + key + '</t></si>';
+                    sharedStrings += '<si><t>' + key.replace(/&/g, '&amp;') + '</t></si>';
                 }
                 return template.format(sharedStrings);
             }

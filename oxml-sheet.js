@@ -42,7 +42,7 @@ define(['oxml_table', 'oxml_rels', 'xmlContentString', 'contentFile'],
                 }
                 return '<c  r="' + cellIndex + '" ' + styleString + '><f t="shared" si="' + value.si + '"></f>' + v + '</c>';
             } else if (value.type === 'string') {
-                return '<c r="' + cellIndex + '" t="inlineStr" ' + styleString + '><is><t>' + value.value + '</t></is></c>';
+                return '<c r="' + cellIndex + '" t="inlineStr" ' + styleString + '><is><t>' + value.value.replace(/&/g, '&amp;') + '</t></is></c>';
             } else if (value.type === 'formula') {
                 var v = "";
                 if (value.value && typeof value.value === "function") {

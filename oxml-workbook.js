@@ -29,7 +29,7 @@ define(['oxml_rels', 'oxml_sheet', 'oxml_xlsx_styles', 'xmlContentString', 'cont
                 });
                 var sharedStrings = '';
                 for (var key in _workBook._sharedStrings) {
-                    sharedStrings += '<si><t>' + key + '</t></si>';
+                    sharedStrings += '<si><t>' + key.replace(/&/g, '&amp;') + '</t></si>';
                 }
                 return template.format(sharedStrings);
             }
